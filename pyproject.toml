@@ -1,0 +1,43 @@
+[tool.poetry]
+name = "llama-summary"
+version = "0.1.0"
+description = ""
+authors = ["conan_jung"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+streamlit = "^1.36.0"
+transformers = "^4.41.2"
+torchvision = {version = "^0.18.1+cu121", source = "torch"}
+torchaudio = {version = "^2.3.1+cu121", source = "torch"}
+langchain = "^0.2.5"
+wandb = "^0.17.3"
+flask = "^3.0.3"
+fastapi = "^0.111.1"
+uvicorn = "^0.30.1"
+trl = "^0.9.6"
+ipex-llm = "^2.1.0b20240715"
+py-cpuinfo = "^9.0.0"
+fairscale = "^0.4.13"
+fire = "^0.6.0"
+tiktoken = "^0.7.0"
+blobfile = "^2.1.1"
+accelerate = "^0.32.1"
+peft = "^0.11.1"
+ray = "^2.32.0"
+onnx = "^1.16.1"
+openvino = "^2024.2.0"
+onnxruntime = "^1.18.1"
+optimum-intel = {extras = ["extras"], version = "^1.18.1"}
+onnx2pytorch = "^0.4.1"
+
+
+[[tool.poetry.source]]
+name = "torch"
+url = "https://download.pytorch.org/whl/cu121"
+priority = "explicit"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
