@@ -88,39 +88,42 @@ user_message ={
 # ov_model.reshape({model_input.any_name: ov.PartialShape([1, '?']) for model_input in ov_model.inputs})
 # ov_model = OVModelForCausalLM(model=ov_model, config=model.config, use_io_binding=False, use_cache=False)
 
-q_model = ORTModelForCausalLM.from_pretrained("mgiessing/tinyllama-1b_onnx-int8", cache_dir=os.getenv("HF_HOME"))
-q_tokenizer = AutoTokenizer.from_pretrained("mgiessing/tinyllama-1b_onnx-int8", cache_dir=os.getenv("HF_HOME"))
-q_tokenizer.pad_token=q_tokenizer.eos_token
-ov_model = OVModelForCausalLM.from_pretrained("OpenVINO/TinyLlama-1.1B-Chat-v1.0-int8-ov", cache_dir=os.getenv("HF_HOME"))
-ov_tokenizer = AutoTokenizer.from_pretrained("OpenVINO/TinyLlama-1.1B-Chat-v1.0-int8-ov", cache_dir=os.getenv("HF_HOME"))
-ov_tokenizer.pad_token=ov_tokenizer.eos_token
+q_model = ORTModelForCausalLM.from_pretrained("OpenVINO/open_llama_3b_v2-int8-ov", cache_dir=os.getenv("HF_HOME"))
+q_tokenizer = AutoTokenizer.from_pretrained("OpenVINO/open_llama_3b_v2-int8-ov", cache_dir=os.getenv("HF_HOME"))
+q_tokenizer.pad_token=q_tokenizer.eos_token if q_tokenizer.pad_token is None else q_tokenizer.pad_token
+q_tokenizer.pad_token_id = q_tokenizer.encode(q_tokenizer.pad_token,)[0]
 
+ov_model = OVModelForCausalLM.from_pretrained("OpenVINO/open_llama_3b_v2-int8-ov", cache_dir=os.getenv("HF_HOME"))
+ov_tokenizer = AutoTokenizer.from_pretrained("OpenVINO/open_llama_3b_v2-int8-ov", cache_dir=os.getenv("HF_HOME"))
+ov_tokenizer.pad_token=ov_tokenizer.eos_token if ov_tokenizer.pad_token is None else ov_tokenizer.pad_token
+ov_tokenizer.pad_token_id = ov_tokenizer.encode(ov_tokenizer.pad_token,)[0]
 
 @inference_timer
 def test_inference(model, tokenizer, input_text):
     # llm_pipeline = pipeline("text-generation", model=model, tokenizer=tokenizer)
-    user_message ={
+    user_message = {
         "role": "user",
         "content": input_text
         }
-    # tokenizer.pad_token=tokenizer.eos_token
+    tokenizer.pad_token_id = tokenizer.encode(tokenizer.pad_token,)[0]
     template = tokenizer.apply_chat_template(
             [user_message, {"role": "assistant", "content": "\n\n"}],
             return_tensors="pt",
             tokenize=True, )
-    tokenized = tokenizer(
-            template,
-            return_tensors="pt",
-            max_length=2538,
-            padding="max_length",
-            truncation=True)
+    # tokenized = tokenizer(
+    #         template,
+    #         return_tensors="pt",
+    #         max_length=2538,
+    #         padding="max_length",
+    #         truncation=True)
     return model.generate(
         # streamer=TextStreamer(tokenizer=tokenizer),
         generation_config=GenerationConfig(max_new_tokens=50,
-                                           use_cache=True),
+                                           use_cache=True,
+                                           ),
         inputs=template)
     # return llm_pipeline(template)
 
 
-print(test_inference(q_model, q_tokenizer, user_message["content"]))
+# print(test_inference(q_model, q_tokenizer, user_message["content"]))
 print(test_inference(ov_model, ov_tokenizer, user_message["content"]))
