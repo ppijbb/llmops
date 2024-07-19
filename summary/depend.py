@@ -12,10 +12,10 @@ def get_model(
         # Load model in 4 bit,
         # which convert the relevant layers in the model into INT4 format
         model = AutoModelForCausalLM.from_pretrained(model_path,
-                                                    load_in_4bit=True,
-                                                    optimize_model=True,
-                                                    trust_remote_code=True,
-                                                    use_cache=True)
+                                                     load_in_4bit=True,
+                                                     optimize_model=True,
+                                                     trust_remote_code=True,
+                                                     use_cache=True)
             
         # -- adapter --
         model.load_adapter(adapter_path)

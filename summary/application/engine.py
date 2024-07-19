@@ -4,7 +4,7 @@ import psutil
 
 from summary.depend import get_model
 
-num_cpus = psutil.cpu_count(logical=False)
+num_cpus = psutil.cpu_count(logical=True)
 ray.init(num_cpus=num_cpus, ignore_reinit_error=True)
 
 
