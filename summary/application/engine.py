@@ -4,9 +4,10 @@ import psutil
 
 from summary.depend import get_model
 
-ray.init(num_cpus=psutil.cpu_count(logical=True), 
-         ignore_reinit_error=True,
-         )
+# ray.init(
+#     num_cpus=psutil.cpu_count(logical=True), 
+#     ignore_reinit_error=True,
+#     )
 
 
 def get_prompt(user_input: str, 
@@ -35,7 +36,7 @@ def get_prompt(user_input: str,
     return "".join(prompt_texts) if isinstance(prompt_texts[0], str) else prompt_texts
 
 
-@ray.remote
+# @ray.remote
 class LLMService(object):
     def __init__(self):
         self.model, self.tokenizer = get_model(
@@ -69,6 +70,8 @@ class LLMService(object):
         return self._make_summary(input_text)
 
 
+llm_service = LLMService()
+
 async def get_llm_service():
-    yield LLMService.remote()
-    # yield llm_service
+    # yield LLMService.remote()
+    yield llm_service
