@@ -4,8 +4,9 @@ import psutil
 
 from summary.depend import get_model
 
-num_cpus = psutil.cpu_count(logical=True)
-ray.init(num_cpus=num_cpus, ignore_reinit_error=True)
+ray.init(num_cpus=psutil.cpu_count(logical=True), 
+         ignore_reinit_error=True,
+         )
 
 
 def get_prompt(user_input: str, 
@@ -37,28 +38,37 @@ def get_prompt(user_input: str,
 @ray.remote
 class LLMService(object):
     def __init__(self):
-        self.model, self.tokenizer = get_model()
-        self.model.eval()
-    
-    @torch.inference_mode()
+        self.model, self.tokenizer = get_model(
+            # model_path="HuggingFaceH4/zephyr-7b-alpha", 
+            model_path="OpenVINO/open_llama_3b_v2-int8-ov",
+            adapter_path=None)
+
+    @torch.inference_mode
     def _make_summary(self,
-                      input_text: str, 
-                      model, 
-                      tokenizer) -> str:
+                      input_text: str) -> str:
         chat_template = {
             "user_input": input_text,
             "chat_history": [],
-            "system_prompt": "You are summary llama"
+            "system_prompt": ""
         }
         prompt = get_prompt(**chat_template)
-        inputs = self.tokenizer(prompt, return_tensors="pt") if isinstance(prompt, str) else tokenizer.apply_chat_template(prompt, return_tensors="pt")
-        output = self.model.generate(**inputs, use_cache=False,)
-        output_str = self.tokenizer.decode(output[0], skip_special_tokens=False)
+        inputs = self.formatting(prompt)
+        output = self.model.generate(**inputs,
+                                     use_cache=True,
+                                     num_return_sequences=1,)
+        output_str = self.tokenizer.decode(output[0], skip_special_tokens=True)
         return output_str
     
+    def formatting(self, prompt: str):
+        if isinstance(prompt, str):
+            return self.tokenizer(prompt, return_tensors="pt")
+        else:
+            return self.tokenizer.apply_chat_template(prompt, return_tensors="pt")
+        
     def summarize(self, input_text: str) -> str:
-        return self._make_summary(input_text, self.model, self.tokenizer)
+        return self._make_summary(input_text)
 
 
 async def get_llm_service():
     yield LLMService.remote()
+    # yield llm_service

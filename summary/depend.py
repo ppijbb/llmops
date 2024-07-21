@@ -1,4 +1,7 @@
+import os
 from ipex_llm.transformers import AutoModelForCausalLM
+from optimum.intel import OVModelForCausalLM
+from optimum.onnxruntime import ORTModelForCausalLM
 from transformers import AutoTokenizer
 
 
@@ -11,14 +14,25 @@ def get_model(
 
         # Load model in 4 bit,
         # which convert the relevant layers in the model into INT4 format
-        model = AutoModelForCausalLM.from_pretrained(model_path,
-                                                     load_in_4bit=True,
-                                                     optimize_model=True,
-                                                     trust_remote_code=True,
-                                                     use_cache=True)
-            
+        # model = AutoModelForCausalLM.from_pretrained(model_path,
+        #                                              load_in_4bit=True,
+        #                                              optimize_model=True,
+        #                                              trust_remote_code=True,
+        #                                              use_cache=True,)
+        model = OVModelForCausalLM.from_pretrained(model_path,
+                                                   load_in_4bit=True,
+                                                   cache_dir=os.getenv("HF_HOME"),
+                                                   device="CPU",
+                                                   use_cache=True,
+                                                   compile=True,
+                                                   ov_config={
+                                                    "INFERENCE_PRECISION_HINT": "FP16",
+                                                    "PERF_COUNT": "YES"
+                                                   })
         # -- adapter --
-        model.load_adapter(adapter_path)
+        if adapter_path is not None:
+            model.load_adapter(adapter_path)
+            
         model.eval()
         # Load tokenizer
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)

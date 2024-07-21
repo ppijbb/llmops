@@ -8,7 +8,18 @@ from summary.dto import SummaryRequest, SummaryResponse
 import traceback
 import os
 import ray
-os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
+
+# os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '0'
+# os.environ["OMP_NUM_THREADS"] = "21"
+# os.environ["ENABLE_SDP_FUSION"] = "1"
+# os.environ["SYCL_CACHE_PERSISTENT"] = "1"
+# os.environ["SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS"] = "1"
+# os.environ["MKL_NUM_THREADS"] = "24"
+# os.environ["KMP_BLOCKTIME"] = "1"
+# os.environ["KMP_AFFINITY"] = "granularity=fine,compact,1,0"
+# os.environ["KMP_SETTINGS"] = "1"
+# os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
+# os.environ["DNNL_PRIMITIVE_CACHE_CAPACITY"] = "1024"
 
 
 def format_llm_output(rlt_text):
@@ -25,23 +36,19 @@ async def summarize(request: SummaryRequest,
                     service: LLMService = Depends(get_llm_service)) -> SummaryResponse:
     result = ""
     # Generate predicted tokens
+    text = ray.put(request.text)
+    result += ray.get(service.summarize.remote(text))
     try:
         # ----------------------------------- #
         st = time.time()
         text = ray.put(request.text)
         result += ray.get(service.summarize.remote(text))
+        # result += service.summarize(request.text)
         end = time.time()
         # ----------------------------------- #
 
-        # logging.warn(f'Inference time: {end-st} s')
-        # logging.warn(('-'*20) + 'Prompt' + ('-'*20))
-        # logging.warn(input_text)
-        # logging.warn(('-'*20) + 'Output (skip_special_tokens=False)' + ('-'*20))
-        # logging.warn(output_str)
-
     except Exception as e:
-        print(traceback(e))
+        logging.error("error" + traceback(e))
         result += "Error in summarize"
     finally:
         return SummaryResponse(text=result)
-
