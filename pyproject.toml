@@ -22,15 +22,15 @@ trl = "^0.9.6"
 py-cpuinfo = "^9.0.0"
 fairscale = "^0.4.13"
 fire = "^0.6.0"
-tiktoken = "^0.7.0"
+tiktoken = "^0.6.0"
 blobfile = "^2.1.1"
 accelerate = "^0.23.0"
 peft = "^0.11.1"
-ray = "^2.32.0"
+ray = {extras = ["serve"], version = "^2.32.0"}
 onnx = "^1.16.1"
 openvino = "^2024.2.0"
 onnxruntime = "^1.18.1"
-optimum = { version = "^1.14.0" }
+optimum = { version = "^1.14.0", extras = ["ipex,openvino,neural-compressor"] }
 optimum-intel = { version = "^1.18.1", extras = ["extras"] }
 onnx2pytorch = "^0.4.1"
 pyyaml = "^6.0.1"
@@ -42,6 +42,7 @@ oneccl_bind_pt = { version = "^2.3.0", source = "intel" }
 locust = "^2.29.1"
 protobuf = "^5.27.2"
 nncf = "^2.11.0"
+vllm = { version = "^0.2.7" }
 
 [[tool.poetry.source]]
 name = "torch"
