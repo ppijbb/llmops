@@ -1,7 +1,7 @@
 import torch
 import ray
 import psutil
-
+import numpy as np
 from summary.depend import get_model
 
 # ray.init(
@@ -43,8 +43,14 @@ class LLMService(object):
             # model_path="HuggingFaceH4/zephyr-7b-alpha", 
             model_path="OpenVINO/open_llama_3b_v2-int8-ov",
             adapter_path=None)
+        
+    def formatting(self, prompt: str):
+        if isinstance(prompt, str):
+            return self.tokenizer(prompt, return_tensors="pt")
+        else:
+            return self.tokenizer.apply_chat_template(prompt, return_tensors="pt")
 
-    @torch.inference_mode
+    @torch.inference_mode()
     def _make_summary(self,
                       input_text: str) -> str:
         chat_template = {
@@ -60,11 +66,23 @@ class LLMService(object):
         output_str = self.tokenizer.decode(output[0], skip_special_tokens=True)
         return output_str
     
-    def formatting(self, prompt: str):
-        if isinstance(prompt, str):
-            return self.tokenizer(prompt, return_tensors="pt")
-        else:
-            return self.tokenizer.apply_chat_template(prompt, return_tensors="pt")
+    @torch.inference_mode()
+    def generate_stream(self, prompt, max_length=50):
+        input_ids = self.tokenizer.encode(prompt, return_tensors="np")
+        
+        for _ in range(max_length):
+            outputs = self.model([input_ids])[self.model.output(0)]
+            next_token_logits = outputs[0, -1, :]
+            next_token = np.argmax(next_token_logits)
+            
+            if next_token == self.tokenizer.eos_token_id:
+                break
+            
+            input_ids = np.concatenate([input_ids, [[next_token]]], axis=-1)
+            
+            yield self.tokenizer.decode([next_token], skip_special_tokens=True)
+
+
         
     def summarize(self, input_text: str) -> str:
         return self._make_summary(input_text)

@@ -26,7 +26,7 @@ def get_model(
                                                    use_cache=True,
                                                    compile=True,
                                                    ov_config={
-                                                    "INFERENCE_PRECISION_HINT": "FP16",
+                                                    "INFERENCE_PRECISION_HINT": "INT8",
                                                     "CPU_SPARSE_WEIGHTS_DECOMPRESSION_RATE": "0.5",
                                                     "CACHE_DIR": os.getenv("HF_HOME"), 
                                                     "ALLOW_AUTO_BATCHING": "YES",
