@@ -36,13 +36,13 @@ onnx2pytorch = "^0.4.1"
 pyyaml = "^6.0.1"
 tokenizers = "^0.15.2"
 setuptools-rust = "^1.9.0"
-ipex-llm = { version = "^2.1.0b20240718", extras = ["all"], source = "torch" }
+ipex-llm = { version = "^2.1.0b20240718", extras = ["all"]  }
 intel-extension-for-pytorch = { version = "^2.3.100+cpu", source = "intel" }
 oneccl_bind_pt = { version = "^2.3.0", source = "intel" }
 locust = "^2.29.1"
 protobuf = "^5.27.2"
 nncf = "^2.11.0"
-vllm = { version = "^0.2.7" }
+# vllm = { version = "^0.2.7" }
 
 [[tool.poetry.source]]
 name = "torch"
