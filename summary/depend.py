@@ -26,8 +26,9 @@ def get_model(
                                                    use_cache=True,
                                                    compile=True,
                                                    ov_config={
+                                                    "CPU_DENORMALS_OPTIMIZATION": "YES",
                                                     "INFERENCE_PRECISION_HINT": "INT8",
-                                                    "CPU_SPARSE_WEIGHTS_DECOMPRESSION_RATE": "0.5",
+                                                    "CPU_SPARSE_WEIGHTS_DECOMPRESSION_RATE": "1.0",
                                                     "CACHE_DIR": os.getenv("HF_HOME"), 
                                                     "ALLOW_AUTO_BATCHING": "YES",
                                                     "PERF_COUNT": "YES"
