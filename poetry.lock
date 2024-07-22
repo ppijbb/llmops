@@ -268,6 +268,25 @@ future = ">=0.15.2"
 numpy = ">=1.12"
 
 [[package]]
+name = "bitsandbytes"
+version = "0.43.1"
+description = "k-bit optimizers and matrix multiplication routines."
+optional = false
+python-versions = "*"
+files = [
+    {file = "bitsandbytes-0.43.1-py3-none-manylinux_2_24_x86_64.whl", hash = "sha256:a81c826d576d6d691c7b4a7491c8fdc0f37f769795d6ca2e54afa605d2c260a3"},
+    {file = "bitsandbytes-0.43.1-py3-none-win_amd64.whl", hash = "sha256:52c1c7189a6ca006555a9663e544e75f40520a97a26e075411f9f9aca0771fcd"},
+]
+
+[package.dependencies]
+numpy = "*"
+torch = "*"
+
+[package.extras]
+benchmark = ["matplotlib", "pandas"]
+test = ["scipy"]
+
+[[package]]
 name = "blinker"
 version = "1.8.2"
 description = "Fast, simple object-to-object and broadcast signaling"
@@ -1819,13 +1838,13 @@ files = [
 
 [[package]]
 name = "ipex-llm"
-version = "2.1.0b20240720"
+version = "2.1.0b20240721"
 description = "Large Language Model Develop Toolkit"
 optional = false
 python-versions = "*"
 files = [
-    {file = "ipex_llm-2.1.0b20240720-py3-none-manylinux2010_x86_64.whl", hash = "sha256:a6f82c4dc8cf40117926ae9abacea91a06a0434d4c390c3fa0d6230426088106"},
-    {file = "ipex_llm-2.1.0b20240720-py3-none-win_amd64.whl", hash = "sha256:5623e6f79dd4c005a2b9bcf72c464cd113a78d894b68f7d28cdfe539d988a88d"},
+    {file = "ipex_llm-2.1.0b20240721-py3-none-manylinux2010_x86_64.whl", hash = "sha256:31b4f1d7707992508ae45362a94a748c5917bcb38de3cc787149f7f4d521fd62"},
+    {file = "ipex_llm-2.1.0b20240721-py3-none-win_amd64.whl", hash = "sha256:389966c4fd93658889e44f30bd3364da237a2d74c7555df97ef2f3b4bf671606"},
 ]
 
 [package.dependencies]
@@ -1846,11 +1865,11 @@ transformers = {version = "4.36.2", optional = true, markers = "extra == \"all\"
 
 [package.extras]
 all = ["accelerate (==0.23.0)", "intel-openmp", "mpmath (==1.3.0)", "numpy (==1.26.4)", "protobuf", "py-cpuinfo", "sentencepiece", "tabulate", "tokenizers (==0.15.2)", "torch (==2.1.2)", "torch (==2.1.2+cpu)", "transformers (==4.36.2)"]
-cpp = ["bigdl-core-cpp (==2.5.0b20240720)", "dpcpp-cpp-rt (==2024.0.2)", "mkl-dpcpp (==2024.0.0)", "onednn (==2024.0.0)", "onednn-devel (==2024.0.0)"]
+cpp = ["bigdl-core-cpp (==2.5.0b20240721)", "dpcpp-cpp-rt (==2024.0.2)", "mkl-dpcpp (==2024.0.0)", "onednn (==2024.0.0)", "onednn-devel (==2024.0.0)"]
 llama-index = ["accelerate (==0.23.0)", "intel-openmp", "mpmath (==1.3.0)", "numpy (==1.26.4)", "protobuf", "py-cpuinfo", "sentence-transformers (>=2.6.1,<2.7.0)", "sentencepiece", "setuptools (<70.0.0)", "tabulate", "tokenizers (==0.15.2)", "torch (<2.2.0)", "transformers (==4.36.2)"]
 serving = ["fschat[model-worker,webui] (==0.2.36)", "protobuf", "py-cpuinfo"]
-xpu = ["accelerate (==0.23.0)", "bigdl-core-xe-21 (==2.5.0b20240720)", "bigdl-core-xe-addons-21 (==2.5.0b20240720)", "bigdl-core-xe-batch-21 (==2.5.0b20240720)", "dpcpp-cpp-rt (==2024.0.2)", "intel-extension-for-pytorch (==2.1.10+xpu)", "intel-openmp", "mkl-dpcpp (==2024.0.0)", "mpmath (==1.3.0)", "numpy (==1.26.4)", "onednn (==2024.0.0)", "protobuf", "py-cpuinfo", "sentencepiece", "setuptools (<70.0.0)", "tabulate", "tokenizers (==0.15.2)", "torch (==2.1.0a0)", "torchvision (==0.16.0a0)", "transformers (==4.36.2)"]
-xpu-2-1 = ["accelerate (==0.23.0)", "bigdl-core-xe-21 (==2.5.0b20240720)", "bigdl-core-xe-addons-21 (==2.5.0b20240720)", "bigdl-core-xe-batch-21 (==2.5.0b20240720)", "dpcpp-cpp-rt (==2024.0.2)", "intel-extension-for-pytorch (==2.1.10+xpu)", "intel-openmp", "mkl-dpcpp (==2024.0.0)", "mpmath (==1.3.0)", "numpy (==1.26.4)", "onednn (==2024.0.0)", "protobuf", "py-cpuinfo", "sentencepiece", "setuptools (<70.0.0)", "tabulate", "tokenizers (==0.15.2)", "torch (==2.1.0a0)", "torchvision (==0.16.0a0)", "transformers (==4.36.2)"]
+xpu = ["accelerate (==0.23.0)", "bigdl-core-xe-21 (==2.5.0b20240721)", "bigdl-core-xe-addons-21 (==2.5.0b20240721)", "bigdl-core-xe-batch-21 (==2.5.0b20240721)", "dpcpp-cpp-rt (==2024.0.2)", "intel-extension-for-pytorch (==2.1.10+xpu)", "intel-openmp", "mkl-dpcpp (==2024.0.0)", "mpmath (==1.3.0)", "numpy (==1.26.4)", "onednn (==2024.0.0)", "protobuf", "py-cpuinfo", "sentencepiece", "setuptools (<70.0.0)", "tabulate", "tokenizers (==0.15.2)", "torch (==2.1.0a0)", "torchvision (==0.16.0a0)", "transformers (==4.36.2)"]
+xpu-2-1 = ["accelerate (==0.23.0)", "bigdl-core-xe-21 (==2.5.0b20240721)", "bigdl-core-xe-addons-21 (==2.5.0b20240721)", "bigdl-core-xe-batch-21 (==2.5.0b20240721)", "dpcpp-cpp-rt (==2024.0.2)", "intel-extension-for-pytorch (==2.1.10+xpu)", "intel-openmp", "mkl-dpcpp (==2024.0.0)", "mpmath (==1.3.0)", "numpy (==1.26.4)", "onednn (==2024.0.0)", "protobuf", "py-cpuinfo", "sentencepiece", "setuptools (<70.0.0)", "tabulate", "tokenizers (==0.15.2)", "torch (==2.1.0a0)", "torchvision (==0.16.0a0)", "transformers (==4.36.2)"]
 
 [[package]]
 name = "itsdangerous"
@@ -2091,8 +2110,8 @@ langchain-core = ">=0.2.22,<0.3.0"
 langchain-text-splitters = ">=0.2.0,<0.3.0"
 langsmith = ">=0.1.17,<0.2.0"
 numpy = [
-    {version = ">=1.26.0,<2.0.0", markers = "python_version >= \"3.12\""},
     {version = ">=1,<2", markers = "python_version < \"3.12\""},
+    {version = ">=1.26.0,<2.0.0", markers = "python_version >= \"3.12\""},
 ]
 pydantic = ">=1,<3"
 PyYAML = ">=5.3"
@@ -4924,19 +4943,19 @@ test = ["pytest"]
 
 [[package]]
 name = "setuptools"
-version = "71.0.4"
+version = "71.1.0"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "setuptools-71.0.4-py3-none-any.whl", hash = "sha256:ed2feca703be3bdbd94e6bb17365d91c6935c6b2a8d0bb09b66a2c435ba0b1a5"},
-    {file = "setuptools-71.0.4.tar.gz", hash = "sha256:48297e5d393a62b7cb2a10b8f76c63a73af933bd809c9e0d0d6352a1a0135dd8"},
+    {file = "setuptools-71.1.0-py3-none-any.whl", hash = "sha256:33874fdc59b3188304b2e7c80d9029097ea31627180896fb549c578ceb8a0855"},
+    {file = "setuptools-71.1.0.tar.gz", hash = "sha256:032d42ee9fb536e33087fb66cac5f840eb9391ed05637b3f2a76a7c8fb477936"},
 ]
 
 [package.extras]
 core = ["importlib-metadata (>=6)", "importlib-resources (>=5.10.2)", "jaraco.text (>=3.7)", "more-itertools (>=8.8)", "ordered-set (>=3.1.1)", "packaging (>=24)", "platformdirs (>=2.6.2)", "tomli (>=2.0.1)", "wheel (>=0.43.0)"]
 doc = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "pygments-github-lexers (==0.0.5)", "pyproject-hooks (!=1.1)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-favicon", "sphinx-inline-tabs", "sphinx-lint", "sphinx-notfound-page (>=1,<2)", "sphinx-reredirects", "sphinxcontrib-towncrier"]
-test = ["build[virtualenv] (>=1.0.3)", "filelock (>=3.4.0)", "importlib-metadata", "ini2toml[lite] (>=0.14)", "jaraco.develop (>=7.21)", "jaraco.envs (>=2.2)", "jaraco.path (>=3.2.0)", "jaraco.test", "mypy (==1.10.0)", "packaging (>=23.2)", "pip (>=19.1)", "pyproject-hooks (!=1.1)", "pytest (>=6,!=8.1.*)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-home (>=0.5)", "pytest-mypy", "pytest-perf", "pytest-ruff (<0.4)", "pytest-ruff (>=0.2.1)", "pytest-ruff (>=0.3.2)", "pytest-subprocess", "pytest-timeout", "pytest-xdist (>=3)", "tomli", "tomli-w (>=1.0.0)", "virtualenv (>=13.0.0)", "wheel"]
+test = ["build[virtualenv] (>=1.0.3)", "filelock (>=3.4.0)", "importlib-metadata", "ini2toml[lite] (>=0.14)", "jaraco.develop (>=7.21)", "jaraco.envs (>=2.2)", "jaraco.path (>=3.2.0)", "jaraco.test", "mypy (==1.11.*)", "packaging (>=23.2)", "pip (>=19.1)", "pyproject-hooks (!=1.1)", "pytest (>=6,!=8.1.*)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-home (>=0.5)", "pytest-mypy", "pytest-perf", "pytest-ruff (<0.4)", "pytest-ruff (>=0.2.1)", "pytest-ruff (>=0.3.2)", "pytest-subprocess", "pytest-timeout", "pytest-xdist (>=3)", "tomli", "tomli-w (>=1.0.0)", "virtualenv (>=13.0.0)", "wheel"]
 
 [[package]]
 name = "setuptools-rust"
@@ -6517,4 +6536,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "fe28791826f907b1a63b869e97504477c0943b71928f9dce8bbfea9f05a6935a"
+content-hash = "d5d0dc5456568de508b1d31bce2acbed2ff3ace358a4ef4a475e13aa6dc2a80c"
