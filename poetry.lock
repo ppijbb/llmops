@@ -1838,13 +1838,13 @@ files = [
 
 [[package]]
 name = "ipex-llm"
-version = "2.1.0b20240721"
+version = "2.1.0b20240722"
 description = "Large Language Model Develop Toolkit"
 optional = false
 python-versions = "*"
 files = [
-    {file = "ipex_llm-2.1.0b20240721-py3-none-manylinux2010_x86_64.whl", hash = "sha256:31b4f1d7707992508ae45362a94a748c5917bcb38de3cc787149f7f4d521fd62"},
-    {file = "ipex_llm-2.1.0b20240721-py3-none-win_amd64.whl", hash = "sha256:389966c4fd93658889e44f30bd3364da237a2d74c7555df97ef2f3b4bf671606"},
+    {file = "ipex_llm-2.1.0b20240722-py3-none-manylinux2010_x86_64.whl", hash = "sha256:18860255c7875f4d046e4903ba6f447830b2c2441cb572dcfbfea860b8985036"},
+    {file = "ipex_llm-2.1.0b20240722-py3-none-win_amd64.whl", hash = "sha256:15a6f5facd5542cdace7af255a12db1ac700f547381e841035db6dc1b2b76d97"},
 ]
 
 [package.dependencies]
@@ -1865,11 +1865,11 @@ transformers = {version = "4.36.2", optional = true, markers = "extra == \"all\"
 
 [package.extras]
 all = ["accelerate (==0.23.0)", "intel-openmp", "mpmath (==1.3.0)", "numpy (==1.26.4)", "protobuf", "py-cpuinfo", "sentencepiece", "tabulate", "tokenizers (==0.15.2)", "torch (==2.1.2)", "torch (==2.1.2+cpu)", "transformers (==4.36.2)"]
-cpp = ["bigdl-core-cpp (==2.5.0b20240721)", "dpcpp-cpp-rt (==2024.0.2)", "mkl-dpcpp (==2024.0.0)", "onednn (==2024.0.0)", "onednn-devel (==2024.0.0)"]
+cpp = ["bigdl-core-cpp (==2.5.0b20240722)", "dpcpp-cpp-rt (==2024.0.2)", "mkl-dpcpp (==2024.0.0)", "onednn (==2024.0.0)", "onednn-devel (==2024.0.0)"]
 llama-index = ["accelerate (==0.23.0)", "intel-openmp", "mpmath (==1.3.0)", "numpy (==1.26.4)", "protobuf", "py-cpuinfo", "sentence-transformers (>=2.6.1,<2.7.0)", "sentencepiece", "setuptools (<70.0.0)", "tabulate", "tokenizers (==0.15.2)", "torch (<2.2.0)", "transformers (==4.36.2)"]
 serving = ["fschat[model-worker,webui] (==0.2.36)", "protobuf", "py-cpuinfo"]
-xpu = ["accelerate (==0.23.0)", "bigdl-core-xe-21 (==2.5.0b20240721)", "bigdl-core-xe-addons-21 (==2.5.0b20240721)", "bigdl-core-xe-batch-21 (==2.5.0b20240721)", "dpcpp-cpp-rt (==2024.0.2)", "intel-extension-for-pytorch (==2.1.10+xpu)", "intel-openmp", "mkl-dpcpp (==2024.0.0)", "mpmath (==1.3.0)", "numpy (==1.26.4)", "onednn (==2024.0.0)", "protobuf", "py-cpuinfo", "sentencepiece", "setuptools (<70.0.0)", "tabulate", "tokenizers (==0.15.2)", "torch (==2.1.0a0)", "torchvision (==0.16.0a0)", "transformers (==4.36.2)"]
-xpu-2-1 = ["accelerate (==0.23.0)", "bigdl-core-xe-21 (==2.5.0b20240721)", "bigdl-core-xe-addons-21 (==2.5.0b20240721)", "bigdl-core-xe-batch-21 (==2.5.0b20240721)", "dpcpp-cpp-rt (==2024.0.2)", "intel-extension-for-pytorch (==2.1.10+xpu)", "intel-openmp", "mkl-dpcpp (==2024.0.0)", "mpmath (==1.3.0)", "numpy (==1.26.4)", "onednn (==2024.0.0)", "protobuf", "py-cpuinfo", "sentencepiece", "setuptools (<70.0.0)", "tabulate", "tokenizers (==0.15.2)", "torch (==2.1.0a0)", "torchvision (==0.16.0a0)", "transformers (==4.36.2)"]
+xpu = ["accelerate (==0.23.0)", "bigdl-core-xe-21 (==2.5.0b20240722)", "bigdl-core-xe-addons-21 (==2.5.0b20240722)", "bigdl-core-xe-batch-21 (==2.5.0b20240722)", "dpcpp-cpp-rt (==2024.0.2)", "intel-extension-for-pytorch (==2.1.10+xpu)", "intel-openmp", "mkl-dpcpp (==2024.0.0)", "mpmath (==1.3.0)", "numpy (==1.26.4)", "onednn (==2024.0.0)", "protobuf", "py-cpuinfo", "sentencepiece", "setuptools (<70.0.0)", "tabulate", "tokenizers (==0.15.2)", "torch (==2.1.0a0)", "torchvision (==0.16.0a0)", "transformers (==4.36.2)"]
+xpu-2-1 = ["accelerate (==0.23.0)", "bigdl-core-xe-21 (==2.5.0b20240722)", "bigdl-core-xe-addons-21 (==2.5.0b20240722)", "bigdl-core-xe-batch-21 (==2.5.0b20240722)", "dpcpp-cpp-rt (==2024.0.2)", "intel-extension-for-pytorch (==2.1.10+xpu)", "intel-openmp", "mkl-dpcpp (==2024.0.0)", "mpmath (==1.3.0)", "numpy (==1.26.4)", "onednn (==2024.0.0)", "protobuf", "py-cpuinfo", "sentencepiece", "setuptools (<70.0.0)", "tabulate", "tokenizers (==0.15.2)", "torch (==2.1.0a0)", "torchvision (==0.16.0a0)", "transformers (==4.36.2)"]
 
 [[package]]
 name = "itsdangerous"
