@@ -30,7 +30,7 @@ fire = "^0.6.0"
 transformers = "^4.36.2"
 accelerate = "^0.23.0"
 peft = "^0.11.1"
-ray = {extras = ["serve"], version = "^2.32.0"}
+ray = { version = "^2.32.0" , extras = ["serve"] }
 onnx = "^1.16.1"
 onnxruntime = "^1.18.1"
 openvino = "^2024.2.0"
