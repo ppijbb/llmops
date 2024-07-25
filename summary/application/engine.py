@@ -40,8 +40,8 @@ def get_prompt(user_input: str,
 class LLMService(object):
     def __init__(self):
         self.model, self.tokenizer = get_model(
-            # model_path="HuggingFaceH4/zephyr-7b-alpha", 
-            model_path="OpenVINO/open_llama_3b_v2-int8-ov",
+            # model_path="meta-llama/Meta-Llama-3-8B-Instruct",  # GPU (vllm) Model
+            model_path="OpenVINO/open_llama_3b_v2-int8-ov", # CPU Model
             adapter_path=None)
         
     def formatting(self, prompt: str):
@@ -59,11 +59,14 @@ class LLMService(object):
             "system_prompt": ""
         }
         prompt = get_prompt(**chat_template)
-        inputs = self.formatting(prompt)
-        output = self.model.generate(**inputs,
-                                     use_cache=True,
-                                     num_return_sequences=1,)
-        output_str = self.tokenizer.decode(output[0], skip_special_tokens=True)
+        if torch.cuda.is_available():
+            output_str = self.model.generate(prompt)[0].outputs[0].text
+        else:
+            inputs = self.formatting(prompt)
+            output = self.model.generate(**inputs,
+                                        use_cache=True,
+                                        num_return_sequences=1,)
+            output_str = self.tokenizer.decode(output[0], skip_special_tokens=True)
         return output_str
     
     @torch.inference_mode()

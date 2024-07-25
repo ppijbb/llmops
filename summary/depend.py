@@ -1,7 +1,5 @@
 import os
-from ipex_llm.transformers import AutoModelForCausalLM
-from optimum.intel import OVModelForCausalLM
-from optimum.onnxruntime import ORTModelForCausalLM
+import torch
 from transformers import AutoTokenizer
 
 
@@ -14,25 +12,29 @@ def get_model(
 
         # Load model in 4 bit,
         # which convert the relevant layers in the model into INT4 format
-        # model = AutoModelForCausalLM.from_pretrained(model_path,
-        #                                              load_in_4bit=True,
-        #                                              optimize_model=True,
-        #                                              trust_remote_code=True,
-        #                                              use_cache=True)
-        model = OVModelForCausalLM.from_pretrained(model_path,
-                                                   load_in_8bit=True,
-                                                   cache_dir=os.getenv("HF_HOME"),
-                                                   device="CPU",
-                                                   use_cache=True,
-                                                   compile=True,
-                                                   ov_config={
-                                                    "CPU_DENORMALS_OPTIMIZATION": "YES",
-                                                    "INFERENCE_PRECISION_HINT": "INT8",
-                                                    "CPU_SPARSE_WEIGHTS_DECOMPRESSION_RATE": "1.0",
-                                                    "CACHE_DIR": os.getenv("HF_HOME"), 
-                                                    "ALLOW_AUTO_BATCHING": "YES",
-                                                    "PERF_COUNT": "YES"
-                                                   })
+        if torch.cuda.is_available():
+            from optimum.onnxruntime import ORTModelForCausalLM      
+            from vllm import LLM
+
+            model  = LLM(model = model_path)
+        else:
+            from ipex_llm.transformers import AutoModelForCausalLM
+            from optimum.intel import OVModelForCausalLM
+
+            model = OVModelForCausalLM.from_pretrained(model_path,
+                                                       load_in_8bit=True,
+                                                       cache_dir=os.getenv("HF_HOME"),
+                                                       device="CPU",
+                                                       use_cache=True,
+                                                       compile=True,
+                                                       ov_config={
+                                                           "CPU_DENORMALS_OPTIMIZATION": "YES",
+                                                           "INFERENCE_PRECISION_HINT": "INT8",
+                                                           "CPU_SPARSE_WEIGHTS_DECOMPRESSION_RATE": "1.0",
+                                                           "CACHE_DIR": os.getenv("HF_HOME"), 
+                                                           "ALLOW_AUTO_BATCHING": "YES",
+                                                           "PERF_COUNT": "YES"
+                                                       })
         # -- adapter --
         if adapter_path is not None:
             model.load_adapter(adapter_path)
