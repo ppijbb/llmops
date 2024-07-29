@@ -1,21 +1,16 @@
-import torch
-import torch.neuronx
-import torch_neuron as tn
+from optimum.neuronx import NeuronModelForCausalLM
 
-# Load the PyTorch model
-model = torch.load('/path/to/model.pth')
 
-# Convert the model to Neuron-optimized format
-neuron_model = tn.neuronize(model)
+# 컴파일을 위한 인자 설정
+compiler_args = {"num_cores": 2, "auto_cast_type": 'bf16'}
+input_shapes = {"batch_size": 1, "sequence_length": 4096}
 
-# Create an inference session
-session = tn.Session(neuron_model)
-
-# Load the input data
-input_data = torch.tensor([1, 2, 3, 4])
-
-# Run inference
-output = session.run([input_data])
-
-# Print the output
-print(output)
+# 사전학습한 모델을 불러오고 설정한 값에 따라 컴파일을 수행 요청
+model = NeuronModelForCausalLM.from_pretrained(
+    model_id="finetuned-model-name-or-path",
+    export=True,
+    **compiler_args,
+    **input_shapes
+)
+# 컴파일된 모델을 저장
+model.save_pretrained("compiled-model-name-or-path")
