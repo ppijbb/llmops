@@ -4,7 +4,8 @@ FROM public.ecr.aws/neuron/pytorch-inference-neuronx:2.1.2-neuronx-py310-sdk2.19
 RUN apt-get update && apt-get install -y \
     awscli \
     wget \
-    unzip
+    unzip \
+    git
 
 # Install Neuron SDK
 # RUN wget https://www.amazonaws.com/aws-neuron-docker/container/neuron_container-1.10.0.tar.gz && \
@@ -19,12 +20,15 @@ ENV PYTHONPATH=$NEURON_INSTALL_DIR/lib/python3.6/site-packages:$PYTHONPATH
 
 # Install Python dependencies
 COPY pyproject.toml pyproject.toml
-RUN pip3 install poetry && \
-    poetry config virtualenvs.create false && \
-    poetry install --no-dev
+
+RUN pip install -U pip
+RUN pip install poetry
+RUN poetry config virtualenvs.create false
+RUN poetry install
+RUN source /opt/aws_neuron_venv_pytorch/bin/activate
 
 # Copy your code into the container
-COPY . .
+COPY . /app
 
 # Set the working directory
 WORKDIR /app
