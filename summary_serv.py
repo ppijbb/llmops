@@ -10,9 +10,9 @@ import os
 import ray
 import torch
 
-torch.set_num_threads(2)
+# torch.set_num_threads(2)
 os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '0'
-os.environ["OMP_NUM_THREADS"] = "2"
+# os.environ["OMP_NUM_THREADS"] = "2"
 # os.environ["ENABLE_SDP_FUSION"] = "1"
 # os.environ["SYCL_CACHE_PERSISTENT"] = "1"
 # os.environ["SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS"] = "1"

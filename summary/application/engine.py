@@ -15,7 +15,7 @@ def get_prompt(user_input: str,
                system_prompt: str) -> str:
     prompt_texts = [f'<|begin_of_text|>']
     chat_template = '<|start_header_id|>{role}<|end_header_id|>\n\n{prompt}<|eot_id|>\n\n'
-    generate_template = f'{chat_template}<|start_header_id|>assistant<|end_header_id|>\n\n네, 알겠습니다.'
+    generate_template = f'{chat_template}<|start_header_id|>assistant<|end_header_id|>\n\n'
     
     def template_dict(role, prompt):
         return { "role": role, "prompt": prompt }
@@ -34,14 +34,14 @@ def get_prompt(user_input: str,
     # prompt_texts.append(template_dict(role="user", prompt=history_input.strip()))
 
     return "".join(prompt_texts) if isinstance(prompt_texts[0], str) else prompt_texts
-
+    # return user_input
 
 # @ray.remote
 class LLMService(object):
     def __init__(self):
         self.model, self.tokenizer = get_model(
-            # model_path="meta-llama/Meta-Llama-3-8B-Instruct",  # GPU (vllm) Model
-            model_path="fakezeta/llama-3-8b-instruct-ov-int8", # CPU Model
+            model_path="meta-llama/Meta-Llama-3-8B",  # GPU (vllm) Model
+            # model_path="fakezeta/llama-3-8b-instruct-ov-int8", # CPU Model
             adapter_path=None)
         
     def formatting(self, prompt: str):
@@ -68,6 +68,7 @@ class LLMService(object):
                                          num_return_sequences=1,
                                          max_new_tokens=100)
             output_str = self.tokenizer.decode(output[0], skip_special_tokens=True)
+            print(output_str)
         return output_str
     
     @torch.inference_mode()
