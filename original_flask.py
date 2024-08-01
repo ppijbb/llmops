@@ -13,6 +13,10 @@ from ipex_llm.transformers import AutoModelForCausalLM
 from transformers import AutoTokenizer
 
 import traceback
+import os
+
+os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '0'
+
 
 ## ---------------------------- ##
 model_name = "/home/conan/workspace/kyi/play-llama/Meta-Llama-3-8B"

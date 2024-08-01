@@ -15,7 +15,7 @@ def get_prompt(user_input: str,
                system_prompt: str) -> str:
     prompt_texts = [f'<|begin_of_text|>']
     chat_template = '<|start_header_id|>{role}<|end_header_id|>\n\n{prompt}<|eot_id|>\n\n'
-    generate_template = f'{chat_template}<|start_header_id|>assistant<|end_header_id|>\n\n'
+    generate_template = f'{chat_template}<|start_header_id|>assistant<|end_header_id|>\n\n네, 알겠습니다.'
     
     def template_dict(role, prompt):
         return { "role": role, "prompt": prompt }
@@ -41,7 +41,7 @@ class LLMService(object):
     def __init__(self):
         self.model, self.tokenizer = get_model(
             # model_path="meta-llama/Meta-Llama-3-8B-Instruct",  # GPU (vllm) Model
-            model_path="OpenVINO/open_llama_3b_v2-int8-ov", # CPU Model
+            model_path="fakezeta/llama-3-8b-instruct-ov-int8", # CPU Model
             adapter_path=None)
         
     def formatting(self, prompt: str):
@@ -64,8 +64,9 @@ class LLMService(object):
         else:
             inputs = self.formatting(prompt)
             output = self.model.generate(**inputs,
-                                        use_cache=True,
-                                        num_return_sequences=1,)
+                                         use_cache=True,
+                                         num_return_sequences=1,
+                                         max_new_tokens=100)
             output_str = self.tokenizer.decode(output[0], skip_special_tokens=True)
         return output_str
     
