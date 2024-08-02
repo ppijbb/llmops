@@ -109,8 +109,7 @@ class LLMService(object):
                 break
 
             input_ids = torch.concatenate([input_ids, next_token], axis=-1)
-            print(input_ids)
-            yield self.tokenizer.decode(next_token, skip_special_tokens=True)
+            yield self.tokenizer.decode(next_token[0], skip_special_tokens=True)
 
         
     def summarize(self, input_text: str, stream: bool = False):
