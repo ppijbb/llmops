@@ -11,6 +11,7 @@ GPU를 사용하는 경우가 있을 수 있어 반드시 python 3.10 버전 사
 ## AWS Inferentia
 
 inf1.xlarge 인스턴스 기준으로만 생각하는 편이 제일 저렴
+-> inferentia2 부터 transformers decoder 지원
 
 
 ## Installation in CPU
