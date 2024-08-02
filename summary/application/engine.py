@@ -98,24 +98,26 @@ class LLMService(object):
     
     @torch.inference_mode()
     def generate_stream(self, prompt, max_length=50):
-        input_ids = self.formatting(prompt=prompt, return_tensors="pt")
+        input_ids = self.formatting(prompt=prompt, return_tensors="pt")["input_ids"]
         
         for _ in range(max_length):
-            outputs = self.model(**input_ids)[0]
-            next_token_logits = outputs[0, -1, :]
-            next_token = torch.argmax(next_token_logits)
+            outputs = self.model(input_ids=input_ids)[0]
+            next_token = torch.unsqueeze(torch.unsqueeze(torch.argmax(outputs[0, -1, :]), 0),1)
+            
             
             if next_token == self.tokenizer.eos_token_id:
                 break
-            
-            input_ids = torch.concatenate([input_ids, [[next_token]]], axis=-1)
-            
-            yield self.tokenizer.decode([next_token], skip_special_tokens=True)
+
+            input_ids = torch.concatenate([input_ids, next_token], axis=-1)
+            print(input_ids)
+            yield self.tokenizer.decode(next_token, skip_special_tokens=True)
 
         
-    def summarize(self, input_text: str) -> str:
-        # return self._make_summary(input_text)
-        return " ".join([word for word in  self.generate_stream(input_text)])
+    def summarize(self, input_text: str, stream: bool = False):
+        if stream:
+            return self.generate_stream(input_text)                
+        else:
+            return self._make_summary(input_text)
 
 
 llm_service = LLMService()

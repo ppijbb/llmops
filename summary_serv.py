@@ -43,12 +43,17 @@ async def summarize(request: SummaryRequest,
                     service: LLMService = Depends(get_llm_service)) -> SummaryResponse:
     result = ""
     # Generate predicted tokens
-    service.summarize(request.text)
+    for token in service.summarize(request.text, stream=True):
+        result += token
+        # result += service.summarize(request.text)
+        print(result)
     try:
         # ----------------------------------- #
         # st = time.time()
         # result += ray.get(service.summarize.remote(ray.put(request.text)))
-        result += service.summarize(request.text)
+        for token in service.summarize(request.text, stream=True):
+            result += token
+        # result += service.summarize(request.text)
         print(result)
         # end = time.time()
         # ----------------------------------- #
