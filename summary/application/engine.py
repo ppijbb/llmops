@@ -34,7 +34,7 @@ class LLMService(object):
         self.text_streamer = TextIteratorStreamer(
             self.tokenizer, 
             skip_prompt=True, 
-            decode_kwargs =dict(skip_special_tokens=True))
+            skip_special_tokens=True)
         
         self.bos_token = self.tokenizer.bos_token if self.tokenizer.bos_token else self.default_bos
         self.eot_token = "<|eot_id|>"#self.tokenizer.eos_token if self.tokenizer.eos_token else self.default_eot
