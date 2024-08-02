@@ -39,24 +39,25 @@ if summarize_button:
     with st.spinner('Wait for it...'):
         start = datetime.now()
         response = requests.post(
-             url="http://localhost:8555/summarize",
+             url="http://localhost:8555/summarize_stream",
              json={
                  "text": st.session_state.target_text
-                 }
-             )
-        output = response.json()["text"]
+                 },
+             stream=True)
+        # output = response.json()["text"]
         end = datetime.now()
         # logging.warn(output)
-        if "---" in output:
-            output = output.split("---")[-1].replace("<|end_of_text|>", "")
+        # if "---" in output:
+        #     output = output.split("---")[-1].replace("<|end_of_text|>", "")
     
-    with st.container(border=True):
-        with st.chat_message("assistant"):
-            message_placeholder = st.empty()
-            full_msg = ""
-            for o in output:
-                full_msg += o
-                message_placeholder.markdown(f'{full_msg}▌')
+        with st.container(border=True):
+            with st.chat_message("assistant"):
+                message_placeholder = st.empty()
+                full_msg = ""
+                for o in response.iter_content(chunk_size=None, decode_unicode=True):
+                    if o:
+                        full_msg += o
+                        message_placeholder.markdown(f'{full_msg}▌')
             
             message_placeholder.markdown(f'{full_msg}')
     st.markdown(f"process time {end-start}")

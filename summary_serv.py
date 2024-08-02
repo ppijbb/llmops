@@ -17,6 +17,7 @@ os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = "0"
 # os.environ["DNNL_PRIMITIVE_CACHE_CAPACITY"] = "1024"
 
 from fastapi import FastAPI, Depends
+from fastapi.responses import StreamingResponse
 import logging
 from typing import Annotated
 import time
@@ -43,17 +44,11 @@ async def summarize(request: SummaryRequest,
                     service: LLMService = Depends(get_llm_service)) -> SummaryResponse:
     result = ""
     # Generate predicted tokens
-    for token in service.summarize(request.text, stream=True):
-        result += token
-        # result += service.summarize(request.text)
-        print(result)
     try:
         # ----------------------------------- #
         # st = time.time()
         # result += ray.get(service.summarize.remote(ray.put(request.text)))
-        for token in service.summarize(request.text, stream=True):
-            result += token
-        # result += service.summarize(request.text)
+        result += service.summarize(request.text)
         print(result)
         # end = time.time()
         # ----------------------------------- #
@@ -64,3 +59,25 @@ async def summarize(request: SummaryRequest,
         result += "Error in summarize"
     finally:
         return SummaryResponse(text=result)
+
+
+@app.post("/summarize_stream",)
+async def summarize(request: SummaryRequest,
+                    service: LLMService = Depends(get_llm_service)):
+    result = ""
+    # Generate predicted tokens
+    try:
+        # ----------------------------------- #
+        # st = time.time()
+        # result += ray.get(service.summarize.remote(ray.put(request.text)))
+        return StreamingResponse(content=service.summarize(request.text, stream=True), media_type="text/plain")
+        # end = time.time()
+        # ----------------------------------- #
+
+    except Exception as e:
+        print(traceback(e))
+        logging.error("error" + traceback(e))
+        result += "Error in summarize"
+    
+    # finally:
+    #     return SummaryResponse(text=result)
