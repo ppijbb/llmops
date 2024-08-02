@@ -24,7 +24,7 @@ COPY pyproject.toml pyproject.toml
 RUN pip install -U pip
 RUN pip install poetry
 RUN poetry config virtualenvs.create false
-RUN poetry install
+RUN VLLM_TARGET_DEVICE=cpu poetry add optimum[neuronx]
 RUN source /opt/aws_neuron_venv_pytorch/bin/activate
 
 # Copy your code into the container
