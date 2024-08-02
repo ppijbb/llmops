@@ -27,13 +27,10 @@ with st.form("요약 데모"):
         label="입력된 텍스트를 요약합니다.", 
         value=input_text,
         key="target_text",
-        height=400
-        )
+        height=400)
 
 
-    summarize_button = st.form_submit_button(
-        label="요약하기",
-        )
+    summarize_button = st.form_submit_button(label="요약하기")
 
 if summarize_button:
     with st.spinner('Wait for it...'):
@@ -54,7 +51,7 @@ if summarize_button:
             with st.chat_message("assistant"):
                 message_placeholder = st.empty()
                 full_msg = ""
-                for o in response.iter_content(chunk_size=None, decode_unicode=True):
+                for o in response.iter_content(chunk_size=256, decode_unicode=True):
                     full_msg += o
                     message_placeholder.markdown(f'{full_msg}▌')
             
