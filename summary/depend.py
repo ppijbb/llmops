@@ -44,7 +44,6 @@ def get_model(
                         "ALLOW_AUTO_BATCHING": "YES",
                         "PERF_COUNT": "YES"
                     })
-            
 
         # -- adapter --
         if adapter_path is not None:

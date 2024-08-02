@@ -43,6 +43,7 @@ async def summarize(request: SummaryRequest,
                     service: LLMService = Depends(get_llm_service)) -> SummaryResponse:
     result = ""
     # Generate predicted tokens
+    service.summarize(request.text)
     try:
         # ----------------------------------- #
         # st = time.time()
@@ -53,7 +54,7 @@ async def summarize(request: SummaryRequest,
         # ----------------------------------- #
 
     except Exception as e:
-        print(e)
+        print(traceback(e))
         logging.error("error" + traceback(e))
         result += "Error in summarize"
     finally:

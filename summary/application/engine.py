@@ -17,9 +17,11 @@ from summary.depend import get_model
 # @ray.remote
 class LLMService(object):
     default_bos: str = "<|begin_of_text|>"
-    default_eot: str = "<|eot_id|>"
-    default_start_header: str = "<|start_header_id|>"
-    default_end_header: str = "<|end_header_id|>"
+    default_eot: str = "<|end_of_text|>"
+    llama_start_header: str = "<|start_header_id|>"
+    llama_end_header: str = "<|end_header_id|>"
+    mistral_start_header: str = "[INST]"
+    mistral_end_header: str = "[/INST]"
 
     def __init__(self):
         self.model, self.tokenizer = get_model(
@@ -29,26 +31,27 @@ class LLMService(object):
             inference_tool="ov")
         
         self.bos_token = self.tokenizer.bos_token if self.tokenizer.bos_token else self.default_bos
-        self.eot_token = self.tokenizer.eos_token if self.tokenizer.eos_token else self.default_eot
-        self.start_header = self.default_start_header
-        self.end_header = self.default_end_header
+        self.eot_token = "<|eot_id|>"#self.tokenizer.eos_token if self.tokenizer.eos_token else self.default_eot
 
-    def _template_header(self, role:str = "role") -> str:
-        return f'{self.start_header}{role}{self.end_header}\n\n'
+        self.start_header = self.llama_start_header if "llama" in self.model.config.model_type else self.mistral_start_header
+        self.end_header = self.llama_end_header if "llama" in self.model.config.model_type else self.mistral_end_header
+
+    def _template_header(self, role:str = "{role}") -> str:
+        return f'{self.start_header}{role}{self.end_header}\n'
 
     def get_prompt(self,
                    user_input: str, 
                    chat_history: list[tuple[str, str]],
                    system_prompt: str = "") -> str:
         prompt_texts = [f"{self.bos_token}"]
-        chat_template = self._template_header() + '{prompt}' + self.eot_token +'\n\n'
+        chat_template = self._template_header() + '{prompt}' + self.eot_token +'\n'
         generate_template = chat_template + self._template_header(role="assistant")
         
         def template_dict(role, prompt):
             return { "role": role, "prompt": prompt }
         
         if system_prompt != '':
-            prompt_texts.append(chat_template.format(role="system", prompt=system_prompt))
+            prompt_texts.append(chat_template.format(role="system", prompt=system_prompt.strip()))
             # prompt_texts.append(template_dict(role="system", prompt=system_prompt))
 
         for history_input, history_response in chat_history:
@@ -57,17 +60,17 @@ class LLMService(object):
             prompt_texts.append(chat_template.format(role="assistant", prompt=history_response.strip()))
             # prompt_texts.append(template_dict(role="assistant", prompt=history_response.strip()))
 
-        prompt_texts.append(chat_template.format(role="user", prompt=user_input.strip()))
+        prompt_texts.append(generate_template.format(role="user", prompt=user_input.strip()))
         # prompt_texts.append(template_dict(role="user", prompt=user_input.strip()))
 
         return "".join(prompt_texts) if not isinstance(prompt_texts[0], dict) else prompt_texts
     
 
-    def formatting(self, prompt: List[str] | List[dict]):
+    def formatting(self, prompt: List[str] | List[dict], return_tensors: str = "pt") -> dict:
         if isinstance(prompt, str):
-            return self.tokenizer(prompt, return_tensors="pt")
+            return self.tokenizer(prompt, return_tensors=return_tensors)
         else:
-            return { "input_ids":self.tokenizer.apply_chat_template(prompt, return_tensors="pt") }
+            return { "input_ids":self.tokenizer.apply_chat_template(prompt, return_tensors=return_tensors) }
 
     @torch.inference_mode()
     def _make_summary(self,
@@ -88,29 +91,31 @@ class LLMService(object):
                                         #  temperature=0.6,
                                          max_length=4096,
                                          top_p=0.9,
-                                         use_cache=True,)
+                                         use_cache=True,
+                                         )
             output_str = self.tokenizer.decode(output[0], skip_special_tokens=True)
         return output_str.replace(". ", ".\n")
     
     @torch.inference_mode()
     def generate_stream(self, prompt, max_length=50):
-        input_ids = self.tokenizer.encode(prompt, return_tensors="np")
+        input_ids = self.formatting(prompt=prompt, return_tensors="pt")
         
         for _ in range(max_length):
-            outputs = self.model([input_ids])[self.model.output(0)]
+            outputs = self.model(**input_ids)[0]
             next_token_logits = outputs[0, -1, :]
-            next_token = np.argmax(next_token_logits)
+            next_token = torch.argmax(next_token_logits)
             
             if next_token == self.tokenizer.eos_token_id:
                 break
             
-            input_ids = np.concatenate([input_ids, [[next_token]]], axis=-1)
+            input_ids = torch.concatenate([input_ids, [[next_token]]], axis=-1)
             
             yield self.tokenizer.decode([next_token], skip_special_tokens=True)
 
         
     def summarize(self, input_text: str) -> str:
-        return self._make_summary(input_text)
+        # return self._make_summary(input_text)
+        return " ".join([word for word in  self.generate_stream(input_text)])
 
 
 llm_service = LLMService()
