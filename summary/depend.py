@@ -37,6 +37,8 @@ def get_model(
                     use_cache=True,
                     compile=True,
                     ov_config={
+                        "PERFORMANCE_HINT": "LATENCY", 
+                        "NUM_STREAMS": "1",
                         "CPU_DENORMALS_OPTIMIZATION": "YES",
                         "INFERENCE_PRECISION_HINT": "INT8",
                         "CPU_SPARSE_WEIGHTS_DECOMPRESSION_RATE": "1.0",

@@ -4,6 +4,8 @@ import psutil
 from typing import List
 import numpy as np
 from transformers import GenerationConfig
+from transformers.generation.streamers import TextStreamer
+from threading import Thread
 
 from summary.depend import get_model
 
@@ -29,6 +31,7 @@ class LLMService(object):
             model_path="fakezeta/llama-3-8b-instruct-ov-int8", # CPU Model
             adapter_path=None,
             inference_tool="ov")
+        self.text_streamer = TextStreamer(self.tokenizer, skip_prompt=True, skip_special_tokens=True)
         
         self.bos_token = self.tokenizer.bos_token if self.tokenizer.bos_token else self.default_bos
         self.eot_token = "<|eot_id|>"#self.tokenizer.eos_token if self.tokenizer.eos_token else self.default_eot
@@ -73,7 +76,7 @@ class LLMService(object):
             return { "input_ids":self.tokenizer.apply_chat_template(prompt, return_tensors=return_tensors) }
 
     @torch.inference_mode()
-    def _make_summary(self,
+    async def _make_summary(self,
                       input_text: str) -> str:
         chat_template = {
             "user_input": input_text,
@@ -88,35 +91,41 @@ class LLMService(object):
             inputs = self.formatting(prompt=prompt)
             output = self.model.generate(**inputs,
                                          do_sample=True,
-                                        #  temperature=0.6,
+                                        # temperature=0.6,
                                          max_length=4096,
                                          top_p=0.9,
-                                         use_cache=True,
-                                         )
+                                         use_cache=True)
             output_str = self.tokenizer.decode(output[0], skip_special_tokens=True)
         return output_str.replace(". ", ".\n")
     
     @torch.inference_mode()
-    def generate_stream(self, prompt, max_length=50):
+    async def generate_stream(self, prompt, max_length=200):
+        generation_kwargs = dict(
+            self.formatting(prompt=prompt, return_tensors="pt"), 
+            streamer=self.text_streamer,
+            max_new_tokens=max_length,
+            temperature=0.45,
+            top_p=0.9,
+            use_cache=True)
+        for new_text in self.model.generate(**generation_kwargs):
+            yield self.tokenizer.decode(new_text, skip_special_tokens=True)
+
+    @torch.inference_mode()
+    def _raw_generate(self, prompt: str, max_length: int = 4096):
         input_ids = self.formatting(prompt=prompt, return_tensors="pt")["input_ids"]
-        
         for _ in range(max_length):
             outputs = self.model(input_ids=input_ids)[0]
             next_token = torch.unsqueeze(torch.unsqueeze(torch.argmax(outputs[0, -1, :]), 0),1)
-            
-            
             if next_token == self.tokenizer.eos_token_id:
                 break
-
             input_ids = torch.concatenate([input_ids, next_token], axis=-1)
             yield self.tokenizer.decode(next_token[0], skip_special_tokens=True)
 
-        
-    def summarize(self, input_text: str, stream: bool = False):
+    async def summarize(self, input_text: str, stream: bool = False):
         if stream:
-            return self.generate_stream(input_text)                
+            return self.generate_stream(input_text)
         else:
-            return self._make_summary(input_text)
+            return await self._make_summary(input_text)
 
 
 llm_service = LLMService()

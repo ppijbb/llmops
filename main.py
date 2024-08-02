@@ -45,7 +45,7 @@ if summarize_button:
                  },
              stream=True)
         # output = response.json()["text"]
-        end = datetime.now()
+        
         # logging.warn(output)
         # if "---" in output:
         #     output = output.split("---")[-1].replace("<|end_of_text|>", "")
@@ -55,9 +55,9 @@ if summarize_button:
                 message_placeholder = st.empty()
                 full_msg = ""
                 for o in response.iter_content(chunk_size=None, decode_unicode=True):
-                    if o:
-                        full_msg += o
-                        message_placeholder.markdown(f'{full_msg}▌')
+                    full_msg += o
+                    message_placeholder.markdown(f'{full_msg}▌')
             
             message_placeholder.markdown(f'{full_msg}')
+            end = datetime.now()
     st.markdown(f"process time {end-start}")

@@ -70,7 +70,10 @@ async def summarize(request: SummaryRequest,
         # ----------------------------------- #
         # st = time.time()
         # result += ray.get(service.summarize.remote(ray.put(request.text)))
-        return StreamingResponse(content=service.summarize(request.text, stream=True), media_type="text/plain")
+        return StreamingResponse(
+            content=await service.summarize(request.text, stream=True),
+            media_type="text/plain"
+            )
         # end = time.time()
         # ----------------------------------- #
 
