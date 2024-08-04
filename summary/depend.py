@@ -24,10 +24,10 @@ def get_model(
             from optimum.intel import OVModelForCausalLM
             if inference_tool == "ipex":
                 model = AutoModelForCausalLM.from_pretrained(model_path,
-                                                            load_in_4bit=True,
-                                                            optimize_model=True,
-                                                            trust_remote_code=True,
-                                                            use_cache=True)
+                                                             load_in_4bit=True,
+                                                             optimize_model=True,
+                                                             trust_remote_code=True,
+                                                             use_cache=True)
             else:
                 model = OVModelForCausalLM.from_pretrained(
                     model_path,
@@ -40,7 +40,7 @@ def get_model(
                         "PERFORMANCE_HINT": "LATENCY", 
                         "NUM_STREAMS": "1",
                         "CPU_DENORMALS_OPTIMIZATION": "YES",
-                        "INFERENCE_PRECISION_HINT": "INT8",
+                        "INFERENCE_PRECISION_HINT": "BF16",
                         "CPU_SPARSE_WEIGHTS_DECOMPRESSION_RATE": "1.0",
                         "CACHE_DIR": os.getenv("HF_HOME"), 
                         "ALLOW_AUTO_BATCHING": "YES",

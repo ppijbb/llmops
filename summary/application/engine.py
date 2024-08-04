@@ -28,7 +28,8 @@ class LLMService(object):
     def __init__(self):
         self.model, self.tokenizer = get_model(
             # model_path="meta-llama/Meta-Llama-3-8B",  # GPU (vllm) Model
-            model_path="Gunulhona/openvino-llama-3.1-8B", # CPU Model
+            # model_path="rajatkrishna/Meta-Llama-3-8B-OpenVINO-INT4",
+            model_path="Gunulhona/openvino-llama-3.1-8B_int8", # CPU Model
             adapter_path=None,
             inference_tool="ov")
         self.text_streamer = TextIteratorStreamer(
@@ -94,9 +95,9 @@ class LLMService(object):
             inputs = self.formatting(prompt=prompt)
             output = self.model.generate(**inputs,
                                          do_sample=True,
-                                        # temperature=0.6,
+                                        #  temperature=0.6,
                                          max_length=4096,
-                                         top_p=0.9,
+                                        #  top_p=0.9,
                                          use_cache=True)
             output_str = self.tokenizer.decode(output[0], skip_special_tokens=True)
         return output_str.replace(". ", ".\n")
