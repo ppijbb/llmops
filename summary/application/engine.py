@@ -95,8 +95,30 @@ class LLMService(object):
         chat_template = {
             "user_input": input_text,
             "chat_history": [],
-            "system_prompt": "summarize dialogue. your job is summarizing dialouge in to korean language. summarize in 3 sentecens. make sentences as simple as possible."
-        }
+            "system_prompt": '''
+summarize dialogue. your job is summarizing dialouge in korean language. summarize in 3 sentecens.
+[Dialogue]
+환자: 의사 선생님, 저를 무엇으로 진단하실 건가요?
+의사: 주삿바늘에 의한 이차적인 혈액 매개 병원체 노출을 살펴보고 있습니다.
+환자: 네, 저도 오염에 대해 생각하고 있었습니다.
+---
+[Summary]
+오염 된 바늘에 이차적으로 혈액 매개 병원체 노출.	
+---
+[Dialogue]
+의사: 가족력에 대해 조금 말씀해 주세요.
+환자: 아버지와 할아버지 모두 제2형 당뇨병을 앓으셨어요. 제 아들은 현재 1형 당뇨병으로 고생하고 있습니다. 
+의사: 유감입니다. 가족 중에 심장 질환이 있는 분이 있나요? 
+환자: 아뇨. 
+의사: 암은 어떻습니까? 
+환자: 사촌 중 두 명이 유방암에 걸렸습니다.
+---
+[Summary]
+심장병에 관해서는 가족 중에 아무도 없음.
+암에 관해서는 사촌 두 명이 유방암 보유.
+당뇨병에 관해서는 아버지와 할아버지가 제 2 형 당뇨병 유병자.
+아들은 제1형 당뇨병을 앓고 있으며 현재 투병 중.
+---'''}
         prompt = self.get_prompt(**chat_template)
         if torch.cuda.is_available(): # vllm generation
             output = self.model.generate(prompt)
