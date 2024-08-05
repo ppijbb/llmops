@@ -79,13 +79,23 @@ class LLMService(object):
         else:
             return { "input_ids":self.tokenizer.apply_chat_template(prompt, return_tensors=return_tensors) }
 
+    def generate_config(self, **kwargs):
+        generation_config = dict(
+            do_sample=True,
+            temperature=0.6,
+            max_new_tokens=4096,
+            top_p=0.9,
+            use_cache=True)
+        generation_config.update(kwargs)
+        return generation_config
+
     @torch.inference_mode()
     def _make_summary(self,
                       input_text: str) -> str:
         chat_template = {
             "user_input": input_text,
             "chat_history": [],
-            "system_prompt": "summarize dialogue. your job is summarizing dialouge in korean language. summarize in 3 sentecens."
+            "system_prompt": "summarize dialogue. your job is summarizing dialouge in to korean language. summarize in 3 sentecens. make sentences as simple as possible."
         }
         prompt = self.get_prompt(**chat_template)
         if torch.cuda.is_available(): # vllm generation
@@ -93,25 +103,17 @@ class LLMService(object):
             output_str= output[0].outputs[0].text
         else: # ipex, ov generation
             inputs = self.formatting(prompt=prompt)
-            output = self.model.generate(**inputs,
-                                         do_sample=True,
-                                        #  temperature=0.6,
-                                         max_length=4096,
-                                        #  top_p=0.9,
-                                         use_cache=True)
+            output = self.model.generate(**self.generate_config(**inputs))
             output_str = self.tokenizer.decode(output[0], skip_special_tokens=True)
         return output_str.replace(". ", ".\n")
     
     @torch.inference_mode()
-    def generate_stream(self, prompt, max_length=200):
-        generation_kwargs = dict(
-            self.formatting(prompt=prompt, return_tensors="pt"), 
-            streamer=self.text_streamer,
-            max_new_tokens=max_length,
-            temperature=0.45,
-            top_p=0.9,
-            use_cache=True)
-        thread = Thread(target=self.model.generate, kwargs=generation_kwargs)
+    def generate_stream(self, prompt):
+        inputs = self.formatting(prompt=prompt , return_tensors="pt")
+        inputs.update(dict(streamer=self.text_streamer))
+        thread = Thread(
+            target=self.model.generate, 
+            kwargs=self.generate_config(**inputs))
         thread.start()
         for new_text in self.text_streamer:
             yield new_text

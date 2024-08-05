@@ -22,6 +22,9 @@ def get_model(
         else:
             from ipex_llm.transformers import AutoModelForCausalLM
             from optimum.intel import OVModelForCausalLM
+            import openvino as ov
+
+
             if inference_tool == "ipex":
                 model = AutoModelForCausalLM.from_pretrained(model_path,
                                                              load_in_4bit=True,
@@ -37,14 +40,20 @@ def get_model(
                     use_cache=True,
                     compile=True,
                     ov_config={
-                        "PERFORMANCE_HINT": "LATENCY", 
-                        "NUM_STREAMS": "1",
-                        "CPU_DENORMALS_OPTIMIZATION": "YES",
-                        "INFERENCE_PRECISION_HINT": "BF16",
-                        "CPU_SPARSE_WEIGHTS_DECOMPRESSION_RATE": "1.0",
-                        "CACHE_DIR": os.getenv("HF_HOME"), 
-                        "ALLOW_AUTO_BATCHING": "YES",
-                        "PERF_COUNT": "YES"
+                        ov.properties.streams.num : ov.properties.streams.Num.NUMA,
+                        ov.properties.hint.num_requests: 1,
+                        ov.properties.hint.execution_mode: ov.properties.hint.ExecutionMode.PERFORMANCE,
+                        ov.properties.hint.performance_mode: ov.properties.hint.PerformanceMode.LATENCY,
+                        ov.properties.hint.inference_precision: ov.Type.bf16,
+                        ov.properties.intel_cpu.denormals_optimization: True,
+                        ov.properties.inference_num_threads: 8,
+                        ov.properties.hint.enable_hyper_threading : True,
+                        ov.properties.hint.enable_cpu_pinning: True,
+                        ov.properties.hint.allow_auto_batching: True,
+                        ov.properties.cache_dir: os.getenv("HF_HOME"), 
+                        # ov.properties.available_devices: "CPU",
+                        # ov.properties.loaded_from_cache: True,
+                        # ov.properties.intel_cpu.sparce_weights_decompression_rate: 1.0,
                     })
 
         # -- adapter --
