@@ -42,8 +42,9 @@ def get_model(
                     ov_config={
                         ov.properties.streams.num : ov.properties.streams.Num.NUMA,
                         ov.properties.hint.num_requests: 1,
-                        ov.properties.hint.execution_mode: ov.properties.hint.ExecutionMode.PERFORMANCE,
-                        ov.properties.hint.performance_mode: ov.properties.hint.PerformanceMode.LATENCY,
+                        ov.properties.hint.execution_mode: ov.properties.hint.ExecutionMode.ACCURACY,
+                        # ov.properties.hint.performance_mode: ov.properties.hint.PerformanceMode.LATENCY,
+                        ov.properties.hint.performance_mode: ov.properties.hint.PerformanceMode.THROUGHPUT,
                         ov.properties.hint.inference_precision: ov.Type.bf16,
                         ov.properties.intel_cpu.denormals_optimization: True,
                         ov.properties.inference_num_threads: 8,

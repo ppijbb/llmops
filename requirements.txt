@@ -22,7 +22,7 @@ ray[serve]>=2.32.0
 onnx>=1.16.1
 onnxruntime>=1.18.1
 openvino>=2024.2.0
-optimum==0.1.0
+optimum>=0.1.0
 optimum[onnxruntime] # @git+https://github.com/huggingface/optimum.git
 optimum[ipex] # @git+https://github.com/huggingface/optimum-intel.git
 optimum[openvino] # @git+https://github.com/huggingface/optimum-intel.git
