@@ -31,6 +31,7 @@ def get_model(
                                                              optimize_model=True,
                                                              trust_remote_code=True,
                                                              use_cache=True)
+                model.eval()
             else:
                 model = OVModelForCausalLM.from_pretrained(
                     model_path,
@@ -56,12 +57,12 @@ def get_model(
                         # ov.properties.loaded_from_cache: True,
                         # ov.properties.intel_cpu.sparce_weights_decompression_rate: 1.0,
                     })
+                model.eval()
 
         # -- adapter --
         if adapter_path is not None:
             model.load_adapter(adapter_path)
             
-        model.eval()
         # Load tokenizer
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
 

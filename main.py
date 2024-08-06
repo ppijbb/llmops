@@ -59,7 +59,7 @@ with output_col:
             with st.spinner('Wait for it...'):
                 start = datetime.now()
                 response = requests.post(
-                    url="http://localhost:8555/summarize_stream",
+                    url="http://localhost:8885/summarize_stream",
                     json={
                         "text": st.session_state.target_text
                         },
@@ -74,8 +74,9 @@ with output_col:
                     message_placeholder = st.empty()
                     full_msg = ""
                     for o in response.iter_content(chunk_size=256, decode_unicode=True):
-                        full_msg += o
-                        message_placeholder.markdown(f'{full_msg}▌')
+                        for word in o:
+                            full_msg += o
+                            message_placeholder.markdown(f'{full_msg}▌')
                 
                 message_placeholder.markdown(f'{full_msg}')
                 end = datetime.now()

@@ -27,9 +27,9 @@ class LLMService(object):
 
     def __init__(self):
         self.model, self.tokenizer = get_model(
-            # model_path="meta-llama/Meta-Llama-3-8B",  # GPU (vllm) Model
+            model_path="meta-llama/Meta-Llama-3-8B",  # GPU (vllm) Model
             # model_path="fakezeta/llama-3-8b-instruct-ov-int8",
-            model_path="Gunulhona/openvino-llama-3-ko-8B_int8",
+            # model_path="Gunulhona/openvino-llama-3-ko-8B_int8",
             # model_path="Gunulhona/openvino-llama-3.1-8B_int8", # CPU Model
             adapter_path=None,
             inference_tool="ov")
@@ -40,9 +40,12 @@ class LLMService(object):
         
         self.bos_token = self.tokenizer.bos_token if self.tokenizer.bos_token else self.default_bos
         self.eot_token = "<|eot_id|>"#self.tokenizer.eos_token if self.tokenizer.eos_token else self.default_eot
-
-        self.start_header = self.llama_start_header if "llama" in self.model.config.model_type else self.mistral_start_header
-        self.end_header = self.llama_end_header if "llama" in self.model.config.model_type else self.mistral_end_header
+        if not  torch.cuda.is_available():
+            self.start_header = self.llama_start_header if "llama" in self.model.config.model_type else self.mistral_start_header
+            self.end_header = self.llama_end_header if "llama" in self.model.config.model_type else self.mistral_end_header
+        else:
+            self.start_header = self.llama_start_header
+            self.end_header = self.llama_end_header
 
     def _template_header(self, role:str = "{role}") -> str:
         return f'{self.start_header}{role}{self.end_header}\n'
@@ -155,6 +158,14 @@ class LLMService(object):
             yield new_text
 
     @torch.inference_mode()
+    def generate_stream_cuda(self, prompt):
+        # inputs = self.formatting(prompt=prompt , return_tensors="pt")
+        inputs = self.get_prompt(user_input=prompt)
+        for new_text in self.model.generate(inputs):
+            print(new_text[0].outputs[0].text)
+            yield new_text[0].outputs[0].text
+
+    @torch.inference_mode()
     def _raw_generate(self, prompt: str, max_length: int = 4096):
         input_ids = self.formatting(prompt=prompt, return_tensors="pt")["input_ids"]
         for _ in range(max_length):
@@ -167,7 +178,7 @@ class LLMService(object):
 
     def summarize(self, input_text: str, stream: bool = False):
         if stream:
-            return self.generate_stream(prompt=input_text)
+            return self.generate_stream_cuda(prompt=input_text) if torch.cuda.is_available() else self.generate_stream(prompt=input_text)
         else:
             return self._make_summary(prompt=input_text)
 
