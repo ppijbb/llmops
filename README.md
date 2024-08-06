@@ -26,3 +26,8 @@ source ipex-llm-init -c --device cpu
 ```bash
 pip install -r requirements.txt
 ```
+
+## Installation in Inferentia
+```bash
+docker build --tag {tag} ./inferentia
+```
