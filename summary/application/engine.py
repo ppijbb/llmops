@@ -29,8 +29,8 @@ class LLMService(object):
         self.model, self.tokenizer = get_model(
             # model_path="meta-llama/Meta-Llama-3-8B",  # GPU (vllm) Model
             # model_path="fakezeta/llama-3-8b-instruct-ov-int8",
-            # model_path="Gunulhona/openvino-llama-3.1-8B",
-            model_path="Gunulhona/openvino-llama-3.1-8B_int8", # CPU Model
+            model_path="Gunulhona/openvino-llama-3-ko-8B_int8",
+            # model_path="Gunulhona/openvino-llama-3.1-8B_int8", # CPU Model
             adapter_path=None,
             inference_tool="ov")
         self.text_streamer = TextIteratorStreamer(
