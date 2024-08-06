@@ -159,11 +159,13 @@ class LLMService(object):
 
     @torch.inference_mode()
     def generate_stream_cuda(self, prompt):
+        from vllm.sampling_params import SamplingParams
         # inputs = self.formatting(prompt=prompt , return_tensors="pt")
         inputs = self.get_prompt(user_input=prompt)
-        for new_text in self.model.generate(inputs):
-            print(new_text[0].outputs[0].text)
-            yield new_text[0].outputs[0].text
+        for new_text in self.model.generate(inputs,
+                                            sampling_params=SamplingParams(
+                                                max_tokens=200)):
+            yield new_text.outputs[0].text
 
     @torch.inference_mode()
     def _raw_generate(self, prompt: str, max_length: int = 4096):
