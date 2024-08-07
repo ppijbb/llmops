@@ -17,7 +17,12 @@ def get_model(
             from optimum.onnxruntime import ORTModelForCausalLM      
             from vllm import LLM
 
-            model  = LLM(model = model_path)
+            model  = LLM(
+                model = model_path,
+                quantization="fp8",
+                trust_remote_code=True,
+                gpu_memory_utilization=0.5,
+            )
 
         else:
             from ipex_llm.transformers import AutoModelForCausalLM
