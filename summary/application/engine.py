@@ -8,7 +8,7 @@ from transformers.generation.streamers import TextIteratorStreamer
 from threading import Thread
 
 from summary.depend import get_model
-
+from summary.application.const import DEFAULT_SUMMARY_FEW_SHOT, DEFAULT_SUMMARY_SYSTEM_PROMPT
 
 # ray.init(
 #     num_cpus=psutil.cpu_count(logical=True), 
@@ -27,10 +27,10 @@ class LLMService(object):
 
     def __init__(self):
         self.model, self.tokenizer = get_model(
-            model_path="KISTI-KONI/KONI-Llama3-8B-Instruct-20240729", # GPU (vllm) Model
+            # model_path="KISTI-KONI/KONI-Llama3-8B-Instruct-20240729", # GPU (vllm) Model
             # model_path="meta-llama/Meta-Llama-3-8B",  # GPU (vllm) Model
             # model_path="fakezeta/llama-3-8b-instruct-ov-int8",
-            # model_path="Gunulhona/openvino-llama-3-ko-8B_int8",
+            model_path="Gunulhona/openvino-llama-3-ko-8B_int8",
             # model_path="Gunulhona/openvino-llama-3.1-8B_int8", # CPU Model
             adapter_path=None,
             inference_tool="ov")
@@ -53,30 +53,7 @@ class LLMService(object):
 
     def get_prompt(self,
                    user_input: str, 
-                   chat_history: list[tuple[str, str]] = [("user", '''---
-[대화]
-의사: 가족력에 대해 조금 말씀해 주세요.
-환자: 아버지와 할아버지 모두 제2형 당뇨병을 앓으셨어요. 제 아들은 현재 1형 당뇨병으로 고생하고 있습니다. 
-의사: 유감입니다. 가족 중에 심장 질환이 있는 분이 있나요? 
-환자: 아뇨. 
-의사: 암은 어떻습니까? 
-환자: 사촌 중 두 명이 유방암에 걸렸습니다.
----
-[요약]
-'''), ("assistant", '''* 심장병에 관해서는 가족 중에 아무도 없음
-* 암에 관해서는 사촌 두 명이 유방암 보유
-* 당뇨병에 관해서는 아버지와 할아버지가 제 2 형 당뇨병 유병자
-* 아들은 제1형 당뇨병을 앓고 있으며 현재 투병 중
----'''),
-("user", '''---
-[대화]
-환자: 의사 선생님, 저를 무엇으로 진단하실 건가요?
-의사: 주삿바늘에 의한 이차적인 혈액 매개 병원체 노출을 살펴보고 있습니다.
-환자: 네, 저도 오염에 대해 생각하고 있었습니다.
----
-[요약]
-'''),("assistant",'''* 오염 된 바늘에 이차적으로 혈액 매개 병원체 노출
----''')],
+                   chat_history: list[tuple[str, str]] = DEFAULT_SUMMARY_FEW_SHOT,
                    system_prompt: str = "") -> str:
         prompt_texts = [f"{self.bos_token}"]
         chat_template = self._template_header() + '{prompt}' + self.eot_token +'\n'
@@ -109,8 +86,8 @@ class LLMService(object):
 
     def generate_config(self, **kwargs):
         generation_config = dict(
-            do_sample=True,
-            temperature=0.1,
+            # do_sample=True,
+            temperature=0.6,
             max_new_tokens=200,
             # top_p=0.9,
             use_cache=True)
@@ -123,20 +100,8 @@ class LLMService(object):
         chat_template = {
             "user_input": input_text,
             "chat_history": [],
-            "system_prompt": '''대화 내용은 요약하는 업무를 수행합니다.
-대화 내용을 읽고 핵심 정보만 추출하여 요약합니다.
-요약은 3 문장으로 합니다.
-아래의 형식을 따라 요약합니다.
----
-[대화]
-사용자 1: ...
-사용자 2: ...
----
-[요약]
-* 대화 요약 ...
-* ...
----
-'''}
+            "system_prompt": DEFAULT_SUMMARY_SYSTEM_PROMPT
+            }
         prompt = self.get_prompt(**chat_template)
         if torch.cuda.is_available(): # vllm generation
             output = self.model.generate(prompt)
