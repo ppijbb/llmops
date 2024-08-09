@@ -1,6 +1,6 @@
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = "0"
 os.environ["VLLM_CPU_KVCACHE_SPACE"] = "5"
 os.environ["VLLM_CPU_OMP_THREADS_BIND"] = "0-29"
