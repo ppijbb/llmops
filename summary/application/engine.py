@@ -113,7 +113,7 @@ class LLMService(object):
         return output_str.replace(". ", ".\n")
     
     @torch.inference_mode()
-    def generate_stream(self, prompt):
+    def generate_stream(self, prompt: str):
         inputs = self.formatting(prompt=prompt , return_tensors="pt")
         inputs.update(dict(streamer=self.text_streamer))
         thread = Thread(
@@ -124,7 +124,7 @@ class LLMService(object):
             yield new_text
 
     @torch.inference_mode()
-    def generate_stream_cuda(self, prompt):
+    def generate_stream_cuda(self, prompt: str):
         from vllm.sampling_params import SamplingParams
         # inputs = self.formatting(prompt=prompt , return_tensors="pt")
         inputs = self.get_prompt(user_input=prompt)
@@ -151,7 +151,7 @@ class LLMService(object):
         if stream:
             return self.generate_stream_cuda(prompt=input_text) if torch.cuda.is_available() else self.generate_stream(prompt=input_text)
         else:
-            return self._make_summary(prompt=input_text)
+            return self._make_summary(input_text=input_text)
 
 
 llm_service = LLMService()
