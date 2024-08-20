@@ -27,11 +27,11 @@ class LLMService(object):
 
     def __init__(self):
         self.model, self.tokenizer = get_model(
-            model_path="KISTI-KONI/KONI-Llama3-8B-Instruct-20240729", # GPU (vllm) Model
+            # model_path="KISTI-KONI/KONI-Llama3-8B-Instruct-20240729", # GPU (vllm) Model
             # model_path="meta-llama/Meta-Llama-3-8B",  # GPU (vllm) Model
             # model_path="fakezeta/llama-3-8b-instruct-ov-int8",
             # model_path="Gunulhona/openvino-llama-3-ko-8B_int8",
-            # model_path="Gunulhona/openvino-llama-3.1-8B_int8", # CPU Model
+            model_path="Gunulhona/openvino-llama-3.1-8B_int8", # CPU Model
             adapter_path=None,
             inference_tool="ov")
         self.text_streamer = TextIteratorStreamer(
@@ -66,11 +66,10 @@ class LLMService(object):
             prompt_texts.append(chat_template.format(role="system", prompt=system_prompt.strip()))
             # prompt_texts.append(template_dict(role="system", prompt=system_prompt))
 
-        for history_input, history_response in chat_history:
-            prompt_texts.append(chat_template.format(role="user", prompt=history_input.strip()))
-            # prompt_texts.append(template_dict(role="user", prompt=history_input.strip()))
-            prompt_texts.append(chat_template.format(role="assistant", prompt=history_response.strip()))
-            # prompt_texts.append(template_dict(role="assistant", prompt=history_response.strip()))
+        for history_role, history_response in chat_history:
+            # print(history_role, history_response)
+            prompt_texts.append(chat_template.format(role=history_role, prompt=history_response.strip()))
+            # prompt_texts.append(template_dict(role=history_role, prompt=history_reponse.strip()))
 
         prompt_texts.append(generate_template.format(role="user", prompt=user_input.strip()))
         # prompt_texts.append(template_dict(role="user", prompt=user_input.strip()))
@@ -86,9 +85,11 @@ class LLMService(object):
 
     def generate_config(self, **kwargs):
         generation_config = dict(
-            # do_sample=True,
+            do_sample=True,
             temperature=0.6,
-            max_new_tokens=200,
+            max_new_tokens=300,
+            penalty_alpha=0.5,
+            no_repeat_ngram_size=5,
             # top_p=0.9,
             use_cache=True)
         generation_config.update(kwargs)
@@ -99,7 +100,7 @@ class LLMService(object):
                       input_text: str) -> str:
         chat_template = {
             "user_input": input_text,
-            "chat_history": [],
+            # "chat_history": [],
             "system_prompt": DEFAULT_SUMMARY_SYSTEM_PROMPT
             }
         prompt = self.get_prompt(**chat_template)

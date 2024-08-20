@@ -40,7 +40,7 @@ def get_model(
             else:
                 model = OVModelForCausalLM.from_pretrained(
                     model_path,
-                    load_in_8bit=True,
+                    load_in_4bit=True,
                     cache_dir=os.getenv("HF_HOME"),
                     device="CPU",
                     use_cache=True,
@@ -48,12 +48,14 @@ def get_model(
                     ov_config={
                         ov.properties.streams.num : ov.properties.streams.Num.NUMA,
                         ov.properties.hint.num_requests: 1,
+                        # ov.properties.hint.execution_mode: ov.properties.hint.ExecutionMode.PERFORMANCE,
                         ov.properties.hint.execution_mode: ov.properties.hint.ExecutionMode.ACCURACY,
                         # ov.properties.hint.performance_mode: ov.properties.hint.PerformanceMode.LATENCY,
-                        ov.properties.hint.performance_mode: ov.properties.hint.PerformanceMode.THROUGHPUT,
+                        # ov.properties.hint.performance_mode: ov.properties.hint.PerformanceMode.THROUGHPUT,CUMULATIVE_THROUGHPUT
+                        ov.properties.hint.performance_mode: ov.properties.hint.PerformanceMode.CUMULATIVE_THROUGHPUT,
                         ov.properties.hint.inference_precision: ov.Type.bf16,
                         ov.properties.intel_cpu.denormals_optimization: True,
-                        ov.properties.inference_num_threads: 8,
+                        ov.properties.inference_num_threads: 4,
                         ov.properties.hint.enable_hyper_threading : True,
                         ov.properties.hint.enable_cpu_pinning: True,
                         ov.properties.hint.allow_auto_batching: True,
@@ -61,7 +63,8 @@ def get_model(
                         # ov.properties.available_devices: "CPU",
                         # ov.properties.loaded_from_cache: True,
                         # ov.properties.intel_cpu.sparce_weights_decompression_rate: 1.0,
-                    })
+                    }
+                )
                 model.eval()
 
         # -- adapter --

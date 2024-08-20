@@ -39,6 +39,10 @@ app = FastAPI(title="dialog summary")
 
 logging.info("Server Running...")
 
+def text_process(text: str):
+    return f"[대화]\n{text}\n---\n[요약]\n" if "[대화]" not in text and "[요약]" not in text else text
+
+
 @app.post("/summarize", response_model=SummaryResponse)
 async def summarize(request: SummaryRequest,
                     service: LLMService = Depends(get_llm_service)) -> SummaryResponse:
@@ -46,13 +50,14 @@ async def summarize(request: SummaryRequest,
     # Generate predicted tokens
     try:
         # ----------------------------------- #
-        # st = time.time()
+        st = time.time()
         # result += ray.get(service.summarize.remote(ray.put(request.text)))
-        result += service.summarize(request.text)
-        print(result)
-        # end = time.time()
-        # ----------------------------------- #
 
+        result += service.summarize(text_process(request.text))
+        # print(result)
+        end = time.time()
+        # ----------------------------------- #
+        print(f"Time: {end - st}")
     except Exception as e:
         print(traceback(e))
         logging.error("error" + traceback(e))
@@ -68,13 +73,14 @@ async def summarize(request: SummaryRequest,
     # Generate predicted tokens
     try:
         # ----------------------------------- #
-        # st = time.time()
+        st = time.time()
         # result += ray.get(service.summarize.remote(ray.put(request.text)))
         return StreamingResponse(
-            content=service.summarize(request.text, stream=True),
+            content=service.summarize(text_process(request.text), stream=True),
             media_type="text/event-stream")
-        # end = time.time()
+        end = time.time()
         # ----------------------------------- #
+        print(f"Time: {end - st}")
 
     except Exception as e:
         print(traceback(e))

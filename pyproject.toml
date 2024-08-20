@@ -27,15 +27,15 @@ tokenizers = "^0.19.0"
 trl = "^0.9.6"
 fairscale = "^0.4.13"
 fire = "^0.6.0"
-transformers = "^4.40.2"
+transformers = { git = "https://github.com/huggingface/transformers.git" }
 accelerate = "^0.23.0"
 peft = "^0.11.1"
 ray = { version = "^2.32.0",  extras = ["serve"] }
 onnx = "^1.16.1"
 # onnxruntime = "^1.17.0"
 openvino = "^2024.2.0"
-optimum = { version = "^1.21.2", extras = ["onnxruntime", "ipex", "openvino ", "habana", "neural-compressor", "diffusers"] }
-optimum-intel = { version = "^1.16.0", extras = ["extras"] }
+optimum = { version = "^1.21.4", extras = ["onnxruntime", "ipex", "openvino ", "habana", "neural-compressor", "diffusers"] }
+optimum-intel = { version = "^1.18.3", extras = ["extras"] }
 # optimum-neuron = { version = "^0.0.23" }
 onnx2pytorch = "^0.4.1"
 pyyaml = "^6.0.1"

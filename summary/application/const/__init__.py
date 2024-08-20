@@ -28,7 +28,8 @@ DEFAULT_SUMMARY_FEW_SHOT = [
 '''),
     ("assistant",
 '''* 오염 된 바늘에 이차적으로 혈액 매개 병원체 노출
----''')]
+---'''),
+]
 
 DEFAULT_SUMMARY_SYSTEM_PROMPT = '''
 대화 내용은 요약하는 업무를 수행합니다.
