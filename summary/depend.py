@@ -21,7 +21,7 @@ def get_model(
                 model = model_path,
                 # quantization="fp8",
                 trust_remote_code=True,
-                gpu_memory_utilization=0.8,
+                gpu_memory_utilization=0.75,
             )
 
         else:

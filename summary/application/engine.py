@@ -27,11 +27,11 @@ class LLMService(object):
 
     def __init__(self):
         self.model, self.tokenizer = get_model(
-            # model_path="KISTI-KONI/KONI-Llama3-8B-Instruct-20240729", # GPU (vllm) Model
+            model_path="KISTI-KONI/KONI-Llama3-8B-Instruct-20240729", # GPU (vllm) Model
             # model_path="meta-llama/Meta-Llama-3-8B",  # GPU (vllm) Model
             # model_path="fakezeta/llama-3-8b-instruct-ov-int8",
             # model_path="Gunulhona/openvino-llama-3-ko-8B_int8",
-            model_path="Gunulhona/openvino-llama-3.1-8B_int8", # CPU Model
+            # model_path="Gunulhona/openvino-llama-3.1-8B_int8", # CPU Model
             adapter_path=None,
             inference_tool="ov")
         self.text_streamer = TextIteratorStreamer(
@@ -53,7 +53,7 @@ class LLMService(object):
 
     def get_prompt(self,
                    user_input: str, 
-                   chat_history: list[tuple[str, str]] = DEFAULT_SUMMARY_FEW_SHOT,
+                   chat_history: list[tuple[str, str]] =[],
                    system_prompt: str = "") -> str:
         prompt_texts = [f"{self.bos_token}"]
         chat_template = self._template_header() + '{prompt}' + self.eot_token +'\n'
@@ -81,7 +81,7 @@ class LLMService(object):
         if isinstance(prompt, str):
             return self.tokenizer(prompt, return_tensors=return_tensors)
         else:
-            return { "input_ids":self.tokenizer.apply_chat_template(prompt, return_tensors=return_tensors) }
+            return { "input_ids": self.tokenizer.apply_chat_template(prompt, return_tensors=return_tensors) }
 
     def generate_config(self, **kwargs):
         generation_config = dict(
@@ -95,22 +95,32 @@ class LLMService(object):
         generation_config.update(kwargs)
         return generation_config
 
+    def vllm_generate_config(self, **kwargs):
+        from vllm.sampling_params import SamplingParams
+        return SamplingParams(repetition_penalty=1.1,
+                              temperature=0.2,
+                              top_p=0.9,
+                              max_tokens=500)
+
     @torch.inference_mode()
     def _make_summary(self,
                       input_text: str) -> str:
         chat_template = {
             "user_input": input_text,
-            # "chat_history": [],
+            "chat_history": DEFAULT_SUMMARY_FEW_SHOT,
             "system_prompt": DEFAULT_SUMMARY_SYSTEM_PROMPT
             }
         prompt = self.get_prompt(**chat_template)
+
         if torch.cuda.is_available(): # vllm generation
-            output = self.model.generate(prompt)
+            from vllm.sampling_params import SamplingParams
+            output = self.model.generate(prompt, sampling_params=self.vllm_generate_config())
             output_str= output[0].outputs[0].text
         else: # ipex, ov generation
             inputs = self.formatting(prompt=prompt)
             output = self.model.generate(**self.generate_config(**inputs))
             output_str = self.tokenizer.decode(output[0], skip_special_tokens=True)
+        
         return output_str.replace(". ", ".\n")
     
     @torch.inference_mode()
@@ -126,16 +136,10 @@ class LLMService(object):
 
     @torch.inference_mode()
     def generate_stream_cuda(self, prompt: str):
-        from vllm.sampling_params import SamplingParams
         # inputs = self.formatting(prompt=prompt , return_tensors="pt")
-        inputs = self.get_prompt(user_input=prompt)
-        for new_text in self.model.generate(inputs,
-                                            sampling_params=SamplingParams(
-                                                repetition_penalty=1.1,
-                                                temperature=0.55,
-                                                top_p=0.9,
-                                                max_tokens=500)):
-            yield new_text.outputs[0].text
+        response = self._make_summary(input_text=prompt)
+        for new_text in response:
+            yield new_text
 
     @torch.inference_mode()
     def _raw_generate(self, prompt: str, max_length: int = 4096):

@@ -16,6 +16,7 @@ fairscale>=0.4.13
 fire>=0.6.0
 diffusers==0.15.0
 transformers>=4.38.2
+transformers @git+https://github.com/huggingface/transformers.git
 accelerate>=0.25.0
 peft>=0.11.1
 ray[serve]>=2.32.0

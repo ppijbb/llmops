@@ -29,6 +29,48 @@ DEFAULT_SUMMARY_FEW_SHOT = [
     ("assistant",
 '''* 오염 된 바늘에 이차적으로 혈액 매개 병원체 노출
 ---'''),
+    ("user", 
+'''---
+[대화]
+참석자_1: 오늘은 무슨 일로 오셨나요? 
+참석자_2: I've had a terrible toothache.(치통이 너무 심해서요.)
+참석자_2: I can't stand the pain anymore.(더 이상 통증을 참을 수 없습니다.)
+참석자_2: I have never experienced this pain in fifty eight years.(58년 동안 이런 통증은 처음입니다.)
+참석자_1: 어디가 가장 아프신가요? 
+참석자_1: 그리고 이 통증은 언제부터 시작되었나요? 
+참석자_2: It started about three weeks ago.(약 3주 전에 시작되었습니다.)
+참석자_2: It's mostly on the left side of my mouth(주로 입 왼쪽에 통증이 있습니다.)
+참석자_2: Kind of on the lower end.(아래쪽 끝부분에요.)
+참석자_2: It goes from my jaw all the way up to my left ear.(턱에서 왼쪽 귀까지 통증이 느껴집니다.)
+참석자_1: 조금도 불편하지 않네요. 
+참석자_1: 기분 좀 나아지게 해드릴게요. 
+참석자_1: 치아와 관련이 있다고 생각하세요? 
+참석자_2: No, I don't think so.(아니요, 그런 것 같지 않아요.)
+참석자_2: I'm pretty good at making my dentist appointments, although I haven't been in since this new pain started.(이 새로운 통증이 시작된 이후로 치과에 간 적은 없지만 치과 예약을 꽤 잘 지키고 있습니다.)
+참석자_1: 그렇군요. 마지막으로 치과를 방문하신 게 언제였나요? 
+참석자_2: About two months ago for a routine clean.(약 두 달 전에 정기적인 스케일링을 위해 방문했습니다.)
+참석자_1: 이 모든 일이 시작된 이후로 얼굴이 부은 것을 느끼셨나요? 
+참석자_2: No, no swelling.(아니요, 붓기는 없습니다.)
+참석자_1: 두통, 목 부종, 인후통, 삼키거나 씹는 데 어려움은 없었나요? 
+참석자_2: No.(아니요.)
+참석자_1: 목 통증, 림프절 부종, 오한, 발열 또는 기타 증상은 어떻습니까? 
+참석자_2: No, thank goodness.(아니요, 다행히도 없습니다.)
+---
+[요약]
+'''),
+    ("assistant",
+'''* 58세 남성.
+* 처음에는 입 아래 왼쪽에서 치통이 시작되어 지금은 턱과 왼쪽 귀 쪽으로 퍼지고 있음. 
+* 안면 부종 없음.
+* 두통 없음.
+* 목에 붓기 없음
+* 인후통 없음.
+* 액체나 고형물을 삼키는 데 어려움이 없음.
+* 목 통증 없음.
+* 림프절 부종 없음.
+* 발열, 오한 없음.
+* 다른 문제나 불만 없음.
+---'''),
 ]
 
 DEFAULT_SUMMARY_SYSTEM_PROMPT = '''
