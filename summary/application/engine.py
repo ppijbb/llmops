@@ -87,7 +87,7 @@ class LLMService(object):
         generation_config = dict(
             do_sample=True,
             temperature=0.6,
-            max_new_tokens=300,
+            max_new_tokens=250,
             penalty_alpha=0.5,
             no_repeat_ngram_size=5,
             # top_p=0.9,
@@ -100,7 +100,7 @@ class LLMService(object):
         return SamplingParams(repetition_penalty=1.1,
                               temperature=0.2,
                               top_p=0.9,
-                              max_tokens=500)
+                              max_tokens=250)
 
     @torch.inference_mode()
     def _make_summary(self,

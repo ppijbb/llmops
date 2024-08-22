@@ -39,11 +39,19 @@ app = FastAPI(title="dialog summary")
 
 logging.info("Server Running...")
 
-def text_process(text: str):
+def text_preprocess(text: str) ->str:
     return f"[대화]\n{text}\n---\n[요약]\n" if "[대화]" not in text and "[요약]" not in text else text
 
+def text_postprocess(text:str) ->str:
+    if not text.endswith("\n---"):
+        text = "* " + "* ".join(text.split("* ")[:-1])
+        if text.endswith("\n---"):
+            "---"
+    return text.replace("* ", "").replace("---", "").strip()
 
-@app.post("/summarize", response_model=SummaryResponse)
+
+@app.post("/summarize", 
+          response_model=SummaryResponse)
 async def summarize(request: SummaryRequest,
                     service: LLMService = Depends(get_llm_service)) -> SummaryResponse:
     result = ""
@@ -52,8 +60,9 @@ async def summarize(request: SummaryRequest,
         # ----------------------------------- #
         st = time.time()
         # result += ray.get(service.summarize.remote(ray.put(request.text)))
-
-        result += service.summarize(text_process(request.text))
+        input_text = text_preprocess(request.text)
+        result += service.summarize(input_text=input_text)
+        result = text_postprocess(result)
         # print(result)
         end = time.time()
         # ----------------------------------- #
@@ -76,7 +85,9 @@ async def summarize(request: SummaryRequest,
         st = time.time()
         # result += ray.get(service.summarize.remote(ray.put(request.text)))
         return StreamingResponse(
-            content=service.summarize(text_process(request.text), stream=True),
+            content=service.summarize(
+                input_text=text_preprocess(request.text), 
+                stream=True),
             media_type="text/event-stream")
         end = time.time()
         # ----------------------------------- #
