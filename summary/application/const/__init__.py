@@ -61,15 +61,31 @@ DEFAULT_SUMMARY_FEW_SHOT = [
     ("assistant",
 '''* 58세 남성
 * 처음에는 입 아래 왼쪽에서 치통이 시작되어 지금은 턱과 왼쪽 귀 쪽으로 퍼지고 있음
-* 안면 부종 없음
-* 두통 없음
-* 목에 붓기 없
-* 인후통 없음
-* 액체나 고형물을 삼키는 데 어려움이 없음
-* 목 통증 없음
-* 림프절 부종 없음
-* 발열, 오한 없음
-* 다른 문제나 불만 없음
+* 다른 문제, 통증 또는 불편 부위 없음
+---'''),
+    ("user", 
+'''---
+[대화]
+참석자_1: Hello, miss.(안녕하세요, 아가씨.)
+참석자_1: Could you verify your age, please?(나이를 확인해 주시겠습니까?)
+참석자_2: 저는 쉰다섯 살입니다. 
+참석자_1: Great. What is the reason for your visit today? (그렇군요. 오늘 방문하신 이유는 무엇입니까? )
+참석자_2: 최근에 문제가 많이 생겨서 선생님께 진찰을 받으러 왔습니다. 
+참석자_1: I see. What kind of problems are you experiencing? (그렇군요. 어떤 문제가 있으신가요?)
+참석자_2: 아, 목록이 길어요.
+참석자_2: 여기 있습니다. 
+참석자_1: Thank you. Let me take a look. (감사합니다. 한번 살펴볼게요.)
+참석자_1: Looks like you have some general allergies and food allergies, loss of taste, problems with your G I tract, asthma, G E R D, and dry mouth or xerostomia. Patient: Yeah, that sounds about right. I think I forgot to add it, but I also have bad allergies during the spring time.(일반적인 알레르기와 음식 알레르기, 미각 상실, 위장관 문제, 천식, G E R D, 구강 건조증 또는 구강 건조증이 있는 것 같네요.)
+참석자_2: 네, 맞는 것 같네요. 
+참석자_2: 제가 깜빡하고 추가하지 못한 것 같은데 봄철에 알레르기가 심해요. 
+참석자_1: Oh, I see. I would describe that as environmental inhalant allergies.(아, 그렇군요. 환경 흡입성 알레르기로 설명할 수 있겠네요.)
+---
+[요약]
+'''),
+    ("assistant",
+'''* 55세 여성
+* 평가 및 치료 가능성 의뢰
+* 항목: 알레르기, 미각 저하, 구강 건조증, 위식도 역류 질환, 음식 알레르기 가능성, 만성 위장관 과민성, 천식 및 환경 흡입제 알레르기 
 ---'''),
 ]
 
