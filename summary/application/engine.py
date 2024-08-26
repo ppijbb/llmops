@@ -47,6 +47,7 @@ class LLMService(object):
         else:
             self.start_header = self.llama_start_header
             self.end_header = self.llama_end_header
+        self.max_new_tokens = 250
 
     def _template_header(self, role:str = "{role}") -> str:
         return f'{self.start_header}{role}{self.end_header}\n'
@@ -87,20 +88,23 @@ class LLMService(object):
         generation_config = dict(
             do_sample=True,
             temperature=0.6,
-            max_new_tokens=250,
+            max_new_tokens=self.max_new_tokens,
             penalty_alpha=0.5,
             no_repeat_ngram_size=5,
-            # top_p=0.9,
+            top_p=0.9,
             use_cache=True)
         generation_config.update(kwargs)
         return generation_config
 
     def vllm_generate_config(self, **kwargs):
         from vllm.sampling_params import SamplingParams
-        return SamplingParams(repetition_penalty=1.1,
-                              temperature=0.2,
-                              top_p=0.9,
-                              max_tokens=250)
+        return SamplingParams(
+            repetition_penalty=1.0,
+            frequency_penalty=1.0,
+            presence_penalty=1.0,
+            temperature=0.2,
+            top_p=0.9,
+            max_tokens=self.max_new_tokens)
 
     @torch.inference_mode()
     def _make_summary(self,

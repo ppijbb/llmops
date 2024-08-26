@@ -2,32 +2,50 @@ DEFAULT_SUMMARY_FEW_SHOT = [
     ("user", 
 '''---
 [대화]
-참석자_1: 가족력에 대해 조금 말씀해 주세요.
-참석자_2: 아버지와 할아버지 모두 제2형 당뇨병을 앓으셨어요. 제 아들은 현재 1형 당뇨병으로 고생하고 있습니다. 
-참석자_1: 유감입니다. 가족 중에 심장 질환이 있는 분이 있나요? 
-참석자_2: 아뇨. 
-참석자_1: 암은 어떻습니까? 
-참석자_2: 사촌 중 두 명이 유방암에 걸렸습니다.
+참석자_1: 오늘은 어떤 문제로 방문하셨나요?
+참석자_2: My dental implant has been feeling a bit loose recently. (임플란트가 최근에 약간 흔들리는 느낌이 듭니다.)
+참석자_2: It was placed about two years ago, and it’s the first time I’ve noticed this. (약 2년 전에 임플란트를 했는데, 이런 건 처음이에요.)
+참석자_1: 그 외에 불편한 점이나 통증이 있으신가요?
+참석자_2: There’s no pain, but sometimes it feels a bit uncomfortable when I chew on that side. (통증은 없지만, 그쪽으로 씹을 때 약간 불편해요.)
+참석자_1: 임플란트를 받은 후에 정기적인 검진은 받으셨나요?
+참석자_2: Yes, I’ve been coming in every six months for check-ups. (네, 정기 검진을 위해 6개월마다 방문했습니다.)
+참석자_1: 최근에 잇몸 염증이나 출혈이 있던 적이 있나요?
+참석자_2: No, my gums have been healthy, and I haven't noticed any bleeding. (아니요, 잇몸은 건강했고 출혈도 없었습니다.)
+참석자_1: 임플란트 주변에 음식물이 잘 끼거나 청소가 어려운 부분이 있었나요?
+참석자_2: Sometimes food gets stuck, but I’ve been careful to clean it thoroughly. (가끔 음식물이 끼긴 하지만, 철저히 청소하고 있어요.)
+참석자_1: 알겠습니다. 임플란트와 주변 조직을 정밀하게 검사해보고, 필요한 경우 치료 방법을 논의하겠습니다.
 ---
 [요약]
 '''), 
     ("assistant", 
-'''* 심장병에 관해서는 가족 중에 아무도 없음
-* 암에 관해서는 사촌 두 명이 유방암 보유
-* 당뇨병에 관해서는 아버지와 할아버지가 제 2 형 당뇨병 유병자
-* 아들은 제1형 당뇨병을 앓고 있으며 현재 투병 중
+'''* 2년 전 임플란트를 받은 환자, 최근 임플란트가 흔들리는 느낌을 호소
+* 통증은 없으나 씹을 때 약간 불편함을 느끼고 있으며, 잇몸 상태는 건강함
+* 임플란트 주변에 음식물이 끼긴 하나 철저한 청소를 유지하고 있음
 ---'''),
     ("user", 
 '''---
-[대화]
-참석자_2: 의사 선생님, 저를 무엇으로 진단하실 건가요?
-참석자_1: 주삿바늘에 의한 이차적인 혈액 매개 병원체 노출을 살펴보고 있습니다.
-참석자_2: 네, 저도 오염에 대해 생각하고 있었습니다.
+[대화] 
+참석자_1: 무슨 문제로 오셨나요? 
+참석자_2: My tooth has been sensitive for a few days now. (며칠 전부터 이가 민감해졌어요.) 
+참석자_2: It's getting worse every time I eat something cold or sweet. (차가운 것이나 단 것을 먹을 때마다 점점 더 아파요.) 
+참석자_2: The pain is sharp and mostly on the upper right side. (통증이 날카롭고 주로 오른쪽 윗부분에 있습니다.) 
+참석자_1: 언제부터 통증이 시작되었나요? 
+참석자_2: It started about a week ago. (약 일주일 전에 시작되었어요.) 
+참석자_2: At first, it was just a little discomfort, but now it's hard to chew on that side. (처음에는 약간 불편했는데, 이제는 그쪽으로 씹기가 힘들어요.) 
+참석자_1: 다른 증상은 없나요? 예를 들어, 발열이나 잇몸 출혈 같은 증상요. 
+참석자_2: No fever, but I noticed some slight bleeding when I brushed my teeth this morning. (열은 없지만, 오늘 아침에 양치할 때 약간 출혈이 있었습니다.) 
+참석자_1: 마지막으로 치과에 가신 게 언제인가요? 
+참석자_2: About six months ago, for a routine check-up. (6개월 전에 정기 검진을 위해 갔습니다.) 
+참석자_1: 치아를 제외하고는 다른 신체 부위에 통증이나 불편함이 없으신가요? 
+참석자_2: No, the pain is localized to the upper right tooth area. (아니요, 통증은 오른쪽 위쪽 치아 부위에 국한되어 있습니다.) 
+참석자_1: 알겠습니다. 지금부터 이 부위를 검사해 보겠습니다.
 ---
 [요약]
 '''),
     ("assistant",
-'''* 오염 된 바늘에 이차적으로 혈액 매개 병원체 노출
+'''* 중년 남성, 오른쪽 윗부분 치아의 민감함과 통증 호소
+* 통증은 약 일주일 전부터 시작되었으며, 차가운 음식과 단 음식에 반응함
+* 발열은 없으나, 오늘 아침 양치 시 약간의 잇몸 출혈을 경험함
 ---'''),
     ("user", 
 '''---
