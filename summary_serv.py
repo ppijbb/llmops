@@ -60,6 +60,7 @@ async def summarize(request: SummaryRequest,
         # ----------------------------------- #
         st = time.time()
         # result += ray.get(service.summarize.remote(ray.put(request.text)))
+        assert len(request.text ) > 200, "Text is too short"
         input_text = text_preprocess(request.text)
         result += service.summarize(input_text=input_text)
         result = text_postprocess(result)
@@ -71,6 +72,8 @@ async def summarize(request: SummaryRequest,
         print(traceback(e))
         logging.error("error" + traceback(e))
         result += "Error in summarize"
+    except AssertionError as e:
+        result += e
     finally:
         return SummaryResponse(text=result)
 
@@ -84,6 +87,7 @@ async def summarize(request: SummaryRequest,
         # ----------------------------------- #
         st = time.time()
         # result += ray.get(service.summarize.remote(ray.put(request.text)))
+        assert len(request.text ) > 200, "Text is too short"
         return StreamingResponse(
             content=service.summarize(
                 input_text=text_preprocess(request.text), 
@@ -92,7 +96,8 @@ async def summarize(request: SummaryRequest,
         end = time.time()
         # ----------------------------------- #
         print(f"Time: {end - st}")
-
+    except AssertionError as e:
+        result += e
     except Exception as e:
         print(traceback(e))
         logging.error("error" + traceback(e))
