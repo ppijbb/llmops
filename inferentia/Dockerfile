@@ -26,6 +26,7 @@ RUN pip install -U pip
 RUN pip install poetry
 RUN poetry config virtualenvs.create false
 RUN VLLM_TARGET_DEVICE=cpu poetry add git+https://github.com/ppijbb/optimum-neuron.git
+RUN poetry lock && poetry install --no-dev
 # RUN source /opt/aws_neuron_venv_pytorch/bin/activate
 
 # Copy your code into the container
@@ -33,6 +34,8 @@ COPY . /app
 
 # Set the working directory
 WORKDIR /app
+
+RUN huggingface-cli login --add-to-git-credential --token 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
 
 # Run your application
 CMD ["uvicorn", "deploy:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

@@ -1,0 +1,15 @@
+version: "3.10"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    ports:
+      - "8502:8502"
+    environment:
+      - FLASK_ENV=development
+    command: gunicorn deploy:app --workers 1 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8502
+  
