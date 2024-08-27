@@ -35,7 +35,7 @@ COPY . /app
 # Set the working directory
 WORKDIR /app
 
-RUN huggingface-cli login --add-to-git-credential --token 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
+RUN huggingface-cli login --add-to-git-credential --token $HF_TOKEN
 
 # Run your application
 CMD ["uvicorn", "deploy:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
