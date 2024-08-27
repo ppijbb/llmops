@@ -118,7 +118,7 @@ class LLMService(object):
 
         if torch.cuda.is_available(): # vllm generation
             from vllm.sampling_params import SamplingParams
-            output = self.model.generate(prompt, sampling_params=self.vllm_generate_config())
+            output = self.model.generate(prompt, sampling_params=self.vllm_generate_config(), use_tqdm=False)
             output_str= output[0].outputs[0].text
         else: # ipex, ov generation
             inputs = self.formatting(prompt=prompt)
