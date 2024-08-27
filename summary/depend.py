@@ -22,8 +22,8 @@ def get_model(
                 # quantization="gguf",
                 trust_remote_code=True,
                 gpu_memory_utilization=0.75,
-                # dtype="bfloat16",
-                # distributed_executor_backend="ray",
+                dtype="bfloat16",
+                distributed_executor_backend="ray",
             )
 
         else:

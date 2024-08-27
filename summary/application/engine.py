@@ -102,7 +102,7 @@ class LLMService(object):
             repetition_penalty=1.0,
             frequency_penalty=1.0,
             presence_penalty=1.0,
-            temperature=0.2,
+            temperature=0.3,
             top_p=0.9,
             max_tokens=self.max_new_tokens)
 
