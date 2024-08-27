@@ -19,7 +19,7 @@ locust = "^2.29.1"
 requests = "^2.32.3"
 # langchain = "^0.2.5"
 torch = { version = "^2.1.2+cpu", source = "torch" }
-# torchvision = { version = "^0.16.2+cpu", source = "torch" }
+torchvision = { version = "^0.16.2+cpu", source = "torch" }
 torchaudio = { version = "^2.1.2+cpu", source = "torch" }
 wandb = "^0.17.3"
 tiktoken = "^0.6.0"

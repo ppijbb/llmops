@@ -2,6 +2,8 @@ version: "3.10"
 
 services:
   app:
+    env_file:
+      - .env
     build:
       context: .
       dockerfile: Dockerfile

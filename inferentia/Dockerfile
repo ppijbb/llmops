@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
 ENV NEURON_INSTALL_DIR=/opt/aws/neuron
 ENV LD_LIBRARY_PATH=$NEURON_INSTALL_DIR/lib:$LD_LIBRARY_PATH
 ENV PYTHONPATH=$NEURON_INSTALL_DIR/lib/python3.6/site-packages:$PYTHONPATH
-
+ENV HF_TOKEN = $HF_TOKEN
 # Install Neuron SDK
 # RUN wget https://www.amazonaws.com/aws-neuron-docker/container/neuron_container-1.10.0.tar.gz && \
 #     tar -xzf neuron_container-1.10.0.tar.gz && \
