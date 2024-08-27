@@ -19,9 +19,11 @@ def get_model(
 
             model  = LLM(
                 model = model_path,
-                # quantization="fp8",
+                # quantization="gguf",
                 trust_remote_code=True,
                 gpu_memory_utilization=0.75,
+                # dtype="bfloat16",
+                # distributed_executor_backend="ray",
             )
 
         else:
