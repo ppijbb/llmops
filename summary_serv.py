@@ -102,6 +102,5 @@ async def summarize(request: SummaryRequest,
         print(traceback(e))
         logging.error("error" + traceback(e))
         result += "Error in summarize"
-    
-    # finally:
-    #     return SummaryResponse(text=result)
+    finally:
+        return SummaryResponse(text=result)
