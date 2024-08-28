@@ -22,9 +22,11 @@ def main_f():
     # 컴파일된 모델을 저장
     model.save_pretrained("neuron_llm")
 
+
 @app.get("/")
 def read_root():
     main_f()
-    return {"Hello": "World"}
-
+    return {
+        "result": "Neuron model is compiled and saved"
+        }
     
