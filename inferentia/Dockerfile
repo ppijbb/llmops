@@ -19,13 +19,14 @@ RUN apt-get update -y && \
 #         aws-neuronx-collectives=2.* \
 #         aws-neuronx-runtime-lib \
 #         aws-neuronx-tools=2.*
+ARG HF_TOKEN
 
 ENV PATH=/opt/aws/neuron/bin:$PATH
 # Set environment variables
 ENV NEURON_INSTALL_DIR=/opt/aws/neuron
 ENV LD_LIBRARY_PATH=$NEURON_INSTALL_DIR/lib:$LD_LIBRARY_PATH
 ENV PYTHONPATH=$NEURON_INSTALL_DIR/lib/python3.6/site-packages:$PYTHONPATH
-ARG HF_TOKEN=${HF_TOKEN}
+ENV HF_TOKEN=${HF_TOKEN}
 
 # Install EFA Driver (only required for multi-instance training)
 # RUN curl -O https://efa-installer.amazonaws.com/aws-efa-installer-latest.tar.gz && \
