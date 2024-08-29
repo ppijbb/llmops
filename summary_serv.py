@@ -39,10 +39,11 @@ app = FastAPI(title="dialog summary")
 
 logging.info("Server Running...")
 
-def text_preprocess(text: str) ->str:
-    return f"[대화]\n{text}\n---\n[요약]\n" if "[대화]" not in text and "[요약]" not in text else text
+def text_preprocess(text: str) -> str:
+    return text
+    # return f"[대화]\n{text}\n---\n[요약]\n" if "[대화]" not in text and "[요약]" not in text else text
 
-def text_postprocess(text:str) ->str:
+def text_postprocess(text:str) -> str:
     if not text.endswith("\n---"):
         text = "* " + "* ".join(text.split("* ")[:-1])
         if text.endswith("\n---"):
@@ -52,8 +53,9 @@ def text_postprocess(text:str) ->str:
 
 @app.post("/summarize", 
           response_model=SummaryResponse)
-async def summarize(request: SummaryRequest,
-                    service: LLMService = Depends(get_llm_service)) -> SummaryResponse:
+async def summarize(
+    request: SummaryRequest,
+    service: LLMService = Depends(get_llm_service)) -> SummaryResponse:
     result = ""
     # Generate predicted tokens
     try:
@@ -62,25 +64,28 @@ async def summarize(request: SummaryRequest,
         # result += ray.get(service.summarize.remote(ray.put(request.text)))
         assert len(request.text ) > 200, "Text is too short"
         input_text = text_preprocess(request.text)
-        result += service.summarize(input_text=input_text)
-        result = text_postprocess(result)
+        result += service.summarize(
+            input_prompt=request.prompt,
+            input_text=input_text)
+        # result = text_postprocess(result)
         # print(result)
         end = time.time()
         # ----------------------------------- #
         print(f"Time: {end - st}")
+    except AssertionError as e:
+        result += e
     except Exception as e:
         print(traceback(e))
         logging.error("error" + traceback(e))
         result += "Error in summarize"
-    except AssertionError as e:
-        result += e
     finally:
         return SummaryResponse(text=result)
 
 
 @app.post("/summarize_stream",)
-async def summarize(request: SummaryRequest,
-                    service: LLMService = Depends(get_llm_service)):
+async def summarize(
+    request: SummaryRequest,
+    service: LLMService = Depends(get_llm_service)):
     result = ""
     # Generate predicted tokens
     try:
@@ -90,7 +95,8 @@ async def summarize(request: SummaryRequest,
         assert len(request.text ) > 200, "Text is too short"
         return StreamingResponse(
             content=service.summarize(
-                input_text=text_preprocess(request.text), 
+                input_prompt=request.prompt,
+                input_text=request.text, 
                 stream=True),
             media_type="text/event-stream")
         end = time.time()
@@ -102,5 +108,3 @@ async def summarize(request: SummaryRequest,
         print(traceback(e))
         logging.error("error" + traceback(e))
         result += "Error in summarize"
-    finally:
-        return SummaryResponse(text=result)

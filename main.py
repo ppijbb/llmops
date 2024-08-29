@@ -12,6 +12,21 @@ st.set_page_config(
     menu_items=None)
 
 
+input_prompt = """
+대화 내용은 요약하는 업무를 수행합니다.
+대화 내용을 읽고 핵심 정보만 추출하여 요약합니다.
+요약은 3 문장으로 합니다.
+아래의 형식을 따라 요약합니다.
+---
+[대화]
+사용자 1: ...
+사용자 2: ...
+---
+[요약]
+* 대화 요약 ...
+* ...
+---
+"""
 
 input_text = """---
 [대화]
@@ -38,12 +53,19 @@ input_text = """---
 if 'target_text' not in st.session_state:
     st.session_state.target_text = input_text
 
+if 'prompt_text' not in st.session_state:
+    st.session_state.prompt_text = input_prompt
 
 
 input_col, output_col = st.columns(2)
 with input_col:
     st.title("LLM 요약")
     with st.form("요약 데모"):
+        prompt_text = st.text_area(
+            label="LLM prompt를 설정합니다", 
+            value=input_prompt,
+            key="prompt_text",
+            height=400)
         target_text = st.text_area(
             label="입력된 텍스트를 요약합니다.", 
             value=input_text,
@@ -59,8 +81,9 @@ with output_col:
             with st.spinner('Wait for it...'):
                 start = datetime.now()
                 response = requests.post(
-                    url="http://localhost:8885/summarize_stream",
+                    url="http://localhost:8501/summarize_stream",
                     json={
+                        "prompt": st.session_state.prompt_text,
                         "text": st.session_state.target_text
                         },
                     stream=True)
@@ -75,7 +98,7 @@ with output_col:
                     full_msg = ""
                     for o in response.iter_content(chunk_size=256, decode_unicode=True):
                         for word in o:
-                            full_msg += o
+                            full_msg += word
                             message_placeholder.markdown(f'{full_msg}▌')
                 
                 message_placeholder.markdown(f'{full_msg}')

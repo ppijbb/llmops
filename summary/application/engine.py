@@ -1,6 +1,7 @@
 import torch
 import ray
 import psutil
+import logging
 from typing import List
 import numpy as np
 from transformers import GenerationConfig
@@ -108,14 +109,16 @@ class LLMService(object):
 
     @torch.inference_mode()
     def _make_summary(self,
-                      input_text: str) -> str:
+                      input_text: str,
+                      input_prompt: str = None,
+                      input_history: List[str] = [],
+                      use_fewshot: bool = False) -> str:
         chat_template = {
             "user_input": input_text,
-            "chat_history": DEFAULT_SUMMARY_FEW_SHOT,
-            "system_prompt": DEFAULT_SUMMARY_SYSTEM_PROMPT
+            "chat_history": DEFAULT_SUMMARY_FEW_SHOT if len(input_history) == 0 and use_fewshot else input_history,
+            "system_prompt": DEFAULT_SUMMARY_SYSTEM_PROMPT if input_prompt is None else input_prompt
             }
         prompt = self.get_prompt(**chat_template)
-
         if torch.cuda.is_available(): # vllm generation
             from vllm.sampling_params import SamplingParams
             output = self.model.generate(prompt, sampling_params=self.vllm_generate_config(), use_tqdm=False)
@@ -128,8 +131,10 @@ class LLMService(object):
         return output_str.replace(". ", ".\n")
     
     @torch.inference_mode()
-    def generate_stream(self, prompt: str):
-        inputs = self.formatting(prompt=prompt , return_tensors="pt")
+    def generate_stream(self, input_text: str, input_prompt: str = None):
+        if input_prompt is not None:
+            input_text = input_prompt + "\n" + input_text
+        inputs = self.formatting(prompt=input_text.strip(), return_tensors="pt")
         inputs.update(dict(streamer=self.text_streamer))
         thread = Thread(
             target=self.model.generate, 
@@ -139,9 +144,9 @@ class LLMService(object):
             yield new_text
 
     @torch.inference_mode()
-    def generate_stream_cuda(self, prompt: str):
+    def generate_stream_cuda(self, input_text: str, input_prompt: str = None):
         # inputs = self.formatting(prompt=prompt , return_tensors="pt")
-        response = self._make_summary(input_text=prompt)
+        response = self._make_summary(input_text=input_text, input_prompt=input_prompt)
         for new_text in response:
             yield new_text
 
@@ -156,11 +161,13 @@ class LLMService(object):
             input_ids = torch.concatenate([input_ids, next_token], axis=-1)
             yield self.tokenizer.decode(next_token[0], skip_special_tokens=True)
 
-    def summarize(self, input_text: str, stream: bool = False):
-        if stream:
-            return self.generate_stream_cuda(prompt=input_text) if torch.cuda.is_available() else self.generate_stream(prompt=input_text)
+    def summarize(self, input_text: str, input_prompt: str = None, stream: bool = False):
+        if torch.cuda.is_available() and stream:
+            return self.generate_stream_cuda(input_text=input_text, input_prompt=input_prompt)
+        elif stream:
+            return self.generate_stream(input_text=input_text, input_prompt=input_prompt)
         else:
-            return self._make_summary(input_text=input_text)
+            return self._make_summary(input_text=input_text, input_prompt=input_prompt)
 
 
 llm_service = LLMService()
