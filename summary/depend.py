@@ -2,6 +2,9 @@ import os
 import torch
 from transformers import AutoTokenizer
 
+from .application.open_ai import OpenAIService
+from .application.anthropic import ClaudeService
+
 
 def get_model(
     model_path: str = "/home/conan/workspace/kyi/play-llama/Meta-Llama-3-8B",
@@ -34,11 +37,12 @@ def get_model(
 
 
             if inference_tool == "ipex":
-                model = AutoModelForCausalLM.from_pretrained(model_path,
-                                                             load_in_4bit=True,
-                                                             optimize_model=True,
-                                                             trust_remote_code=True,
-                                                             use_cache=True)
+                model = AutoModelForCausalLM.from_pretrained(
+                    model_path,
+                    load_in_4bit=True,
+                    optimize_model=True,
+                    trust_remote_code=True,
+                    use_cache=True)
                 model.eval()
             else:
                 model = OVModelForCausalLM.from_pretrained(
@@ -78,3 +82,9 @@ def get_model(
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
 
         return model, tokenizer
+
+def get_gpt() -> OpenAIService:
+    return OpenAIService()
+
+def get_claude() -> ClaudeService:
+    return ClaudeService()

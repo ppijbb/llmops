@@ -1,7 +1,7 @@
 import anthropic
 
 
-class claude_engine:
+class ClaudeService:
     def __init__(self):
         self.client = anthropic.Anthropic()
 
@@ -17,3 +17,6 @@ class claude_engine:
                 }
             ]
         )
+
+    async def summarize(self, input_text:str , input_prompt:str )->str:
+        return self.generate(input_prompt=input_prompt, input_text=input_text)
