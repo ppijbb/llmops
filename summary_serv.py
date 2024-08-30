@@ -21,8 +21,8 @@ from fastapi.responses import StreamingResponse
 import logging
 from typing import Annotated
 import time
-from summary.depend import get_model
-from summary.application import LLMService, get_llm_service
+from summary.application import (LLMService, OpenAIService, 
+                                 get_llm_service, get_gpt_service)
 from summary.dto import SummaryRequest, SummaryResponse
 import traceback
 import os
@@ -51,7 +51,7 @@ def text_postprocess(text:str) -> str:
     return text.replace("* ", "").replace("---", "").strip()
 
 
-@app.post("/summarize", 
+@app.post("/summarize_llama", 
           response_model=SummaryResponse)
 async def summarize(
     request: SummaryRequest,
@@ -62,7 +62,7 @@ async def summarize(
         # ----------------------------------- #
         st = time.time()
         # result += ray.get(service.summarize.remote(ray.put(request.text)))
-        assert len(request.text ) > 200, "Text is too short"
+        # assert len(request.text ) > 200, "Text is too short"
         input_text = text_preprocess(request.text)
         result += service.summarize(
             input_prompt=request.prompt,
@@ -83,7 +83,7 @@ async def summarize(
 
 
 @app.post("/summarize_stream",)
-async def summarize(
+async def summarize_stream(
     request: SummaryRequest,
     service: LLMService = Depends(get_llm_service)):
     result = ""
@@ -92,7 +92,7 @@ async def summarize(
         # ----------------------------------- #
         st = time.time()
         # result += ray.get(service.summarize.remote(ray.put(request.text)))
-        assert len(request.text ) > 200, "Text is too short"
+        # assert len(request.text ) > 200, "Text is too short"
         return StreamingResponse(
             content=service.summarize(
                 input_prompt=request.prompt,
@@ -108,3 +108,36 @@ async def summarize(
         print(traceback(e))
         logging.error("error" + traceback(e))
         result += "Error in summarize"
+
+
+@app.post("/summarize", 
+          response_model=SummaryResponse)
+async def summarize_gpt(
+    request: SummaryRequest,
+    service: OpenAIService = Depends(get_gpt_service)) -> SummaryResponse:
+    result = ""
+    await service.summarize(
+            input_prompt=request.prompt,
+            input_text=request.text)
+    try:
+        # ----------------------------------- #
+        st = time.time()
+        # result += ray.get(service.summarize.remote(ray.put(request.text)))
+        # assert len(request.text ) > 200, "Text is too short"
+        input_text = text_preprocess(request.text)
+        result += await service.summarize(
+            input_prompt=request.prompt,
+            input_text=input_text)
+        # result = text_postprocess(result)
+        # print(result)
+        end = time.time()
+        # ----------------------------------- #
+        print(f"Time: {end - st}")
+    except AssertionError as e:
+        result += e
+    except Exception as e:
+        print(traceback(e))
+        logging.error("error" + traceback(e))
+        result += "Error in summarize"
+    finally:
+        return SummaryResponse(text=result)

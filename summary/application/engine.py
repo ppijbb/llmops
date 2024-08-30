@@ -8,13 +8,15 @@ from transformers import GenerationConfig
 from transformers.generation.streamers import TextIteratorStreamer
 from threading import Thread
 
-from summary.depend import get_model
+from summary.depend import get_model, get_claude, get_gpt
 from summary.application.const import DEFAULT_SUMMARY_FEW_SHOT, DEFAULT_SUMMARY_SYSTEM_PROMPT
 
 # ray.init(
 #     num_cpus=psutil.cpu_count(logical=True), 
 #     ignore_reinit_error=True,
 #     )
+
+
 
 
 # @ray.remote
@@ -48,7 +50,7 @@ class LLMService(object):
         else:
             self.start_header = self.llama_start_header
             self.end_header = self.llama_end_header
-        self.max_new_tokens = 250
+        self.max_new_tokens = 500
 
     def _template_header(self, role:str = "{role}") -> str:
         return f'{self.start_header}{role}{self.end_header}\n'
@@ -175,3 +177,9 @@ llm_service = LLMService()
 async def get_llm_service():
     # yield LLMService.remote()
     yield llm_service
+
+async def get_gpt_service():
+    yield get_gpt()
+
+async def get_claude_service():
+    yield get_claude()
