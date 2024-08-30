@@ -81,36 +81,6 @@ with input_col:
 with output_col:
     st.title("요약 결과")
     with st.container(border=True):
-        st.markdown("Llama 요약 결과가 여기에 표시됩니다.")
-        if summarize_button:
-            with st.spinner('Wait for it...'):
-                start = datetime.now()
-                response = requests.post(
-                    url="http://localhost:8501/summarize_stream",
-                    json={
-                        "prompt": st.session_state.prompt_text,
-                        "text": st.session_state.target_text
-                        },
-                    stream=True)
-                # output = response.json()["text"]
-                
-                # logging.warn(output)
-                # if "---" in output:
-                #     output = output.split("---")[-1].replace("<|end_of_text|>", "")
-
-                with st.chat_message("assistant"):
-                    message_placeholder = st.empty()
-                    full_msg = ""
-                    for o in response.iter_content(chunk_size=256, decode_unicode=True):
-                        for word in o:
-                            full_msg += word
-                            message_placeholder.markdown(f'{full_msg}▌')
-                
-                message_placeholder.markdown(f'{full_msg}')
-                end = datetime.now()
-            st.markdown(f"process time {end-start}")
-
-    with st.container(border=True):
             st.markdown("GPT 요약 결과가 여기에 표시됩니다.")
             if summarize_button:
                 with st.spinner('Wait for it...'):
@@ -140,3 +110,33 @@ with output_col:
                     message_placeholder.markdown(f'{full_msg}')
                     end = datetime.now()
                 st.markdown(f"process time {end-start}")
+
+    with st.container(border=True):
+        st.markdown("Llama 요약 결과가 여기에 표시됩니다.")
+        if summarize_button:
+            with st.spinner('Wait for it...'):
+                start = datetime.now()
+                response = requests.post(
+                    url="http://localhost:8501/summarize_stream",
+                    json={
+                        "prompt": st.session_state.prompt_text,
+                        "text": st.session_state.target_text
+                        },
+                    stream=True)
+                # output = response.json()["text"]
+                
+                # logging.warn(output)
+                # if "---" in output:
+                #     output = output.split("---")[-1].replace("<|end_of_text|>", "")
+
+                with st.chat_message("assistant"):
+                    message_placeholder = st.empty()
+                    full_msg = ""
+                    for o in response.iter_content(chunk_size=256, decode_unicode=True):
+                        for word in o:
+                            full_msg += word
+                            message_placeholder.markdown(f'{full_msg}▌')
+                
+                message_placeholder.markdown(f'{full_msg}')
+                end = datetime.now()
+            st.markdown(f"process time {end-start}")
