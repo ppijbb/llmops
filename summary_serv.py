@@ -24,10 +24,10 @@ import time
 from summary.application import (LLMService, OpenAIService, 
                                  get_llm_service, get_gpt_service)
 from summary.dto import SummaryRequest, SummaryResponse
+from summary.logger import setup_logger
 import traceback
 import os
 import ray
-import torch
 
 
 def format_llm_output(rlt_text):
@@ -36,8 +36,12 @@ def format_llm_output(rlt_text):
     }
 
 app = FastAPI(title="dialog summary")
-
-logging.info("Server Running...")
+server_logger = setup_logger()
+server_logger.info("""
+####################
+#  Server Started  #
+####################
+""")
 
 def text_preprocess(text: str) -> str:
     return text
@@ -76,7 +80,7 @@ async def summarize(
         result += e
     except Exception as e:
         print(traceback(e))
-        logging.error("error" + traceback(e))
+        server_logger.error("error" + traceback(e))
         result += "Error in summarize"
     finally:
         return SummaryResponse(text=result)
@@ -106,7 +110,7 @@ async def summarize_stream(
         result += e
     except Exception as e:
         print(traceback(e))
-        logging.error("error" + traceback(e))
+        server_logger.error("error" + traceback(e))
         result += "Error in summarize"
 
 
@@ -116,9 +120,6 @@ async def summarize_gpt(
     request: SummaryRequest,
     service: OpenAIService = Depends(get_gpt_service)) -> SummaryResponse:
     result = ""
-    await service.summarize(
-            input_prompt=request.prompt,
-            input_text=request.text)
     try:
         # ----------------------------------- #
         st = time.time()
@@ -134,10 +135,10 @@ async def summarize_gpt(
         # ----------------------------------- #
         print(f"Time: {end - st}")
     except AssertionError as e:
+        server_logger.warn("error" + traceback(e))
         result += e
     except Exception as e:
-        print(traceback(e))
-        logging.error("error" + traceback(e))
+        server_logger.warn("error" + traceback(e))
         result += "Error in summarize"
     finally:
         return SummaryResponse(text=result)
