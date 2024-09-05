@@ -20,13 +20,13 @@ def main_f():
         **input_shapes
     )
     # 컴파일된 모델을 저장
-    model.save_pretrained("neuron_llm")
+    return model.config
 
 
 @app.get("/")
 def read_root():
-    main_f()
     return {
-        "result": "Neuron model is compiled and saved"
+        "message": "Neuron model is compiled and saved",
+        "neuron_model": main_f()
         }
     
