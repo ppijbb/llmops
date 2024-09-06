@@ -133,7 +133,7 @@ async def summarize_gpt(
         # print(result)
         end = time.time()
         # ----------------------------------- #
-        print(f"Time: {end - st}")
+        # print(f"Time: {end - st}")
     except AssertionError as e:
         server_logger.warn("error" + traceback(e))
         result += e
