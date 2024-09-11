@@ -29,5 +29,8 @@ pip install -r requirements.txt
 
 ## Installation in Inferentia
 ```bash
+# docker compose build(Recommended)
+docker compose -f ./inferentia/docker-compose.yaml build
+# docker build
 docker build --tag {tag} ./inferentia
 ```
