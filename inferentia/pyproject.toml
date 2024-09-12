@@ -47,7 +47,7 @@ setuptools-rust = "^1.9.0"
 # ipex-llm = { version = "^2.1.0b20240801", extras = ["all"] }
 # intel-extension-for-pytorch = { version = "^2.3.100+cpu", source = "intel" }
 oneccl_bind_pt = { version = "^2.3.0", source = "intel" }
-# protobuf = "^3.20.3"
+protobuf = "^3.20.3"
 nncf = "^2.11.0"
 vllm = { version = "^0.2.7" }
 bitsandbytes = "^0.43.1"

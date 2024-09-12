@@ -51,7 +51,7 @@ RUN poetry config virtualenvs.create false
 RUN VLLM_TARGET_DEVICE=neuron poetry add git+https://github.com/ppijbb/optimum-neuron.git
 RUN poetry lock && poetry install --no-dev
 # RUN source /opt/aws_neuron_venv_pytorch/bin/activate
-
+RUN pip install -U neuronx-cc --extra-index-url https://pip.repos.neuron.amazonaws.com
 # Copy your code into the container
 COPY . /app
 
