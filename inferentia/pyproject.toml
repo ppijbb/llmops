@@ -34,8 +34,8 @@ fire = "^0.6.0"
 accelerate = "^0.29.2"
 peft = "^0.11.1"
 ray = { version = "^2.32.0",  extras = ["serve"] }
-onnx = "^1.16.1"
-onnxruntime = "^1.18.1"
+# onnx = "^1.16.1"
+# onnxruntime = "^1.18.1"
 openvino = "^2024.2.0"
 # optimum = { version = "^1.21.2", extras = ["onnxruntime", "ipex", "openvino ", "habana", "neural-compressor", "diffusers"] }
 # optimum-intel = { version = "^1.16.0", extras = ["extras"] }
