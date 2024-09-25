@@ -45,13 +45,20 @@ ENV HF_TOKEN=${HF_TOKEN}
     # Install Python dependencies
 COPY pyproject.toml pyproject.toml
 
-RUN pip install -U pip
-RUN pip install poetry
-RUN poetry config virtualenvs.create false
-RUN VLLM_TARGET_DEVICE=neuron poetry add git+https://github.com/ppijbb/optimum-neuron.git
-RUN poetry lock && poetry install --no-dev
+# RUN pip install -U pip
+# RUN pip install poetry
+# RUN poetry config virtualenvs.create false
+# RUN VLLM_TARGET_DEVICE=neuron poetry add git+https://github.com/ppijbb/optimum-neuron.git
+# RUN poetry lock && poetry install --no-dev
 # RUN source /opt/aws_neuron_venv_pytorch/bin/activate
-RUN pip install -U neuronx-cc neuronx-cc-stubs --extra-index-url https://pip.repos.neuron.amazonaws.com
+# RUN pip install -U neuronx-cc neuronx-cc-stubs --extra-index-url https://pip.repos.neuron.amazonaws.com
+RUN python -m pip config set global.extra-index-url https://pip.repos.neuron.amazonaws.com
+
+# Install wget, awscli 
+RUN python -m pip install wget  awscli  fastapi uvicorn gunicorn
+
+# Update Neuron Compiler and Framework
+RUN python -m pip install --upgrade neuronx-cc==2.* torch-neuronx torchvision
 # Copy your code into the container
 COPY . /app
 

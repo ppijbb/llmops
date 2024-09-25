@@ -20,7 +20,7 @@ awscli = "^1.34.7"
 locust = "^2.29.1"
 requests = "^2.31.0"
 # langchain = "^0.2.5"
-torch = { version = "^2.1.2+cpu", source = "torch" }
+torch = { version = "^2.1.2+cpu", source = "torch" }   
 torchvision = { version = "^0.16.2+cpu", source = "torch" }
 torchaudio = { version = "^2.1.2+cpu", source = "torch" }
 wandb = "^0.17.3"
