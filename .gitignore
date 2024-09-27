@@ -6,3 +6,4 @@ llvm-release
 nas/*
 .env
 summary_test
+start_server
