@@ -15,6 +15,7 @@ os.environ["VLLM_CPU_OMP_THREADS_BIND"] = "0-29"
 # os.environ["KMP_SETTINGS"] = "1"
 # os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 # os.environ["DNNL_PRIMITIVE_CACHE_CAPACITY"] = "1024"
+import asyncio
 
 from fastapi import FastAPI, Depends
 from fastapi.responses import StreamingResponse
@@ -35,6 +36,7 @@ def format_llm_output(rlt_text):
         'text': rlt_text
     }
 
+request_queue = asyncio.Queue()
 app = FastAPI(title="dialog summary")
 server_logger = setup_logger()
 server_logger.info("""
@@ -54,6 +56,30 @@ def text_postprocess(text:str) -> str:
             "---"
     return text.replace("* ", "").replace("---", "").strip()
 
+
+
+async def batch_processor():
+    engine_args = AsyncEngineArgs(model="your_model_name")
+    engine = AsyncLLMEngine.from_pretrained(engine_args=engine_args)
+    
+    while True:
+        batch = []
+        try:
+            # 최대 0.1초 동안 요청을 모음
+            async with asyncio.timeout(0.1):
+                while len(batch) < 32:  # 최대 배치 크기
+                    prompt = await request_queue.get()
+                    batch.append(prompt)
+        except asyncio.TimeoutError:
+            pass
+        
+        if batch:
+            results = await engine.generate(batch, max_tokens=100)
+            # 결과 처리 로직
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(batch_processor())
 
 @app.post("/summarize_llama", 
           response_model=SummaryResponse)
