@@ -11,12 +11,14 @@ services:
         - HF_TOKEN=$HF_TOKEN
     volumes:
       - .:/app
+      - /opt/aws/neuron/lib:/opt/aws/neuron/lib
     ports:
       - "8000:8000"
     environment:
       - FLASK_ENV=development
-    command: gunicorn deploy:app \
-      --workers 1 \
-      --worker-class uvicorn.workers.UvicornWorker \
-      --bind 0.0.0.0:8000
-  
+    # command: python deploy.py
+    command: poetry run \
+      gunicorn deploy:app \
+        --workers 1 \
+        --worker-class uvicorn.workers.UvicornWorker \
+        --bind 0.0.0.0:8000
