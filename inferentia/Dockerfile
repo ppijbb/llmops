@@ -33,7 +33,7 @@ RUN pip config set global.extra-index-url https://pip.repos.neuron.amazonaws.com
 ENV VLLM_TARGET_DEVICE=neuron
 ENV MAX_JOBS=4
 ENV VLLM_BUILD_WITHNEURON=1
-RUN pip install -r requirements.txt
+RUN pip install -r requirements.txt 
 # RUN git clone https://github.com/vllm-project/vllm.git && \
 #         cd vllm && \
 #         pip install -U -r requirements-neuron.txt && \
