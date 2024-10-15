@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-
+import uvicorn
 
 app = FastAPI(title="dialog summary")
 
@@ -14,7 +14,7 @@ def main_f():
 
     # 사전학습한 모델을 불러오고 설정한 값에 따라 컴파일을 수행 요청
     model = NeuronModelForCausalLM.from_pretrained(
-        model_id="meta-llama/Meta-Llama-3-8B",
+        model_id="Gunulhona/Gemma-Ko-Merge",
         export=True,
         **compiler_args,
         **input_shapes
@@ -29,4 +29,5 @@ def read_root():
         "message": "Neuron model is compiled and saved",
         "neuron_model": main_f()
         }
-    
+
+uvicorn.run(app, host="0.0.0.0", port=8000)

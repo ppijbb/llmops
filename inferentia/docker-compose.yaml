@@ -12,8 +12,11 @@ services:
     volumes:
       - .:/app
     ports:
-      - "8502:8502"
+      - "8000:8000"
     environment:
       - FLASK_ENV=development
-    command: gunicorn deploy:app --workers 1 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8502
+    command: gunicorn deploy:app \
+      --workers 1 \
+      --worker-class uvicorn.workers.UvicornWorker \
+      --bind 0.0.0.0:8000
   
