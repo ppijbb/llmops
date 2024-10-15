@@ -15,21 +15,22 @@ ENV NEURON_LIBRARY_PATH=/opt/aws/neuron/lib
 ENV VLLM_TARGET_DEVICE="neuron"
 # Install Python dependencies
 COPY pyproject.toml pyproject.toml
-
-RUN pip install poetry
+COPY requirements.txt requirements.txt
 
 # RUN poetry config virtualenvs.create false
-RUN poetry add git+https://github.com/huggingface/optimum-neuron.git
-RUN poetry lock
-RUN poetry install --no-dev
+# RUN pip install poetry
+# RUN poetry add git+https://github.com/huggingface/optimum-neuron.git
+# RUN poetry lock
+# RUN poetry install --no-dev
         
 # Update Neuron Compiler and Framework
-RUN python -m pip config set global.extra-index-url https://pip.repos.neuron.amazonaws.com
-RUN python -m pip install --upgrade neuronx-cc==2.* neuronx-cc-stubs torch-neuronx torchvision  transformers_neuronx
-RUN python -m pip install optimum
-RUN python -m pip install -U git+https://github.com/huggingface/optimum-neuron.git
-RUN python -m pip install -U git+https://github.com/huggingface/transformers.git
+RUN pip config set global.extra-index-url https://pip.repos.neuron.amazonaws.com
+# RUN pip install --upgrade neuronx-cc==2.* neuronx-cc-stubs torch-neuronx torchvision  transformers_neuronx
+# RUN pip install optimum
+# RUN pip install --upgrade git+https://github.com/huggingface/optimum-neuron.git
+# RUN pip install --upgrade git+https://github.com/huggingface/transformers.git
 # Copy your code into the container
+RUN pip install -r requirements.txt
 COPY . /app
 
 # Set the working directory
@@ -38,5 +39,5 @@ WORKDIR /app
 RUN huggingface-cli login --add-to-git-credential --token ${HF_TOKEN}
 
 # Run your application
-CMD ["poetry", "run", "gunicorn", "deploy:app", "--workers", "1", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn", "deploy:app", "--workers", "1", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
 

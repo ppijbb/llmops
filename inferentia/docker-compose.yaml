@@ -17,8 +17,7 @@ services:
     environment:
       - FLASK_ENV=development
     # command: python deploy.py
-    command: poetry run \
-      gunicorn deploy:app \
+    command: gunicorn deploy:app \
         --workers 1 \
         --worker-class uvicorn.workers.UvicornWorker \
         --bind 0.0.0.0:8000

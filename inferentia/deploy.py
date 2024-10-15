@@ -14,7 +14,7 @@ def main_f():
 
     # 사전학습한 모델을 불러오고 설정한 값에 따라 컴파일을 수행 요청
     model = NeuronModelForCausalLM.from_pretrained(
-        model_id="Gunulhona/Gemma-Ko-Merge",
+        model_id="Qwen/Qwen2-1.5B-Instruct",
         export=True,
         **compiler_args,
         **input_shapes
@@ -30,4 +30,4 @@ def read_root():
         "neuron_model": main_f()
         }
 
-uvicorn.run(app, host="0.0.0.0", port=8000)
+# uvicorn.run(app, host="0.0.0.0", port=8000)
