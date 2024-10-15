@@ -3,18 +3,17 @@
 FROM public.ecr.aws/neuron/pytorch-training-neuronx:2.1.2-neuronx-py310-sdk2.19.1-ubuntu20.04
 
 ARG HF_TOKEN
+ENV HF_TOKEN=${HF_TOKEN}
 
-ENV PATH=/opt/aws/neuron/bin:$PATH
 # Set environment variables
 ENV NEURON_INSTALL_DIR=/opt/aws/neuron
 ENV LD_LIBRARY_PATH=$NEURON_INSTALL_DIR/lib:$LD_LIBRARY_PATH
 ENV PYTHONPATH=$NEURON_INSTALL_DIR/lib/python3.10/site-packages:$PYTHONPATH
 ENV PATH=/opt/aws/neuron/bin:$PATH
-ENV HF_TOKEN=${HF_TOKEN}
 ENV NEURON_LIBRARY_PATH=/opt/aws/neuron/lib
-ENV VLLM_TARGET_DEVICE="neuron"
+
 # Install Python dependencies
-COPY pyproject.toml pyproject.toml
+# COPY pyproject.toml pyproject.toml
 COPY requirements.txt requirements.txt
 
 # RUN poetry config virtualenvs.create false
@@ -30,7 +29,16 @@ RUN pip config set global.extra-index-url https://pip.repos.neuron.amazonaws.com
 # RUN pip install --upgrade git+https://github.com/huggingface/optimum-neuron.git
 # RUN pip install --upgrade git+https://github.com/huggingface/transformers.git
 # Copy your code into the container
+
+ENV VLLM_TARGET_DEVICE=neuron
+ENV MAX_JOBS=4
+ENV VLLM_BUILD_WITHNEURON=1
 RUN pip install -r requirements.txt
+# RUN git clone https://github.com/vllm-project/vllm.git && \
+#         cd vllm && \
+#         pip install -U -r requirements-neuron.txt && \
+#         pip install .
+
 COPY . /app
 
 # Set the working directory
