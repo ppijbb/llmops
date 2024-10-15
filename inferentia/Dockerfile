@@ -28,8 +28,9 @@ ENV VLLM_TARGET_DEVICE=neuron
 ENV MAX_JOBS=4
 ENV VLLM_BUILD_WITHNEURON=1
 RUN pip install -r requirements.txt 
-RUN pip install --upgrade neuronx-cc==2.* neuronx-cc-stubs torch-neuronx torchvision  transformers_neuronx
-RUN pip install optimum
+RUN pip install --upgrade neuronx-cc==2.* neuronx-cc-stubs torch-neuronx torchvision \
+                        transformers_neuronx libneuronxla aws-neuronx-runtime-discovery neuronx-distributed
+RUN pip install optimum["neuron"]
 RUN pip install --upgrade git+https://github.com/huggingface/optimum-neuron.git
 RUN pip install --upgrade git+https://github.com/huggingface/transformers.git
 # Copy your code into the container
