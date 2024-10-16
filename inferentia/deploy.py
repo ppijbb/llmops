@@ -34,11 +34,13 @@ def vllm():
     # that contain the prompt, generated text, and other information.
     outputs = llm.generate(prompts, sampling_params)
     # Print the outputs.
+    result_text = ""
     for output in outputs:
         prompt = output.prompt
         generated_text = output.outputs[0].text
         print(f"Prompt: {prompt!r}, Generated text: {generated_text!r}")
-
+        result_text += generated_text
+    return result_text
 
 def main_f():
     # 컴파일을 위한 인자 설정
@@ -66,7 +68,8 @@ def main_f():
 def read_root():
     return {
         "message": "Neuron model is compiled and saved",
-        "neuron_model": main_f()
+        "neuron_model": main_f(),
+        "text": vllm()
         }
 
 # uvicorn.run(app, host="0.0.0.0", port=8000)
