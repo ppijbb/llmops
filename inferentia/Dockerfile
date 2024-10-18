@@ -13,26 +13,27 @@ ENV PATH=/opt/aws/neuron/bin:$PATH
 ENV NEURON_LIBRARY_PATH=/opt/aws/neuron/lib
 
 # Install Python dependencies
-# COPY pyproject.toml pyproject.toml
+COPY pyproject.toml pyproject.toml
 COPY requirements.txt requirements.txt
 
 # RUN poetry config virtualenvs.create false
 # RUN pip install poetry
-# RUN poetry add git+https://github.com/huggingface/optimum-neuron.git
 # RUN poetry lock
-# RUN poetry install --no-dev
+# RUN poetry add git+https://github.com/huggingface/optimum-neuron.git
+# RUN poetry install
+# RUN poetry env remove python
         
 # Update Neuron Compiler and Framework
-RUN pip config set global.extra-index-url https://pip.repos.neuron.amazonaws.com
+
 ENV VLLM_TARGET_DEVICE=neuron
 ENV MAX_JOBS=4
-ENV VLLM_BUILD_WITHNEURON=1
-RUN pip install -r requirements.txt 
-RUN pip install --upgrade neuronx-cc==2.* neuronx-cc-stubs torch-neuronx torchvision \
-                        transformers_neuronx libneuronxla aws-neuronx-runtime-discovery neuronx-distributed
-RUN pip install optimum["neuron"]
-RUN pip install --upgrade git+https://github.com/huggingface/optimum-neuron.git
-RUN pip install --upgrade git+https://github.com/huggingface/transformers.git
+ENV VLLM_BUILD_WITH_NEURON=1
+RUN pip config set global.extra-index-url https://pip.repos.neuron.amazonaws.com && \
+    pip install -r requirements.txt --upgrade && \
+    pip install --upgrade neuron neuronx-cc==2.* neuronx-cc-stubs torch-neuronx torchvision \
+                        transformers_neuronx libneuronxla aws-neuronx-runtime-discovery neuronx-distributed && \
+    pip install --upgrade-strategy eager optimum[neuronx] && \
+    pip install --upgrade git+https://github.com/huggingface/transformers.git
 # Copy your code into the container
 
 COPY . /app
@@ -41,7 +42,13 @@ COPY . /app
 WORKDIR /app
 
 RUN huggingface-cli login --add-to-git-credential --token ${HF_TOKEN}
-
+# RUN gunicorn --help
+# RUN  serve run serve:build_app\
+#     model=TinyLlama/TinyLlama-1.1B-Chat-v1.0\
+#     device=neruon\
+#     dtype=bfloat16\
+#     gpu_memory_utilization=.95\
+#     max_model_len=127
 # Run your application
 CMD ["gunicorn", "deploy:app", "--workers", "1", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
 

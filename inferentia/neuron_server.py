@@ -1,3 +1,4 @@
+import os
 from typing import Dict, Optional, List
 import logging
 
@@ -17,6 +18,26 @@ from vllm.entrypoints.openai.protocol import (
 )
 from vllm.entrypoints.openai.serving_chat import OpenAIServingChat
 from vllm.entrypoints.openai.serving_engine import LoRAModulePath
+from vllm.utils import FlexibleArgumentParser
+from vllm.entrypoints.logger import RequestLogger
+
+
+from vllm.engine.arg_utils import AsyncEngineArgs
+from vllm.engine.async_llm_engine import AsyncLLMEngine
+from vllm.entrypoints.openai.cli_args import make_arg_parser
+from vllm.entrypoints.openai.protocol import (
+    ChatCompletionRequest,
+    ChatCompletionResponse,
+    ErrorResponse,
+)
+from vllm.entrypoints.openai.serving_chat import OpenAIServingChat
+from vllm.entrypoints.openai.serving_engine import LoRAModulePath
+
+os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = "0"
+os.environ["VLLM_CPU_KVCACHE_SPACE"] = "5"
+os.environ["VLLM_CPU_OMP_THREADS_BIND"] = "0-29"
+os.environ["RAY_DEDUP_LOGS"] = "0" 
+os.environ["VLLM_ATTENTION_BACKEND"] = "XFORMERS"
 
 logger = logging.getLogger("ray.serve")
 
@@ -93,7 +114,11 @@ def parse_vllm_args(cli_args: Dict[str, str]):
     Currently uses argparse because vLLM doesn't expose Python models for all of the
     config options we want to support.
     """
-    parser = make_arg_parser()
+    arg_parser = FlexibleArgumentParser(
+        description="vLLM OpenAI-Compatible RESTful API server."
+    )
+
+    parser = make_arg_parser(arg_parser)
     arg_strings = []
     for key, value in cli_args.items():
         arg_strings.extend([f"--{key}", str(value)])
