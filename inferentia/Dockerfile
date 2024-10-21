@@ -2,7 +2,9 @@ FROM public.ecr.aws/neuron/pytorch-inference-neuronx:2.1.2-neuronx-py310-sdk2.20
 # FROM public.ecr.aws/neuron/pytorch-training-neuronx:2.1.2-neuronx-py310-sdk2.19.1-ubuntu20.04
 
 ARG HF_TOKEN
+ARG VLLM_TARGET_DEVICE
 ENV HF_TOKEN=${HF_TOKEN}
+ENV VLLM_TARGET_DEVICE=${VLLM_TARGET_DEVICE}
 
 # Set environment variables
 ENV NEURON_INSTALL_DIR=/opt/aws/neuron
@@ -23,7 +25,7 @@ ENV VLLM_BUILD_WITH_NEURON=1
 RUN pip config set global.extra-index-url https://pip.repos.neuron.amazonaws.com && \
     pip install -r requirements.txt --upgrade && \
     pip install --upgrade git+https://github.com/huggingface/transformers.git && \
-    pip install --upgrade \
+    pip install \
         neuron \
         neuronx-cc==2.* \
         neuronx-cc-stubs \
@@ -32,8 +34,7 @@ RUN pip config set global.extra-index-url https://pip.repos.neuron.amazonaws.com
         libneuronxla \
         aws-neuronx-runtime-discovery \
         neuronx-distributed && \
-    pip install --upgrade-strategy eager optimum[neuronx] &&\
-    pip install --upgrade vllm >= 0.5.0 &&
+    pip install --upgrade-strategy eager optimum[neuronx]
 
 RUN pip cache purge
 # Copy your code into the container

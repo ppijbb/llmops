@@ -66,6 +66,7 @@ def main_f():
     model = NeuronModelForCausalLM.from_pretrained(
         model_id=model_path,
         export=True,
+        # dynamic_batch_size=True,
         **compiler_args,
         **input_shapes)
     tokenizer = AutoTokenizer.from_pretrained(
