@@ -34,8 +34,8 @@ RUN pip config set global.extra-index-url https://pip.repos.neuron.amazonaws.com
         libneuronxla \
         aws-neuronx-runtime-discovery \
         neuronx-distributed && \
-    pip install --upgrade-strategy eager optimum[neuronx] &&\
-    VLLM_TARGET_DEVICE="neuron" pip install torch-xla>=2.5.0 vllm triton>=3.*
+    pip install --upgrade-strategy eager optimum[neuronx]
+RUN VLLM_TARGET_DEVICE="neuron" pip install --upgrade torch-xla>=2.5.0 vllm>=0.6.0 triton>=3.*
 
 RUN pip cache purge
 # Copy your code into the container
