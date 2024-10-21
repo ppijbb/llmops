@@ -1,3 +1,6 @@
+import triton
+
+print(triton.__version__)
 from fastapi import FastAPI
 from vllm import LLM, SamplingParams
 from optimum.neuron import NeuronModelForCausalLM
@@ -14,7 +17,9 @@ app = FastAPI(title="dialog summary")
 
 
 def vllm():
+    import vllm
     print("Call VLLM Function")
+    print(vllm.__version__)
     # Sample prompts.
     prompts = [
         "Hello, my name is",
@@ -97,8 +102,8 @@ def read_root():
     print("MAIN CALLED")
     return {
         "message": "Neuron model is compiled and saved",
-        "neuron_model": main_f(),
-        # "text": vllm()
+        # "neuron_model": main_f(),
+        "text": vllm()
         }
 
 # uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -33,31 +33,66 @@ from vllm.entrypoints.openai.protocol import (
 from vllm.entrypoints.openai.serving_chat import OpenAIServingChat
 from vllm.entrypoints.openai.serving_engine import LoRAModulePath
 
+
+
+os.environ['NEURON_VISIBLE_CORES']='2'
+os.environ['NEURON_RT_NUM_CORES']='2'
 os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = "0"
-os.environ["VLLM_CPU_KVCACHE_SPACE"] = "5"
+os.environ["VLLM_CPU_KVCACHE_SPACE"] = "2"
 os.environ["VLLM_CPU_OMP_THREADS_BIND"] = "0-29"
 os.environ["RAY_DEDUP_LOGS"] = "0" 
-os.environ["VLLM_ATTENTION_BACKEND"] = "XFORMERS"
+# os.environ["VLLM_ATTENTION_BACKEND"] = "XFORMERS"
+
+# creates XLA hlo graphs for all the context length buckets.
+os.environ['NEURON_CONTEXT_LENGTH_BUCKETS'] = "128,512,1024,2048"
+# creates XLA hlo graphs for all the token gen buckets.
+os.environ['NEURON_TOKEN_GEN_BUCKETS'] = "128,512,1024,2048"
+
 
 logger = logging.getLogger("ray.serve")
 
 app = FastAPI()
 
+# class BatchingDeployment:
+#     @serve.batch
+#     async def my_batch_handler(self, requests: List):
+#         results = []
+#         for request in requests:
+#             results.append(request.json())
+#         return results
+
+#     async def __call__(self, request):
+#         return await self.my_batch_handler(request)
+
+
+@serve.deployment(num_replicas=1)
+@serve.ingress(app)
+class APIIngress:
+    def __init__(self, vllm_model_handle) -> None:
+        self.handle = vllm_model_handle
+
+    @app.get("/")
+    async def generate(self, prompt):
+        return await self.handle.create_chat_completion.remote(prompt)
 
 @serve.deployment(
     autoscaling_config={
         "min_replicas": 1,
-        "max_replicas": 10,
+        "max_replicas": 2,
         "target_ongoing_requests": 5,
     },
     ray_actor_options={
         "resources": {
-            "neuron_cores": 1
-            }
+            "neuron_cores": 2
+            },
+        "runtime_env": {
+            "env_vars": {
+                "NEURON_CC_FLAGS": "-O1"
+                }
+            },
         },
     max_ongoing_requests=10,
 )
-@serve.ingress(app)
 class VLLMDeployment:
     def __init__(
         self,
@@ -74,7 +109,7 @@ class VLLMDeployment:
         self.chat_template = chat_template
         self.engine = AsyncLLMEngine.from_engine_args(engine_args)
 
-    @app.post("/summarize")
+    # @app.post("/summarize")
     async def create_chat_completion(
         self, request: ChatCompletionRequest, raw_request: Request
     ):
@@ -124,7 +159,10 @@ def parse_vllm_args(cli_args: Dict[str, str]):
     )
 
     parser = make_arg_parser(arg_parser)
-    arg_strings = []
+    arg_strings = [ # defualt arguments
+        "--max_num_seqs", "8",
+        "--tensor_parallel_size", "2",
+        ]
     for key, value in cli_args.items():
         arg_strings.extend([f"--{key}", str(value)])
     logger.info(arg_strings)
@@ -153,12 +191,14 @@ def build_app(cli_args: Dict[str, str]) -> serve.Application:
 
     # We use the "STRICT_PACK" strategy below to ensure all vLLM actors are placed on
     # the same Ray node.
-    return VLLMDeployment.options(
-        placement_group_bundles=pg_resources, placement_group_strategy="STRICT_PACK"
-    ).bind(
-        engine_args,
-        parsed_args.response_role,
-        parsed_args.lora_modules,
-        parsed_args.chat_template,
-    )
+    return APIIngress.bind(
+        VLLMDeployment
+        # .options(placement_group_bundles=pg_resources,  placement_group_strategy="STRICT_PACK")
+        .bind(
+            engine_args,
+            parsed_args.response_role,
+            parsed_args.lora_modules,
+            parsed_args.chat_template,
+            )
+        )
 
