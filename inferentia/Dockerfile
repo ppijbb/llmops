@@ -1,6 +1,5 @@
-#     wget https://efa-installer.amazonaws.com/aws-efa-installer.key && gpg --import aws-efa-installer.key && \
-# FROM 763104351884.dkr.ecr.us-east-1.amazonaws.com/huggingface-pytorch-inference-neuronx:2.1.2-neuronx-py310-sdk2.19.1-ubuntu20.04
-FROM public.ecr.aws/neuron/pytorch-training-neuronx:2.1.2-neuronx-py310-sdk2.19.1-ubuntu20.04
+FROM public.ecr.aws/neuron/pytorch-inference-neuronx:2.1.2-neuronx-py310-sdk2.20.0-ubuntu20.04
+# FROM public.ecr.aws/neuron/pytorch-training-neuronx:2.1.2-neuronx-py310-sdk2.19.1-ubuntu20.04
 
 ARG HF_TOKEN
 ENV HF_TOKEN=${HF_TOKEN}
@@ -16,13 +15,6 @@ ENV NEURON_LIBRARY_PATH=/opt/aws/neuron/lib
 COPY pyproject.toml pyproject.toml
 COPY requirements.txt requirements.txt
 
-# RUN poetry config virtualenvs.create false
-# RUN pip install poetry
-# RUN poetry lock
-# RUN poetry add git+https://github.com/huggingface/optimum-neuron.git
-# RUN poetry install
-# RUN poetry env remove python
-        
 # Update Neuron Compiler and Framework
 
 ENV VLLM_TARGET_DEVICE=neuron
@@ -40,7 +32,10 @@ RUN pip config set global.extra-index-url https://pip.repos.neuron.amazonaws.com
         libneuronxla \
         aws-neuronx-runtime-discovery \
         neuronx-distributed && \
-    pip install --upgrade-strategy eager optimum[neuronx]    
+    pip install --upgrade-strategy eager optimum[neuronx] &&\
+    pip install --upgrade vllm >= 0.5.0 &&
+
+RUN pip cache purge
 # Copy your code into the container
 
 COPY . /app
@@ -50,12 +45,7 @@ WORKDIR /app
 
 RUN huggingface-cli login --add-to-git-credential --token ${HF_TOKEN}
 # RUN gunicorn --help
-# RUN  serve run serve:build_app\
-#     model=TinyLlama/TinyLlama-1.1B-Chat-v1.0\
-#     device=neruon\
-#     dtype=bfloat16\
-#     gpu_memory_utilization=.95\
-#     max_model_len=127
+
 # Run your application
 CMD ["gunicorn", "deploy:app", "--workers", "1", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
 
