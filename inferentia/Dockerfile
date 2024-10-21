@@ -30,10 +30,17 @@ ENV MAX_JOBS=4
 ENV VLLM_BUILD_WITH_NEURON=1
 RUN pip config set global.extra-index-url https://pip.repos.neuron.amazonaws.com && \
     pip install -r requirements.txt --upgrade && \
-    pip install --upgrade neuron neuronx-cc==2.* neuronx-cc-stubs torch-neuronx torchvision \
-                        transformers_neuronx libneuronxla aws-neuronx-runtime-discovery neuronx-distributed && \
-    pip install --upgrade-strategy eager optimum[neuronx] && \
-    pip install --upgrade git+https://github.com/huggingface/transformers.git
+    pip install --upgrade git+https://github.com/huggingface/transformers.git && \
+    pip install --upgrade \
+        neuron \
+        neuronx-cc==2.* \
+        neuronx-cc-stubs \
+        torch-neuronx torchvision \
+        transformers-neuronx \
+        libneuronxla \
+        aws-neuronx-runtime-discovery \
+        neuronx-distributed && \
+    pip install --upgrade-strategy eager optimum[neuronx]    
 # Copy your code into the container
 
 COPY . /app
