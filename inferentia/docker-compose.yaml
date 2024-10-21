@@ -18,17 +18,8 @@ services:
       - FLASK_ENV=development
       - VLLM_MODEL="TinyLlama/TinyLlama-1.1B-Chat-v1.0"
     command: 
-     - serve run neuron_server:build_app model=TinyLlama/TinyLlama-1.1B-Chat-v1.0 device=neuron dtype=bfloat16 gpu_memory_utilization=0.95 max_model_len=127
-     #  - serve && gunicorn deploy:app \
-    #       --workers 1 \
-    #       --worker-class uvicorn.workers.UvicornWorker \
-    #       --bind 0.0.0.0:8000 
-          
-          
-        #   && \
-        # serve run main:build_app\
-        #   model="TinyLlama/TinyLlama-1.1B-Chat-v1.0" \
-        #   device="neruon"\
-        #   dtype="bfloat16"\
-        #   gpu_memory_utilization=0.95\
-        #   max_model_len=127
+    #  - serve run neuron_server:build_app model=TinyLlama/TinyLlama-1.1B-Chat-v1.0 device=neuron dtype=float16 gpu_memory_utilization=0.95 max_model_len=127
+      - gunicorn deploy:app \
+          --workers 1 \
+          --worker-class uvicorn.workers.UvicornWorker \
+          --bind 0.0.0.0:8000 

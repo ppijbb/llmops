@@ -50,6 +50,11 @@ app = FastAPI()
         "max_replicas": 10,
         "target_ongoing_requests": 5,
     },
+    ray_actor_options={
+        "resources": {
+            "neuron_cores": 1
+            }
+        },
     max_ongoing_requests=10,
 )
 @serve.ingress(app)
