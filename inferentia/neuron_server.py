@@ -1,3 +1,6 @@
+import vllm
+
+print(vllm.__version__)
 import os
 from typing import Dict, Optional, List
 import logging

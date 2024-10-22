@@ -10,9 +10,5 @@ fairscale>=0.4.13
 fire
 trl
 neuron
+optimum[neuronx]
 ray[serve]>=2.37.0
-# torch==2.3.1
-# torchvision==0.18.1
-# torchaudio==2.3.1
-# torch-xla>=2.3.1
-

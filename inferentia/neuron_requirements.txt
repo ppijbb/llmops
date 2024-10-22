@@ -6,4 +6,3 @@ libneuronxla --extra-index-url https://pip.repos.neuron.amazonaws.com
 transformers-neuronx>=0.12.0 --extra-index-url https://pip.repos.neuron.amazonaws.com
 aws-neuronx-runtime-discovery --extra-index-url https://pip.repos.neuron.amazonaws.com
 optimum-neuron @git+https://github.com/huggingface/optimum-neuron.git
-transformers>=4.43.2 #@git+https://github.com/huggingface/transformers.git

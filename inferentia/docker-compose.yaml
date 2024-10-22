@@ -22,9 +22,11 @@ services:
     environment:
       - FLASK_ENV=development
       - VLLM_MODEL=TinyLlama/TinyLlama-1.1B-Chat-v1.0
+      - VLLM_BUILD_WITH_NEURON=true
     command:
       # - serve run neuron_server:build_app model=TinyLlama/TinyLlama-1.1B-Chat-v1.0 device=neuron dtype=float16 gpu_memory_utilization=0.95 max_model_len=127
       # - gunicorn deploy:app --workers=1 --worker-class=uvicorn.workers.UvicornWorker --bind=0.0.0.0:8000
-      - uvicorn deploy:app --host 0.0.0.0 --port 8000
+      - pip list
+      # - uvicorn deploy:app --host 0.0.0.0 --port 8000
 
       
