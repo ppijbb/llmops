@@ -16,9 +16,6 @@ from summary.application.const import DEFAULT_SUMMARY_FEW_SHOT, DEFAULT_SUMMARY_
 #     ignore_reinit_error=True,
 #     )
 
-
-
-
 # @ray.remote
 class LLMService(object):
     default_bos: str = "<|begin_of_text|>"

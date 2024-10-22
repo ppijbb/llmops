@@ -78,6 +78,7 @@ async def batch_processor():
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(batch_processor())
+    return
 
 @app.post("/batch_summarize")
 async def batch_summarize(request: SummaryRequest):
