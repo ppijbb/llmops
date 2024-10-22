@@ -16,29 +16,18 @@ ENV NEURON_LIBRARY_PATH=/opt/aws/neuron/lib
 # Install Python dependencies
 COPY pyproject.toml pyproject.toml
 COPY requirements.txt requirements.txt
+COPY neuron_requirements.txt neuron_requirements.txt
 
 # Update Neuron Compiler and Framework
 
 ENV MAX_JOBS=4
-ENV VLLM_BUILD_WITH_NEURON=1
+ENV VLLM_BUILD_WITH_NEURON=true
 RUN pip config set global.extra-index-url https://pip.repos.neuron.amazonaws.com && \
-    pip install -r requirements.txt --upgrade && \
+    pip install --upgrade -r requirements.txt  && \
+    pip install --upgrade -r neuron_requirements.txt && \
     pip install --upgrade git+https://github.com/huggingface/transformers.git && \
-    pip install \
-        neuron \
-        neuronx-cc==2.* \
-        neuronx-cc-stubs \
-        torch-neuronx >=2.1.2 \
-        torchvision \
-        transformers-neuronx >=0.12.0\
-        libneuronxla \
-        aws-neuronx-runtime-discovery \
-        neuronx-distributed && \
-    pip install --upgrade-strategy eager optimum[neuronx]
-RUN VLLM_TARGET_DEVICE="neuron" pip install --upgrade \
-    torch-xla>=2.5.0 \
-    triton>=3.* \
-    vllm@git+https://github.com/vllm-project/vllm.git
+    VLLM_TARGET_DEVICE="neuron" pip install 'vllm>=0.3,<0.6' &&\
+    pip install --upgrade-strategy eager optimum[neuronx] torch-neuronx>=2.1.2 triton==3.0.0
 
 RUN pip cache purge
 # Copy your code into the container
