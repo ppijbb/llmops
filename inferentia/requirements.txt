@@ -8,7 +8,8 @@ tiktoken>=0.6.0
 blobfile>=2.1.1
 fairscale>=0.4.13
 fire
-trl
+trl>0.10.0
 neuron
-optimum[neuronx]
+optimum
 ray[serve]>=2.37.0
+transformers

@@ -1,8 +1,8 @@
-neuronx-cc==2.* --extra-index-url https://pip.repos.neuron.amazonaws.com
+neuronx-cc==2.15.* --extra-index-url https://pip.repos.neuron.amazonaws.com
 neuronx-cc-stubs --extra-index-url https://pip.repos.neuron.amazonaws.com
 neuronx-distributed>=0.9.0 --extra-index-url https://pip.repos.neuron.amazonaws.com
-torch-neuronx>=2.1.2 --extra-index-url https://pip.repos.neuron.amazonaws.com
+torch-neuronx>=2.1.2.2.3.0 --extra-index-url https://pip.repos.neuron.amazonaws.com
 libneuronxla --extra-index-url https://pip.repos.neuron.amazonaws.com
-transformers-neuronx>=0.12.0 --extra-index-url https://pip.repos.neuron.amazonaws.com
+transformers-neuronx>=0.12.313 --extra-index-url https://pip.repos.neuron.amazonaws.com
 aws-neuronx-runtime-discovery --extra-index-url https://pip.repos.neuron.amazonaws.com
 optimum-neuron @git+https://github.com/huggingface/optimum-neuron.git

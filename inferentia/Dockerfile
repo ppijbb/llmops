@@ -24,11 +24,10 @@ ENV MAX_JOBS=4
 ENV VLLM_BUILD_WITH_NEURON=true
 RUN pip config set global.extra-index-url https://pip.repos.neuron.amazonaws.com && \
     pip install --upgrade -r requirements.txt  && \
-    pip install --upgrade git+https://github.com/huggingface/transformers.git && \
+    pip install --upgrade transformers git+https://github.com/huggingface/transformers.git && \
     pip install --pre --upgrade-strategy eager -r neuron_requirements.txt
-RUN pip install --upgrade transformers git+https://github.com/huggingface/transformers.git &&\
-    VLLM_TARGET_DEVICE="neuron" pip install torch==2.4.0 torchvision==0.19.0 torchaudio==2.4.0 torch-xla>=2.4.0 vllm>=0.6 &&\
-    pip install optimum-neuron git+https://github.com/huggingface/optimum-neuron.git
+RUN VLLM_TARGET_DEVICE="neuron" pip install torch==2.4.0 torchvision==0.19.0 torchaudio==2.4.0 torch-xla>=2.4.0 'vllm>=0.3,<0.5' &&\    
+    pip install --upgrade-strategy eager optimum-neuron git+https://github.com/huggingface/optimum-neuron.git
 
 RUN pip cache purge
 # Copy your code into the container
