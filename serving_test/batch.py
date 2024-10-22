@@ -1,108 +1,165 @@
-from fastapi import FastAPI, Request
-import typing
+# deployment.py
+import ray
+from ray import serve
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import List, Optional
+from vllm import LLM, SamplingParams
 import asyncio
-import time 
-import logging 
+from collections import deque
+import time
 
-Scope = typing.MutableMapping[str, typing.Any]
-Message = typing.MutableMapping[str, typing.Any]
-Receive = typing.Callable[[], typing.Awaitable[Message]]
-Send = typing.Callable[[Message], typing.Awaitable[None]]
-RequestTuple = typing.Tuple[Scope, Receive, Send]
+# Pydantic 모델 정의
+class GenerationRequest(BaseModel):
+    prompt: str
+    max_tokens: Optional[int] = 512
+    temperature: Optional[float] = 0.7
+    top_p: Optional[float] = 0.95
+    request_id: str
 
-logger = logging.getLogger("uvicorn")
+class BatchRequest(BaseModel):
+    requests: List[GenerationRequest]
 
-async def very_heavy_lifting(requests: dict[int,RequestTuple], batch_no) -> dict[int, RequestTuple]:
-    #This mimics a heavy lifting function, takes a whole 3 seconds to process this batch
-    logger.info(f"Heavy lifting for batch {batch_no} with {len(requests.keys())} requests")
-    await asyncio.sleep(3)
-    processed_requests: dict[int,RequestTuple] = {}
-    for id, request in requests.items():
-        request[0]["heavy_lifting_result"] = f"result of request {id} in batch {batch_no}"
-        processed_requests[id] = (request[0], request[1], request[2])
-    return processed_requests
+class GenerationResponse(BaseModel):
+    request_id: str
+    generated_text: str
+    processing_time: float
 
-class Batcher():
-    def __init__(self, batch_max_size: int = 5, batch_max_seconds: int = 3) -> None:
-        self.batch_max_size = batch_max_size
-        self.batch_max_seconds = batch_max_seconds
-        self.to_process: dict[int, RequestTuple] = {}
-        self.processing: dict[int, RequestTuple] = {}
-        self.processed: dict[int, RequestTuple] = {}
-        self.batch_no = 1
+# Ray Serve 디플로이먼트 정의
+@serve.deployment(
+    ray_actor_options={"num_gpus": 1},
+    max_concurrent_queries=10
+)
+class VLLMBatchDeployment:
+    def __init__(self, model_name: str = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"):
+        self.llm = LLM(
+            model=model_name,
+            trust_remote_code=True,
+            tensor_parallel_size=1,  # GPU 수에 따라 조정
+            max_num_batched_tokens=4096,
+            gpu_memory_utilization=0.9
+        )
+        self.request_queue = deque()
+        self.batch_size = 8
+        self.max_batch_wait_time = 0.1  # 100ms
 
-    def start_batcher(self):
-        _ = asyncio.get_event_loop()
-        self.batcher_task = asyncio.create_task(self._batcher())
+    async def process_batch(self):
+        if not self.request_queue:
+            return []
 
-    async def _batcher(self):
-        while True:
-            time_out = time.time() + self.batch_max_seconds
-            while time.time() < time_out:
-                if len(self.to_process) >= self.batch_max_size:
-                    logger.info(f"Batch {self.batch_no} is full \
-                        (requests: {len(self.to_process.keys())}, max allowed: {self.batch_max_size})")
-                    self.batch_no += 1
-                    await self.process_requests(self.batch_no)
+        batch_size = min(len(self.request_queue), self.batch_size)
+        batch_requests = []
+        start_times = []
 
-                    break
-                await asyncio.sleep(0)
-            else:
-                if len(self.to_process)>0:
-                    logger.info(f"Batch {self.batch_no} is over timelimit (requests: {len(self.to_process.keys())})")
-                    self.batch_no += 1
-                    await self.process_requests(self.batch_no)
-            await asyncio.sleep(0)
+        for _ in range(batch_size):
+            request, start_time = self.request_queue.popleft()
+            batch_requests.append(request)
+            start_times.append(start_time)
 
-    async def process_requests(self, batch_no: int):
-        logger.info(f"Start of processing batch {batch_no}...")
-        for id, request in self.to_process.items():
-            self.processing[id] = request
-        self.to_process = {}
-        processed_requests  = await very_heavy_lifting(self.processing, batch_no)
-        self.processed = processed_requests
-        self.processing = {}
-        logger.info(f"Finished processing batch {batch_no}")
+        # vLLM 배치 처리를 위한 파라미터 준비
+        prompts = [req.prompt for req in batch_requests]
+        sampling_params = SamplingParams(
+            temperature=batch_requests[0].temperature,
+            top_p=batch_requests[0].top_p,
+            max_tokens=batch_requests[0].max_tokens
+        )
 
-batcher = Batcher() 
+        # 배치 추론 실행
+        outputs = self.llm.generate(prompts, sampling_params)
+        
+        # 결과 처리
+        responses = []
+        for i, output in enumerate(outputs):
+            end_time = time.time()
+            responses.append(GenerationResponse(
+                request_id=batch_requests[i].request_id,
+                generated_text=output.outputs[0].text,
+                processing_time=end_time - start_times[i]
+            ))
 
-class InterceptorMiddleware():
-    def __init__(self, app) -> None:
-        self.app = app
-        self.request_id: int = 0
+        return responses
 
-    async def __call__(self, scope: Scope, receive: Receive, send: Send):
-        if scope["type"] != "http":  # pragma: no cover
-            await self.app(scope, receive, send)
-            return
+    async def __process_batch_streaming(self, batch_requests, start_times):
+        """스트리밍 방식으로 배치 처리를 수행하는 내부 메서드"""
+        prompts = [req.prompt for req in batch_requests]
+        sampling_params = SamplingParams(
+            temperature=batch_requests[0].temperature,
+            top_p=batch_requests[0].top_p,
+            max_tokens=batch_requests[0].max_tokens
+        )
 
-        self.request_id += 1
-        current_id = self.request_id
-        batcher.to_process[self.request_id] = (scope, receive, send)
-        logger.info(f"Added request {current_id} to batch {batcher.batch_no}.")
-        while True:
-            request = batcher.processed.get(current_id, None)
-            if not request:
-                await asyncio.sleep(0.5)
-            else:
-                logger.info(f"Request {current_id} was processed, forwarding to FastAPI endpoint..")
-                batcher.processed.pop(current_id)
-                await self.app(request[0], request[1], request[2])
-                await asyncio.sleep(0)
+        responses = []
+        for i, output_generator in enumerate(self.llm.generate(prompts, sampling_params, use_tqdm=False)):
+            generated_text = ""
+            for output in output_generator:
+                generated_text += output.outputs[0].text
+            
+            end_time = time.time()
+            responses.append(GenerationResponse(
+                request_id=batch_requests[i].request_id,
+                generated_text=generated_text,
+                processing_time=end_time - start_times[i]
+            ))
+        
+        return responses
 
+    async def handle_request(self, request: GenerationRequest):
+        start_time = time.time()
+        self.request_queue.append((request, start_time))
+
+        # 배치 크기에 도달하거나 최대 대기 시간이 경과할 때까지 대기
+        if len(self.request_queue) >= self.batch_size:
+            responses = await self.process_batch()
+        else:
+            await asyncio.sleep(self.max_batch_wait_time)
+            responses = await self.process_batch()
+
+        # 현재 요청에 해당하는 응답 찾기
+        for response in responses:
+            if response.request_id == request.request_id:
+                return response
+
+        raise HTTPException(status_code=500, detail="Request processing failed")
+
+    async def handle_batch_request(self, batch_request: BatchRequest):
+        tasks = []
+        for request in batch_request.requests:
+            tasks.append(self.handle_request(request))
+        
+        try:
+            responses = await asyncio.gather(*tasks)
+            return responses
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Batch processing failed: {str(e)}")
+
+# FastAPI 앱 설정
 app = FastAPI()
 
-@app.on_event("startup")
-async def startup_event():
-    batcher.start_batcher()
-    return
+@serve.deployment(route_prefix="/")
+@serve.ingress(app)
+class FastAPIDeployment:
+    def __init__(self, vllm_handle):
+        self.vllm_handle = vllm_handle
 
-app.add_middleware(InterceptorMiddleware)
+    @app.post("/generate")
+    async def generate(self, request: GenerationRequest):
+        try:
+            return await self.vllm_handle.handle_request.remote(request)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/")
-async def root(request: Request):
-    return {"Return value": request["heavy_lifting_result"]}
+    @app.post("/batch_generate")
+    async def batch_generate(self, batch_request: BatchRequest):
+        try:
+            return await self.vllm_handle.handle_batch_request.remote(batch_request)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
+    @app.get("/health")
+    async def health_check():
+        return {"status": "healthy"}
+
+# 서버 구동 코드
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    ray.init()
+    serve.run(FastAPIDeployment.bind(VLLMBatchDeployment.bind()))
