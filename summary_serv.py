@@ -59,8 +59,6 @@ def text_postprocess(text:str) -> str:
 
 
 async def batch_processor():
-    engine_args = AsyncEngineArgs(model="your_model_name")
-    engine = AsyncLLMEngine.from_pretrained(engine_args=engine_args)
     
     while True:
         batch = []
@@ -81,6 +79,12 @@ async def batch_processor():
 async def startup_event():
     asyncio.create_task(batch_processor())
 
+@app.post("/batch_summarize")
+async def batch_summarize(request: SummaryRequest):
+    await request_queue.put(request)
+    return {"message": "success"}
+
+    
 @app.post("/summarize_llama", 
           response_model=SummaryResponse)
 async def summarize(
