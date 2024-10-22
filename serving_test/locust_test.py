@@ -21,8 +21,11 @@ class TestingUser(HttpUser):
     @task
     def summary_testing(self):
         headers = {'Content-Type': 'application/json'}
-        payload = {'text': input_text}
-        response = self.client.post(url="http://localhost:8555/summarize",
+        payload = {'prompt': input_text}
+        response = self.client.post(url="http://localhost:8000/",
                                     headers=headers,
                                     json=payload)  # Replace with your actual endpoint
+        # response = self.client.post(url="http://localhost:8555/summarize",
+        #                             headers=headers,
+        #                             json=payload)  # Replace with your actual endpoint
         # Add assertions or other logic here to validate the response if needed
