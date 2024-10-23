@@ -32,6 +32,8 @@ class BatchAPIIngress:
         return self._classifier(input_text)[0]["label"]
     
     
-def build_app(cli_args: Dict[str, str], *args, **kwargs) -> serve.Application:
-    parser = ArgumentParser()
-    return BatchAPIIngress.bind(*args, **kwargs)
+# def build_app(cli_args: Dict[str, str], *args, **kwargs) -> serve.Application:
+#     return BatchAPIIngress.bind(**cli_args)
+
+serve.start()
+BatchAPIIngress.deploy()

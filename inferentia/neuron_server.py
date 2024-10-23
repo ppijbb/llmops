@@ -205,7 +205,6 @@ def build_app(cli_args: Dict[str, str]) -> serve.Application:
     for i in range(tp):
         pg_resources.append({
             "CPU": 1,#, "GPU": 1
-            "neuron_cores": 1,
         })  # for the vLLM actors
     # We use the "STRICT_PACK" strategy below to ensure all vLLM actors are placed on
     # the same Ray node.
