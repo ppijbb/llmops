@@ -1,5 +1,6 @@
 import os
 import torch
+import subprocess
 from transformers import AutoTokenizer
 
 from .application.open_ai import OpenAIService
@@ -16,7 +17,7 @@ def get_model(
 
         # Load model in 4 bit,
         # which convert the relevant layers in the model into INT4 format
-        if torch.cuda.is_available():
+        if torch.cuda.is_available(): # if device on GPT
             from optimum.onnxruntime import ORTModelForCausalLM      
             from vllm import LLM
 
@@ -31,7 +32,19 @@ def get_model(
                 distributed_executor_backend="ray",
             )
 
-        else:
+        elif subprocess.run(["neuron-ls"]).returncode == 0: # if device on neuron
+            from optimum.neuron import NeuronModelForCausalLM
+            
+            compiler_args = { "num_cores": 2, "auto_cast_type": "bf16" }
+            input_shapes = { "batch_size": 1, "sequence_length": 1024, "dynamic_batch_size": True }
+            model = NeuronModelForCausalLM.from_pretrained(
+                model_id=model_path,
+                export=True,
+                load_in_4bit=True,
+                **compiler_args,
+                **input_shapes)
+        
+        else: # if device on CPU
             from ipex_llm.transformers import AutoModelForCausalLM
             from optimum.intel import OVModelForCausalLM
             import openvino as ov

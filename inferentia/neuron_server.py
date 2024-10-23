@@ -1,17 +1,15 @@
-import vllm
-
-print(vllm.__version__)
 import os
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Any
 import logging
-
+from argparse import ArgumentParser as Parser
 from fastapi import FastAPI
 from starlette.requests import Request
 from starlette.responses import StreamingResponse, JSONResponse
-
+import subprocess
 from ray import serve
 
-from vllm.engine.arg_utils import AsyncEngineArgs
+from vllm.engine.arg_utils import AsyncEngineArgs, EngineArgs
+from vllm.engine.llm_engine import LLMEngine
 from vllm.engine.async_llm_engine import AsyncLLMEngine
 from vllm.entrypoints.openai.cli_args import make_arg_parser
 from vllm.entrypoints.openai.protocol import (
@@ -20,9 +18,9 @@ from vllm.entrypoints.openai.protocol import (
     ErrorResponse,
 )
 from vllm.entrypoints.openai.serving_chat import OpenAIServingChat
-from vllm.entrypoints.openai.serving_engine import LoRAModulePath
-from vllm.utils import FlexibleArgumentParser
-from vllm.entrypoints.logger import RequestLogger
+# from vllm.entrypoints.openai.serving_engine import LoRAModulePath, PromptAdapterPath
+# from vllm.utils import FlexibleArgumentParser
+# from vllm.entrypoints.logger import RequestLogger
 
 
 os.environ['NEURON_VISIBLE_CORES']='2'
@@ -43,27 +41,38 @@ logger = logging.getLogger("ray.serve")
 
 app = FastAPI()
 
-# class BatchingDeployment:
-#     @serve.batch
-#     async def my_batch_handler(self, requests: List):
-#         results = []
-#         for request in requests:
-#             results.append(request.json())
-#         return results
+@serve.deployment
+class BatchTextGenerator:
+    def __init__(self, pipeline_key: str, model_key: str):
+        self.model = pipeline(pipeline_key, model_key)
 
-#     async def __call__(self, request):
-#         return await self.my_batch_handler(request)
+    @serve.batch(max_batch_size=4)
+    async def handle_batch(self, inputs: List[str]) -> List[str]:
+        print("Our input array has length:", len(inputs))
+
+        results = self.model(inputs)
+        return [result[0]["generated_text"] for result in results]
+
+    async def __call__(self, request: Request) -> List[str]:
+        return await self.handle_batch(request.query_params["text"])
 
 
-@serve.deployment(num_replicas=1)
+@serve.deployment(num_replicas=1, route_prefix="/")
 @serve.ingress(app)
 class APIIngress:
     def __init__(self, vllm_model_handle) -> None:
         self.handle = vllm_model_handle
-
+    
+    @serve.batch(max_batch_size=4, batch_wait_timeout_s=0.1)
     @app.get("/")
-    async def generate(self, prompt):
+    async def handle_batch(self, inputs: List[str]) -> List[str]:
+        print("Our input array has length:", len(inputs))
+        results = await self.genrate(inputs)
+        return [result[0]["generated_text"] for result in results]
+    
+    async def generate(self, prompt: List[str]) -> List[str]:
         return await self.handle.create_chat_completion.remote(prompt)
+
 
 @serve.deployment(
     autoscaling_config={
@@ -81,27 +90,37 @@ class APIIngress:
                 }
             },
         },
-    max_ongoing_requests=10,
-)
+    max_ongoing_requests=10)
 class VLLMDeployment:
     def __init__(
         self,
-        engine_args: AsyncEngineArgs,
+        engine_args: EngineArgs | AsyncEngineArgs,
         response_role: str,
-        lora_modules: Optional[List[LoRAModulePath]] = None,
+        lora_modules: Optional[List[Any]]= None, # Optional[List[LoRAModulePath]] = None,
         chat_template: Optional[str] = None,
     ):
         logger.info(f"Starting with engine args: {engine_args}")
         self.openai_serving_chat = None
         self.engine_args = engine_args
         self.response_role = response_role
-        self.lora_modules = lora_modules
+        # self.lora_modules = lora_modules
         self.chat_template = chat_template
-        self.engine = AsyncLLMEngine.from_engine_args(engine_args)
+        self.engine = LLMEngine.from_engine_args(engine_args)
+        
+        print("VLLMDeployment initialized")
+        # try:
+        #     self.engine = AsyncLLMEngine.from_engine_args(engine_args)
+        # except NotImplementedError:
+        #     self.engine = LLMEngine.from_engine_args(engine_args)
+        # except Exception as e:
+        #     logger.error(f"Failed to create engine: {e}")
+        #     raise e
 
     # @app.post("/summarize")
     async def create_chat_completion(
-        self, request: ChatCompletionRequest, raw_request: Request
+        self, 
+        request: ChatCompletionRequest, 
+        raw_request: Request
     ):
         """OpenAI-compatible HTTP endpoint.
 
@@ -109,7 +128,7 @@ class VLLMDeployment:
             - https://docs.vllm.ai/en/latest/serving/openai_compatible_server.html
         """
         if not self.openai_serving_chat:
-            model_config = await self.engine.get_model_config()
+            model_config = self.engine.get_model_config()
             # Determine the name of the served model for the OpenAI client.
             if self.engine_args.served_model_name is not None:
                 served_model_names = self.engine_args.served_model_name
@@ -124,7 +143,7 @@ class VLLMDeployment:
                 self.chat_template,
             )
         logger.info(f"Request: {request}")
-        generator = await self.openai_serving_chat.create_chat_completion(
+        generator = self.openai_serving_chat.create_chat_completion(
             request, raw_request
         )
         if isinstance(generator, ErrorResponse):
@@ -144,14 +163,20 @@ def parse_vllm_args(cli_args: Dict[str, str]):
     Currently uses argparse because vLLM doesn't expose Python models for all of the
     config options we want to support.
     """
-    arg_parser = FlexibleArgumentParser(
-        description="vLLM OpenAI-Compatible RESTful API server."
-    )
+    # arg_parser = EngineArgs.add_cli_args(Parser())
+        # description="vLLM OpenAI-Compatible RESTful API server."
 
-    parser = make_arg_parser(arg_parser)
+    parser = make_arg_parser(
+        # arg_parser
+        )
     arg_strings = [ # defualt arguments
-        "--max_num_seqs", "8",
-        "--tensor_parallel_size", "2",
+        "--model", "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+        "--device", "neuron",
+        "--dtype", "float16",
+        "--gpu-memory-utilization", "0.95",
+        "--max-model-len", "1024",
+        "--max-num-seqs", "8",
+        "--tensor-parallel-size", "2",
         ]
     for key, value in cli_args.items():
         arg_strings.extend([f"--{key}", str(value)])
@@ -169,26 +194,30 @@ def build_app(cli_args: Dict[str, str]) -> serve.Application:
     Supported engine arguments: https://docs.vllm.ai/en/latest/models/engine_args.html.
     """  # noqa: E501
     parsed_args = parse_vllm_args(cli_args)
-    engine_args = AsyncEngineArgs.from_cli_args(parsed_args)
+    # engine_args = AsyncEngineArgs.from_cli_args(parsed_args)
+    engine_args = EngineArgs.from_cli_args(parsed_args) # neuron is not supported for async yet
     engine_args.worker_use_ray = True
 
     tp = engine_args.tensor_parallel_size
     logger.info(f"Tensor parallelism = {tp}")
     pg_resources = []
-    pg_resources.append({"CPU": 1})  # for the deployment replica
+    pg_resources.append({"CPU": 1, "neuron_cores":2})  # for the deployment replica
     for i in range(tp):
-        pg_resources.append({"CPU": 1, "GPU": 1})  # for the vLLM actors
-
+        pg_resources.append({
+            "CPU": 1,#, "GPU": 1
+            "neuron_cores": 1,
+        })  # for the vLLM actors
     # We use the "STRICT_PACK" strategy below to ensure all vLLM actors are placed on
     # the same Ray node.
     return APIIngress.bind(
         VLLMDeployment
-        # .options(placement_group_bundles=pg_resources,  placement_group_strategy="STRICT_PACK")
+        .options(
+            placement_group_bundles=pg_resources,  
+            placement_group_strategy="STRICT_PACK")
         .bind(
             engine_args,
             parsed_args.response_role,
             parsed_args.lora_modules,
-            parsed_args.chat_template,
-            )
+            parsed_args.chat_template)
         )
 

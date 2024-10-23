@@ -38,6 +38,8 @@ class GenerationResponse(BaseModel):
     generated_text: str
     processing_time: float
 
+# ---
+
 # Ray Serve 디플로이먼트 정의
 @serve.deployment(
     ray_actor_options={"num_gpus": 1},
@@ -175,4 +177,8 @@ class FastAPIDeployment:
 # 서버 구동 코드
 if __name__ == "__main__":
     ray.init()
-    serve.run(FastAPIDeployment.bind(VLLMBatchDeployment.bind()))
+    serve.run(
+        FastAPIDeployment.bind(
+            VLLMBatchDeployment.bind()
+            )
+        )

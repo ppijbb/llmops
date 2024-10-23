@@ -1,6 +1,5 @@
 import triton
 
-print(triton.__version__)
 from fastapi import FastAPI
 from vllm import LLM, SamplingParams
 from optimum.neuron import NeuronModelForCausalLM
@@ -9,9 +8,9 @@ import uvicorn
 import os
 import time
 
-os.environ['NEURON_VISIBLE_CORES']='2'
-os.environ['NEURON_RT_NUM_CORES']='2'
-
+os.environ['NEURON_VISIBLE_CORES'] = "2"
+os.environ['NEURON_RT_NUM_CORES'] = "2"
+os.environ['VLLM_TARGET_DEVICE'] = "neuron"
 
 app = FastAPI(title="dialog summary")
 
