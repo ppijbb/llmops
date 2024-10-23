@@ -12,9 +12,9 @@ services:
         - VLLM_TARGET_DEVICE=$VLLM_TARGET_DEVICE
     volumes:
       - .:/app
-      # - /opt/aws/neuron/lib:/opt/aws/neuron/lib
-    # devices:
-    #   - /dev/neuron0:/dev/neuron0
+      - /opt/aws/neuron/lib:/opt/aws/neuron/lib
+    devices:
+      - /dev/neuron0:/dev/neuron0
     ports:
       - target: 8000       ## 컨테이너 내부 포트
         published: 8000    ## 호스트OS에서 공개할 포트
