@@ -7,7 +7,7 @@ from starlette.requests import Request
 from starlette.responses import StreamingResponse, JSONResponse
 import subprocess
 from ray import serve
-
+from ray.serve.handle import DeploymentHandle
 from vllm.engine.arg_utils import AsyncEngineArgs, EngineArgs
 from vllm.engine.llm_engine import LLMEngine
 from vllm.engine.async_llm_engine import AsyncLLMEngine
@@ -41,37 +41,21 @@ logger = logging.getLogger("ray.serve")
 
 app = FastAPI()
 
-@serve.deployment
-class BatchTextGenerator:
-    def __init__(self, pipeline_key: str, model_key: str):
-        self.model = pipeline(pipeline_key, model_key)
-
-    @serve.batch(max_batch_size=4)
-    async def handle_batch(self, inputs: List[str]) -> List[str]:
-        print("Our input array has length:", len(inputs))
-
-        results = self.model(inputs)
-        return [result[0]["generated_text"] for result in results]
-
-    async def __call__(self, request: Request) -> List[str]:
-        return await self.handle_batch(request.query_params["text"])
 
 
 @serve.deployment(num_replicas=1, route_prefix="/")
 @serve.ingress(app)
 class APIIngress:
-    def __init__(self, vllm_model_handle) -> None:
+    def __init__(self, vllm_model_handle: DeploymentHandle) -> None:
         self.handle = vllm_model_handle
     
-    @serve.batch(max_batch_size=4, batch_wait_timeout_s=0.1)
     @app.get("/")
-    async def handle_batch(self, inputs: List[str]) -> List[str]:
-        print("Our input array has length:", len(inputs))
-        results = await self.genrate(inputs)
-        return [result[0]["generated_text"] for result in results]
+    async def handle_batch(self, request: ChatCompletionRequest) -> List[str]:
+        return await self.genrate(request)
     
-    async def generate(self, prompt: List[str]) -> List[str]:
-        return await self.handle.create_chat_completion.remote(prompt)
+    @serve.batch(max_batch_size=4, batch_wait_timeout_s=0.1)
+    async def generate(self, input_texts: List[ChatCompletionRequest]) -> List[str]:
+        return await self.handle.create_chat_completion.remote(input_texts)
 
 
 @serve.deployment(

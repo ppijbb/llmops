@@ -45,10 +45,8 @@ class BatchTextGenerator:
 
     async def handle_batch(self, inputs: List[str]) -> List[str]:
         print("Our input array has length:", len(inputs))
-        print("Our input array has length:", inputs)
         results = await self.model(inputs)
         results = [result["generated_text"] for result in results]
-        print(results)
         return results
 
     # async def __call__(self, input_texts: List[GenerationRequest]) -> List[str]:
