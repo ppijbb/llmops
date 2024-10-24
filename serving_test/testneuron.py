@@ -1,54 +1,67 @@
 import subprocess
 from typing import List, Dict
+from datetime import datetime
 from ray import serve
+from ray.serve.handle import DeploymentHandle
 from starlette.requests import Request
 from fastapi import FastAPI
-from argparse import ArgumentParser
+from pydantic import BaseModel
 import logging
 
 logger = logging.getLogger("ray.serve")
 app = FastAPI()
 
+class GenerationRequest(BaseModel):
+    input_text: str
 
-@serve.deployment(num_replicas=1, route_prefix="/")
+
+@serve.deployment(num_replicas=3, route_prefix="/")
 @serve.ingress(app)
 class BatchAPIIngress:
-    def __init__(self, name="test", *args, **kwargs):
-        self.name = name
-        subprocess.run(["neuron-ls"])
-  
-    @serve.batch(max_batch_size=4)    
-    def _classifier(self, input_text:List[str])->List[str]:
-        return [{"label": str(i)} for i in range(len(input_text))]            
+    def __init__(self, batch_handler: DeploymentHandle, *args, **kwargs):
+        self.handle = batch_handler
+        
+        try:
+            subprocess.run(["neuron-ls"])
+            logger.info("Yes Neuron")
+        except:
+            logger.warning("No Neuron")
+            
+    @serve.batch(max_batch_size=8, batch_wait_timeout_s=0.3)
+    async def _classifier(self, input_text:List[str])->List[str]:
+        return await self.handle.handle_batch.remote(input_text)
 
-    @app.get("/")
-    def batch(self, request:List[str])->List[str]:
-        input_text = request.query_params["input_text"]
-        return self._classifier(input_text)[0]["label"]
+    @app.post("/")
+    async def batch(self, requests: GenerationRequest)->str:
+        return await self._classifier(requests.input_text)
 
 @serve.deployment
 class BatchTextGenerator:
     def __init__(self, pipeline_key: str, model_key: str):
-        self.model = (pipeline_key, model_key)
+        self.parsed = (pipeline_key, model_key)
+        
+    async def model(self, inputs: List[str]):
+        return [{"generated_text": f"Hello {datetime.now().strftime('%Y%m%d %H:%M:%S')}"} for i in range(len(inputs))]
 
-    @serve.batch(max_batch_size=4)
     async def handle_batch(self, inputs: List[str]) -> List[str]:
         print("Our input array has length:", len(inputs))
+        print("Our input array has length:", inputs)
+        results = await self.model(inputs)
+        results = [result["generated_text"] for result in results]
+        print(results)
+        return results
 
-        results = self.model(inputs)
-        return [result[0]["generated_text"] for result in results]
-
-    async def __call__(self, request: Request) -> List[str]:
-        return await self.handle_batch(request.query_params["text"])
-
+    # async def __call__(self, input_texts: List[GenerationRequest]) -> List[str]:
+    #     return await self.handle_batch([x.input_text for x in input_texts])
 
 def build_app(cli_args: Dict[str, str]) -> serve.Application:
     return BatchAPIIngress.options(
-        placement_group_bundles=[{"CPU":1}], placement_group_strategy="STRICT_PACK"
+        placement_group_bundles=[{"CPU":1}], 
+        placement_group_strategy="STRICT_PACK"
     ).bind(
-        BatchTextGenerator.bind("tesat", "any")
+        BatchTextGenerator.bind("test", "any")
         )
 
 # serve.run(BatchAPIIngress.bind(
-#         BatchTextGenerator.bind("tesat", "any")
+#         BatchTextGenerator.bind("test", "any")
 #         ))
