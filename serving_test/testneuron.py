@@ -41,7 +41,11 @@ class BatchTextGenerator:
         self.parsed = (pipeline_key, model_key)
         
     async def model(self, inputs: List[str]):
-        return [{"generated_text": f"Hello {datetime.now().strftime('%Y%m%d %H:%M:%S')}"} for i in range(len(inputs))]
+        return [
+            {
+                "generated_text": f"Hello {i}! It's {datetime.now().strftime('%Y%m%d %H:%M:%S')} now."
+            } 
+        for i in range(len(inputs))]
 
     async def handle_batch(self, inputs: List[str]) -> List[str]:
         print("Our input array has length:", len(inputs))
