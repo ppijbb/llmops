@@ -15,7 +15,7 @@ os.environ["VLLM_CPU_OMP_THREADS_BIND"] = "0-29"
 # os.environ["KMP_SETTINGS"] = "1"
 # os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 # os.environ["DNNL_PRIMITIVE_CACHE_CAPACITY"] = "1024"
-import asyncio
+import torch
 
 from fastapi import FastAPI, Depends
 from fastapi.responses import StreamingResponse
@@ -63,7 +63,7 @@ def text_postprocess(text:str) -> str:
     return text.replace("* ", "").replace("---", "").strip()
 
 
-@serve.deployment(num_replicas=1, route_prefix="/")
+@serve.deployment(num_replicas=1)
 @serve.ingress(app)
 class APIIngress:
     def __init__(self, llm_handle: DeploymentHandle) -> None:
@@ -177,7 +177,9 @@ class APIIngress:
 
 def build_app(cli_args: Dict[str, str]) -> serve.Application:
     return APIIngress.options(
-        placement_group_bundles=[{"CPU":1., "GPU":1.}], 
+        placement_group_bundles=[
+            {"CPU": 2, "GPU": int(torch.cuda.is_available())}
+            ], 
         placement_group_strategy="STRICT_PACK"
     ).bind(
         LLMService.bind("test", "any")

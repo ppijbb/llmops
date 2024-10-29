@@ -37,7 +37,7 @@ def get_accelerator():
     resources = {"num_cpus": 1.}
     if torch.cuda.is_available():
         resources.update({"num_gpus": 1.})
-    elif subprocess.run(["neuron-ls"]).returncode == 0:
+    elif subprocess.run(["neuron-ls"], shell=True).returncode == 0:
         resources.update({"neuron_cores": 2.})
     else:
         pass
@@ -51,7 +51,7 @@ def get_accelerator():
         "target_ongoing_requests": 5,
     },
     ray_actor_options={
-        # "resources": get_accelerator(),
+        "resources": get_accelerator(),
         "runtime_env": {
             "env_vars": {
                 "NEURON_CC_FLAGS": "-O1"

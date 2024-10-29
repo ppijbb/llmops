@@ -15,7 +15,7 @@ class GenerationRequest(BaseModel):
     input_text: str
 
 
-@serve.deployment(num_replicas=3, route_prefix="/")
+@serve.deployment
 @serve.ingress(app)
 class BatchAPIIngress:
     def __init__(self, batch_handler: DeploymentHandle, *args, **kwargs):
@@ -64,6 +64,4 @@ def build_app(cli_args: Dict[str, str]) -> serve.Application:
         BatchTextGenerator.bind("test", "any")
         )
 
-# serve.run(BatchAPIIngress.bind(
-#         BatchTextGenerator.bind("test", "any")
-#         ))
+

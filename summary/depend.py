@@ -32,7 +32,7 @@ def get_model(
                 distributed_executor_backend="ray",
             )
 
-        elif subprocess.run(["neuron-ls"]).returncode == 0: # if device on neuron
+        elif subprocess.run(["neuron-ls"], shell=True).returncode == 0: # if device on neuron
             from optimum.neuron import NeuronModelForCausalLM
             
             compiler_args = { "num_cores": 2, "auto_cast_type": "bf16" }
