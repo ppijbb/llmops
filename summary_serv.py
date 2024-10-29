@@ -178,9 +178,9 @@ class APIIngress:
 def build_app(cli_args: Dict[str, str]) -> serve.Application:
     return APIIngress.options(
         placement_group_bundles=[
-            {"CPU": 2, "GPU": int(torch.cuda.is_available())}
+            {"CPU": 1., "GPU": float(torch.cuda.is_available())}
             ], 
         placement_group_strategy="STRICT_PACK"
-    ).bind(
-        LLMService.bind("test", "any")
-        )
+        ).bind(
+            LLMService.bind()
+            )

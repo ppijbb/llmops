@@ -34,7 +34,14 @@ async def get_claude_service():
     yield get_claude()
 
 def get_accelerator():
-    resources = {"num_cpus": 1.}
+    resources = {
+        "num_cpus": 1.,
+        "runtime_env": {
+            "env_vars": {
+                "NEURON_CC_FLAGS": "-O1"
+                }
+            }
+        }
     if torch.cuda.is_available():
         resources.update({"num_gpus": 1.})
     elif subprocess.run(["neuron-ls"], shell=True).returncode == 0:
@@ -47,17 +54,10 @@ def get_accelerator():
 @serve.deployment(
     autoscaling_config={
         "min_replicas": 1,
-        "max_replicas": 2,
+        "max_replicas": 3,
         "target_ongoing_requests": 5,
     },
-    ray_actor_options={
-        "resources": get_accelerator(),
-        "runtime_env": {
-            "env_vars": {
-                "NEURON_CC_FLAGS": "-O1"
-                }
-            },
-        },
+    ray_actor_options=get_accelerator(),
     max_ongoing_requests=10)
 class LLMService:
     default_bos: str = "<|begin_of_text|>"
