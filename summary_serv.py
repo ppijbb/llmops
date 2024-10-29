@@ -20,7 +20,7 @@ import asyncio
 from fastapi import FastAPI, Depends
 from fastapi.responses import StreamingResponse
 import logging
-from typing import Annotated
+from typing import Any, List, Dict
 import time
 from summary.application import (LLMService, OpenAIService, 
                                  get_llm_service, get_gpt_service)
@@ -28,7 +28,8 @@ from summary.dto import SummaryRequest, SummaryResponse
 from summary.logger import setup_logger
 import traceback
 import os
-import ray
+from ray import serve
+from ray.serve.handle import DeploymentHandle
 
 
 def format_llm_output(rlt_text):
@@ -37,13 +38,16 @@ def format_llm_output(rlt_text):
     }
 
 request_queue = asyncio.Queue()
-app = FastAPI(title="dialog summary")
+app = FastAPI(title="dialog summary",
+              lifespan="on")
+logger = logging.getLogger("ray.serve")
 server_logger = setup_logger()
 server_logger.info("""
 ####################
 #  Server Started  #
 ####################
 """)
+
 
 def text_preprocess(text: str) -> str:
     return text
@@ -57,119 +61,119 @@ def text_postprocess(text:str) -> str:
     return text.replace("* ", "").replace("---", "").strip()
 
 
-
-async def batch_processor():
-    
-    while True:
-        batch = []
-        try:
-            # 최대 0.1초 동안 요청을 모음
-            async with asyncio.timeout(0.1):
-                while len(batch) < 32:  # 최대 배치 크기
-                    prompt = await request_queue.get()
-                    batch.append(prompt)
-        except asyncio.TimeoutError:
-            pass
+@serve.deployment(num_replicas=1, route_prefix="/")
+@serve.ingress(app)
+class APIIngress:
+    def __init__(self, llm_handle: DeploymentHandle) -> None:
+        self.handle = llm_handle
+ 
+    @serve.batch(
+        max_batch_size=4, 
+        batch_wait_timeout_s=0.1)
+    async def batched_response(
+        self, 
+        data: List[Any]) -> List[str]:
+        return await self.handle.create_chat_completion.remote(data)
         
-        if batch:
-            results = await engine.generate(batch, max_tokens=100)
-            # 결과 처리 로직
-
-@app.on_event("startup")
-async def startup_event():
-    asyncio.create_task(batch_processor())
-    return
-
-@app.post("/batch_summarize")
-async def batch_summarize(request: SummaryRequest):
-    await request_queue.put(request)
-    return {"message": "success"}
-
-    
-@app.post("/summarize_llama", 
-          response_model=SummaryResponse)
-async def summarize(
-    request: SummaryRequest,
-    service: LLMService = Depends(get_llm_service)) -> SummaryResponse:
-    result = ""
-    # Generate predicted tokens
-    try:
-        # ----------------------------------- #
-        st = time.time()
-        # result += ray.get(service.summarize.remote(ray.put(request.text)))
-        # assert len(request.text ) > 200, "Text is too short"
-        input_text = text_preprocess(request.text)
-        result += service.summarize(
-            input_prompt=request.prompt,
-            input_text=input_text)
-        # result = text_postprocess(result)
-        # print(result)
-        end = time.time()
-        # ----------------------------------- #
-        print(f"Time: {end - st}")
-    except AssertionError as e:
-        result += e
-    except Exception as e:
-        print(traceback(e))
-        server_logger.error("error" + traceback(e))
-        result += "Error in summarize"
-    finally:
-        return SummaryResponse(text=result)
-
-
-@app.post("/summarize_stream",)
-async def summarize_stream(
-    request: SummaryRequest,
-    service: LLMService = Depends(get_llm_service)):
-    result = ""
-    # Generate predicted tokens
-    try:
-        # ----------------------------------- #
-        st = time.time()
-        # result += ray.get(service.summarize.remote(ray.put(request.text)))
-        # assert len(request.text ) > 200, "Text is too short"
-        return StreamingResponse(
-            content=service.summarize(
+    @app.post(
+        "/summarize_llama", 
+        response_model=SummaryResponse)
+    async def summarize(
+        self,
+        request: SummaryRequest,
+        service: LLMService = Depends(get_llm_service)) -> SummaryResponse:
+        result = ""
+        # Generate predicted tokens
+        try:
+            # ----------------------------------- #
+            st = time.time()
+            # result += ray.get(service.summarize.remote(ray.put(request.text)))
+            # assert len(request.text ) > 200, "Text is too short"
+            input_text = text_preprocess(request.text)
+            result += service.summarize(
                 input_prompt=request.prompt,
-                input_text=request.text, 
-                stream=True),
-            media_type="text/event-stream")
-        end = time.time()
-        # ----------------------------------- #
-        print(f"Time: {end - st}")
-    except AssertionError as e:
-        result += e
-    except Exception as e:
-        print(traceback(e))
-        server_logger.error("error" + traceback(e))
-        result += "Error in summarize"
+                input_text=input_text)
+            # result = text_postprocess(result)
+            # print(result)
+            end = time.time()
+            # ----------------------------------- #
+            print(f"Time: {end - st}")
+        except AssertionError as e:
+            result += e
+        except Exception as e:
+            print(traceback(e))
+            server_logger.error("error" + traceback(e))
+            result += "Error in summarize"
+        finally:
+            return SummaryResponse(text=result)
 
 
-@app.post("/summarize", 
-          response_model=SummaryResponse)
-async def summarize_gpt(
-    request: SummaryRequest,
-    service: OpenAIService = Depends(get_gpt_service)) -> SummaryResponse:
-    result = ""
-    try:
-        # ----------------------------------- #
-        st = time.time()
-        # result += ray.get(service.summarize.remote(ray.put(request.text)))
-        # assert len(request.text ) > 200, "Text is too short"
-        input_text = text_preprocess(request.text)
-        result += await service.summarize(
-            input_prompt=request.prompt,
-            input_text=input_text)
-        # result = text_postprocess(result)
-        # print(result)
-        end = time.time()
-        # ----------------------------------- #
-        # print(f"Time: {end - st}")
-    except AssertionError as e:
-        server_logger.warn("error" + traceback(e))
-        result += e
-    except Exception as e:
-        server_logger.warn("error" + traceback(e))
-        result += "Error in summarize"
-    finally:
-        return SummaryResponse(text=result)
+    @app.post(
+        "/summarize_stream",
+        )
+    async def summarize_stream(
+        self,
+        request: SummaryRequest,
+        service: LLMService = Depends(get_llm_service)):
+        result = ""
+        # Generate predicted tokens
+        try:
+            # ----------------------------------- #
+            st = time.time()
+            # result += ray.get(service.summarize.remote(ray.put(request.text)))
+            # assert len(request.text ) > 200, "Text is too short"
+            return StreamingResponse(
+                content=service.summarize(
+                    input_prompt=request.prompt,
+                    input_text=request.text, 
+                    stream=True),
+                media_type="text/event-stream")
+            end = time.time()
+            # ----------------------------------- #
+            print(f"Time: {end - st}")
+        except AssertionError as e:
+            result += e
+        except Exception as e:
+            print(traceback(e))
+            server_logger.error("error" + traceback(e))
+            result += "Error in summarize"
+
+
+    @app.post(
+        "/summarize", 
+        response_model=SummaryResponse)
+    async def summarize_gpt(
+        self,
+        request: SummaryRequest,
+        service: OpenAIService = Depends(get_gpt_service)) -> SummaryResponse:
+        result = ""
+        try:
+            # ----------------------------------- #
+            st = time.time()
+            # result += ray.get(service.summarize.remote(ray.put(request.text)))
+            # assert len(request.text ) > 200, "Text is too short"
+            input_text = text_preprocess(request.text)
+            result += await service.summarize(
+                input_prompt=request.prompt,
+                input_text=input_text)
+            # result = text_postprocess(result)
+            # print(result)
+            end = time.time()
+            # ----------------------------------- #
+            # print(f"Time: {end - st}")
+        except AssertionError as e:
+            server_logger.warn("error" + traceback(e))
+            result += e
+        except Exception as e:
+            server_logger.warn("error" + traceback(e))
+            result += "Error in summarize"
+        finally:
+            return SummaryResponse(text=result)
+
+def build_app(cli_args: Dict[str, str]) -> serve.Application:
+    return APIIngress.options(
+        placement_group_bundles=[{"CPU":1}], 
+        placement_group_strategy="STRICT_PACK"
+    ).bind(
+        LLMService.bind("test", "any")
+        )

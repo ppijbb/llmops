@@ -1,22 +1,41 @@
 import torch
-import ray
-import psutil
+import os
+import subprocess
 import logging
 from typing import List
 import numpy as np
 from transformers import GenerationConfig
 from transformers.generation.streamers import TextIteratorStreamer
 from threading import Thread
+from ray import serve
 
 from summary.depend import get_model, get_claude, get_gpt
 from summary.application.const import DEFAULT_SUMMARY_FEW_SHOT, DEFAULT_SUMMARY_SYSTEM_PROMPT
 
-# ray.init(
-#     num_cpus=psutil.cpu_count(logical=True), 
-#     ignore_reinit_error=True,
-#     )
+def get_accelerator():
+    if torch.cuda.is_available():
+        return {"GPU": 1}
+    elif subprocess.run(["neuron-ls"]).returncode == 0:
+        return {"neuron_cores": 2}
+    else:
+        return {"CPU": 1}
 
-# @ray.remote
+
+@serve.deployment(
+    autoscaling_config={
+        "min_replicas": 1,
+        "max_replicas": 2,
+        "target_ongoing_requests": 5,
+    },
+    ray_actor_options={
+        "resources": get_accelerator(),
+        "runtime_env": {
+            "env_vars": {
+                "NEURON_CC_FLAGS": "-O1"
+                }
+            },
+        },
+    max_ongoing_requests=10)
 class LLMService(object):
     default_bos: str = "<|begin_of_text|>"
     default_eot: str = "<|end_of_text|>"
@@ -25,10 +44,11 @@ class LLMService(object):
     mistral_start_header: str = "[INST]"
     mistral_end_header: str = "[/INST]"
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.model, self.tokenizer = get_model(
             # model_path="KISTI-KONI/KONI-Llama3-8B-Instruct-20240729", # GPU (vllm) Model
-            model_path="Gunulhona/Llama-Merge-Small",  # GPU (vllm) Model
+            model_path="Gunulhona/Llama-Agent-Merge",  # GPU (vllm) Model
+            # model_path="Gunulhona/Llama-Merge-Small",  # GPU (vllm) Model
             # model_path="fakezeta/llama-3-8b-instruct-ov-int8",
             # model_path="Gunulhona/openvino-llama-3-ko-8B_int8",
             # model_path="Gunulhona/openvino-llama-3.1-8B_int8", # CPU Model
