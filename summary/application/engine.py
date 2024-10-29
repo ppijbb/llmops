@@ -1,9 +1,10 @@
 import torch
 import os
 import subprocess
-import logging
+from contextlib import asynccontextmanager
 from typing import List
 import numpy as np
+from fastapi import FastAPI
 from transformers import GenerationConfig
 from transformers.generation.streamers import TextIteratorStreamer
 from threading import Thread
@@ -13,12 +14,14 @@ from summary.depend import get_model, get_claude, get_gpt
 from summary.application.const import DEFAULT_SUMMARY_FEW_SHOT, DEFAULT_SUMMARY_SYSTEM_PROMPT
 
 def get_accelerator():
+    resources = {"num_cpus": 1.}
     if torch.cuda.is_available():
-        return {"GPU": 1}
+        resources.update({"num_gpus": 1.})
     elif subprocess.run(["neuron-ls"]).returncode == 0:
-        return {"neuron_cores": 2}
+        resources.update({"neuron_cores": 2.})
     else:
-        return {"CPU": 1}
+        pass
+    return resources
 
 
 @serve.deployment(
@@ -28,7 +31,7 @@ def get_accelerator():
         "target_ongoing_requests": 5,
     },
     ray_actor_options={
-        "resources": get_accelerator(),
+        # "resources": get_accelerator(),
         "runtime_env": {
             "env_vars": {
                 "NEURON_CC_FLAGS": "-O1"
@@ -36,7 +39,7 @@ def get_accelerator():
             },
         },
     max_ongoing_requests=10)
-class LLMService(object):
+class LLMService:
     default_bos: str = "<|begin_of_text|>"
     default_eot: str = "<|end_of_text|>"
     llama_start_header: str = "<|start_header_id|>"
@@ -189,11 +192,14 @@ class LLMService(object):
             return self._make_summary(input_text=input_text, input_prompt=input_prompt)
 
 
-llm_service = LLMService()
+@asynccontextmanager
+async def llm_ready(app: FastAPI):
+    # TODO : make llm load once in linespan
+    yield
 
 async def get_llm_service():
     # yield LLMService.remote()
-    yield llm_service
+    yield LLMService()
 
 async def get_gpt_service():
     yield get_gpt()

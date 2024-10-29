@@ -22,7 +22,7 @@ from fastapi.responses import StreamingResponse
 import logging
 from typing import Any, List, Dict
 import time
-from summary.application import (LLMService, OpenAIService, 
+from summary.application import (LLMService, OpenAIService, llm_ready,
                                  get_llm_service, get_gpt_service)
 from summary.dto import SummaryRequest, SummaryResponse
 from summary.logger import setup_logger
@@ -37,9 +37,10 @@ def format_llm_output(rlt_text):
         'text': rlt_text
     }
 
-request_queue = asyncio.Queue()
-app = FastAPI(title="dialog summary",
-              lifespan="on")
+app = FastAPI(
+    title="dialog summary",
+    lifespan=llm_ready,
+    )
 logger = logging.getLogger("ray.serve")
 server_logger = setup_logger()
 server_logger.info("""
@@ -65,7 +66,7 @@ def text_postprocess(text:str) -> str:
 @serve.ingress(app)
 class APIIngress:
     def __init__(self, llm_handle: DeploymentHandle) -> None:
-        self.handle = llm_handle
+        self.service = llm_handle
  
     @serve.batch(
         max_batch_size=4, 
@@ -73,7 +74,7 @@ class APIIngress:
     async def batched_response(
         self, 
         data: List[Any]) -> List[str]:
-        return await self.handle.create_chat_completion.remote(data)
+        return await self.service.create_chat_completion.remote(data)
         
     @app.post(
         "/summarize_llama", 
@@ -81,7 +82,8 @@ class APIIngress:
     async def summarize(
         self,
         request: SummaryRequest,
-        service: LLMService = Depends(get_llm_service)) -> SummaryResponse:
+        # service: LLMService = Depends(get_llm_service)
+        ) -> SummaryResponse:
         result = ""
         # Generate predicted tokens
         try:
@@ -90,7 +92,7 @@ class APIIngress:
             # result += ray.get(service.summarize.remote(ray.put(request.text)))
             # assert len(request.text ) > 200, "Text is too short"
             input_text = text_preprocess(request.text)
-            result += service.summarize(
+            result += self.service.summarize.remote(
                 input_prompt=request.prompt,
                 input_text=input_text)
             # result = text_postprocess(result)
@@ -114,7 +116,8 @@ class APIIngress:
     async def summarize_stream(
         self,
         request: SummaryRequest,
-        service: LLMService = Depends(get_llm_service)):
+        # service: LLMService = Depends(get_llm_service)
+        ):
         result = ""
         # Generate predicted tokens
         try:
@@ -123,7 +126,7 @@ class APIIngress:
             # result += ray.get(service.summarize.remote(ray.put(request.text)))
             # assert len(request.text ) > 200, "Text is too short"
             return StreamingResponse(
-                content=service.summarize(
+                content=self.service.summarize.remote(
                     input_prompt=request.prompt,
                     input_text=request.text, 
                     stream=True),
@@ -145,7 +148,8 @@ class APIIngress:
     async def summarize_gpt(
         self,
         request: SummaryRequest,
-        service: OpenAIService = Depends(get_gpt_service)) -> SummaryResponse:
+        # service: OpenAIService = Depends(get_gpt_service)
+        ) -> SummaryResponse:
         result = ""
         try:
             # ----------------------------------- #
@@ -153,7 +157,7 @@ class APIIngress:
             # result += ray.get(service.summarize.remote(ray.put(request.text)))
             # assert len(request.text ) > 200, "Text is too short"
             input_text = text_preprocess(request.text)
-            result += await service.summarize(
+            result += await self.service.summarize.remote(
                 input_prompt=request.prompt,
                 input_text=input_text)
             # result = text_postprocess(result)
@@ -172,7 +176,7 @@ class APIIngress:
 
 def build_app(cli_args: Dict[str, str]) -> serve.Application:
     return APIIngress.options(
-        placement_group_bundles=[{"CPU":1}], 
+        placement_group_bundles=[{"CPU":1., "GPU":1.}], 
         placement_group_strategy="STRICT_PACK"
     ).bind(
         LLMService.bind("test", "any")
