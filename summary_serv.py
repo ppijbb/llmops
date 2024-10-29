@@ -22,8 +22,9 @@ from fastapi.responses import StreamingResponse
 import logging
 from typing import Any, List, Dict
 import time
-from summary.application import (LLMService, OpenAIService, llm_ready,
-                                 get_llm_service, get_gpt_service)
+from summary.application.engine import (
+    LLMService, OpenAIService, llm_ready,
+    get_llm_service, get_gpt_service)
 from summary.dto import SummaryRequest, SummaryResponse
 from summary.logger import setup_logger
 import traceback

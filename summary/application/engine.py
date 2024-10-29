@@ -1,8 +1,10 @@
 import torch
 import os
 import subprocess
-from contextlib import asynccontextmanager
 from typing import List
+
+from fastapi import FastAPI
+from contextlib import asynccontextmanager
 import numpy as np
 from fastapi import FastAPI
 from transformers import GenerationConfig
@@ -12,6 +14,24 @@ from ray import serve
 
 from summary.depend import get_model, get_claude, get_gpt
 from summary.application.const import DEFAULT_SUMMARY_FEW_SHOT, DEFAULT_SUMMARY_SYSTEM_PROMPT
+
+from summary.application.anthropic import ClaudeService
+from summary.application.open_ai import OpenAIService
+
+
+@asynccontextmanager
+async def llm_ready(app: FastAPI):
+    # TODO : make llm load once in linespan
+    yield
+
+async def get_llm_service():
+    yield LLMService()
+
+async def get_gpt_service():
+    yield get_gpt()
+
+async def get_claude_service():
+    yield get_claude()
 
 def get_accelerator():
     resources = {"num_cpus": 1.}
@@ -191,18 +211,3 @@ class LLMService:
         else:
             return self._make_summary(input_text=input_text, input_prompt=input_prompt)
 
-
-@asynccontextmanager
-async def llm_ready(app: FastAPI):
-    # TODO : make llm load once in linespan
-    yield
-
-async def get_llm_service():
-    # yield LLMService.remote()
-    yield LLMService()
-
-async def get_gpt_service():
-    yield get_gpt()
-
-async def get_claude_service():
-    yield get_claude()
