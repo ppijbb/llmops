@@ -35,7 +35,7 @@ async def get_claude_service():
 
 def get_accelerator():
     resources = {
-        "num_cpus": 1.,
+        "num_cpus": 1.0,
         "runtime_env": {
             "env_vars": {
                 "NEURON_CC_FLAGS": "-O1"
@@ -43,9 +43,9 @@ def get_accelerator():
             }
         }
     if torch.cuda.is_available():
-        resources.update({"num_gpus": 1.})
+        resources.update({"num_gpus": 0.5})
     elif subprocess.run(["neuron-ls"], shell=True).returncode == 0:
-        resources.update({"neuron_cores": 2.})
+        resources.update({"resources": {"neuron_cores": 2.0}})
     else:
         pass
     return resources
@@ -70,7 +70,7 @@ class LLMService:
     def __init__(self, *args, **kwargs):
         self.model, self.tokenizer = get_model(
             # model_path="KISTI-KONI/KONI-Llama3-8B-Instruct-20240729", # GPU (vllm) Model
-            model_path="Gunulhona/Llama-Agent-Merge",  # GPU (vllm) Model
+            model_path="google/gemma-2-2b-it",  # GPU (vllm) Model
             # model_path="Gunulhona/Llama-Merge-Small",  # GPU (vllm) Model
             # model_path="fakezeta/llama-3-8b-instruct-ov-int8",
             # model_path="Gunulhona/openvino-llama-3-ko-8B_int8",
@@ -81,9 +81,9 @@ class LLMService:
             self.tokenizer, 
             skip_prompt=True, 
             skip_special_tokens=True)
-        
+
         self.bos_token = self.tokenizer.bos_token if self.tokenizer.bos_token else self.default_bos
-        self.eot_token = "<|eot_id|>"#self.tokenizer.eos_token if self.tokenizer.eos_token else self.default_eot
+        self.eot_token = "<|eot_id|>" # self.tokenizer.eos_token if self.tokenizer.eos_token else self.default_eot
         if not  torch.cuda.is_available():
             self.start_header = self.llama_start_header if "llama" in self.model.config.model_type else self.mistral_start_header
             self.end_header = self.llama_end_header if "llama" in self.model.config.model_type else self.mistral_end_header
@@ -102,10 +102,10 @@ class LLMService:
         prompt_texts = [f"{self.bos_token}"]
         chat_template = self._template_header() + '{prompt}' + self.eot_token +'\n'
         generate_template = chat_template + self._template_header(role="assistant")
-        
+
         def template_dict(role, prompt):
             return { "role": role, "prompt": prompt }
-        
+
         if system_prompt != '':
             prompt_texts.append(chat_template.format(role="system", prompt=system_prompt.strip()))
             # prompt_texts.append(template_dict(role="system", prompt=system_prompt))
@@ -119,7 +119,7 @@ class LLMService:
         # prompt_texts.append(template_dict(role="user", prompt=user_input.strip()))
 
         return "".join(prompt_texts) if not isinstance(prompt_texts[0], dict) else prompt_texts
-    
+
 
     def formatting(self, prompt: List[str] | List[dict], return_tensors: str = "pt") -> dict:
         if isinstance(prompt, str):
@@ -169,9 +169,9 @@ class LLMService:
             inputs = self.formatting(prompt=prompt)
             output = self.model.generate(**self.generate_config(**inputs))
             output_str = self.tokenizer.decode(output[0], skip_special_tokens=True)
-        
+
         return output_str.replace(". ", ".\n")
-    
+
     @torch.inference_mode()
     def generate_stream(self, input_text: str, input_prompt: str = None):
         if input_prompt is not None:
@@ -210,4 +210,3 @@ class LLMService:
             return self.generate_stream(input_text=input_text, input_prompt=input_prompt)
         else:
             return self._make_summary(input_text=input_text, input_prompt=input_prompt)
-

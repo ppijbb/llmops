@@ -20,7 +20,6 @@ def get_model(
         if torch.cuda.is_available(): # if device on GPT
             from optimum.onnxruntime import ORTModelForCausalLM      
             from vllm import LLM
-
             model = LLM(
                 model = model_path,
                 # quantization="bitsandbytes",
@@ -29,7 +28,9 @@ def get_model(
                 trust_remote_code=True,
                 gpu_memory_utilization=0.75,
                 dtype="bfloat16",
-                distributed_executor_backend="ray",
+                # distributed_executor_backend="ray",
+                tensor_parallel_size=1,
+                pipeline_parallel_size=1
             )
 
         elif subprocess.run(["neuron-ls"], shell=True).returncode == 0: # if device on neuron
