@@ -1,5 +1,5 @@
 import torch
-import os
+import logging
 import subprocess
 from typing import List
 
@@ -43,7 +43,7 @@ def get_accelerator():
             }
         }
     if torch.cuda.is_available():
-        resources.update({"num_gpus": 0.5})
+        resources.update({"num_gpus": 1.0})
     elif subprocess.run(["neuron-ls"], shell=True).returncode == 0:
         resources.update({"resources": {"neuron_cores": 2.0}})
     else:
@@ -91,6 +91,10 @@ class LLMService:
             self.start_header = self.llama_start_header
             self.end_header = self.llama_end_header
         self.max_new_tokens = 500
+        
+        logger = logging.getLogger("ray.serve")
+        logger.info("\n\n\nLLM Engine is ready\n\n\n")
+        logger.info(f"Model: {dir(self.model)}")
 
     def _template_header(self, role:str = "{role}") -> str:
         return f'{self.start_header}{role}{self.end_header}\n'
