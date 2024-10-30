@@ -43,7 +43,7 @@ def get_accelerator():
             }
         }
     if torch.cuda.is_available():
-        resources.update({"num_gpus": 1.0})
+        resources.update({"num_gpus": 0.5})
     elif subprocess.run(["neuron-ls"], shell=True).returncode == 0:
         resources.update({"resources": {"neuron_cores": 2.0}})
     else:

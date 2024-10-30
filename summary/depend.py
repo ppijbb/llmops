@@ -26,7 +26,7 @@ def get_model(
                 # load_format="bitsandbytes",
                 max_model_len=4096,
                 trust_remote_code=True,
-                gpu_memory_utilization=0.75,
+                gpu_memory_utilization=0.5,
                 dtype="bfloat16",
                 # distributed_executor_backend="ray",
                 tensor_parallel_size=1,

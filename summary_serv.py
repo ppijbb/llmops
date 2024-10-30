@@ -177,7 +177,7 @@ class APIIngress:
 
 def build_app(cli_args: Dict[str, str]) -> serve.Application:
     return APIIngress.options(
-        placement_group_bundles=[{"CPU": 1.0},{"CPU":1/.0, "GPU": 0.2}], 
+        placement_group_bundles=[{"CPU": 1.0},{"CPU":1.0, "GPU": 0.2}], 
         placement_group_strategy="STRICT_PACK"
         ).bind(
             LLMService.bind()
