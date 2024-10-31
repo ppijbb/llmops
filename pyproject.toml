@@ -46,6 +46,7 @@ protobuf = "^3.20.3"
 nncf = "^2.11.0"
 vllm = { version = "^0.2.7" }
 bitsandbytes = "^0.43.1"
+msgpack = "^1.1.0"
 # neuronx-cc = { version = "^2.13.66", source = "aws-neuron" }
 # torch-neuronx = { version = "^2.1.2.2.1.0", source = "aws-neuron" }
 # libneuronxla = { version = "^2.0.2335", source = "aws-neuron" }
