@@ -2,7 +2,7 @@ import os
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = "0"
-os.environ["VLLM_CPU_KVCACHE_SPACE"] = "5"
+os.environ["VLLM_CPU_KVCACHE_SPACE"] = "2"
 os.environ["VLLM_CPU_OMP_THREADS_BIND"] = "0-29"
 # os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = "0"
 # os.environ["OMP_NUM_THREADS"] = "2"
@@ -72,10 +72,15 @@ class APIIngress:
     @serve.batch(
         max_batch_size=4, 
         batch_wait_timeout_s=0.1)
-    async def batched_response(
+    async def batched_summary(
         self, 
-        data: List[Any]) -> List[str]:
-        return await self.service.create_chat_completion.remote(data)
+        request_prompt: List[Any],
+        request_text: List[Any]
+    ) -> List[str]:
+        return await self.service.summarize.remote(
+            input_prompt=request_prompt,
+            input_text=request_text,
+            batch=True)
         
     @app.post(
         "/summarize_llama", 
@@ -84,18 +89,20 @@ class APIIngress:
         self,
         request: SummaryRequest,
         # service: LLMService = Depends(get_llm_service)
-        ) -> SummaryResponse:
+    ) -> SummaryResponse:
         result = ""
         # Generate predicted tokens
+        await self.batched_summary(
+                request_prompt=request.prompt,
+                request_text=text_preprocess(request.text))
         try:
             # ----------------------------------- #
             st = time.time()
             # result += ray.get(service.summarize.remote(ray.put(request.text)))
             # assert len(request.text ) > 200, "Text is too short"
-            input_text = text_preprocess(request.text)
-            result += self.service.summarize.remote(
-                input_prompt=request.prompt,
-                input_text=input_text)
+            result += await self.batched_summary(
+                request_prompt=request.prompt,
+                request_text=text_preprocess(request.text))
             # result = text_postprocess(result)
             # print(result)
             end = time.time()
@@ -113,12 +120,12 @@ class APIIngress:
 
     @app.post(
         "/summarize_stream",
-        )
+    )
     async def summarize_stream(
         self,
         request: SummaryRequest,
         # service: LLMService = Depends(get_llm_service)
-        ):
+    ):
         result = ""
         # Generate predicted tokens
         try:
@@ -149,8 +156,8 @@ class APIIngress:
     async def summarize_gpt(
         self,
         request: SummaryRequest,
-        # service: OpenAIService = Depends(get_gpt_service)
-        ) -> SummaryResponse:
+        service: OpenAIService = Depends(get_gpt_service)
+    ) -> SummaryResponse:
         result = ""
         try:
             # ----------------------------------- #
@@ -158,7 +165,7 @@ class APIIngress:
             # result += ray.get(service.summarize.remote(ray.put(request.text)))
             # assert len(request.text ) > 200, "Text is too short"
             input_text = text_preprocess(request.text)
-            result += await self.service.summarize.remote(
+            result += await service.summarize(
                 input_prompt=request.prompt,
                 input_text=input_text)
             # result = text_postprocess(result)
@@ -175,9 +182,11 @@ class APIIngress:
         finally:
             return SummaryResponse(text=result)
 
-def build_app(cli_args: Dict[str, str]) -> serve.Application:
+def build_app(
+    cli_args: Dict[str, str]
+) -> serve.Application:
     return APIIngress.options(
-        placement_group_bundles=[{"CPU": 1.0},{"CPU":1.0, "GPU": 0.2}], 
+        placement_group_bundles=[{"CPU": 1.0}, {"CPU":1.0, "GPU": 0.4}], 
         placement_group_strategy="STRICT_PACK"
         ).bind(
             LLMService.bind()

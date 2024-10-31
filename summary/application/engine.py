@@ -2,6 +2,7 @@ import torch
 import logging
 import subprocess
 from typing import List
+from itertools import zip_longest
 
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
@@ -36,6 +37,7 @@ async def get_claude_service():
 def get_accelerator():
     resources = {
         "num_cpus": 1.0,
+        "memory": 1024,
         "runtime_env": {
             "env_vars": {
                 "NEURON_CC_FLAGS": "-O1"
@@ -43,7 +45,7 @@ def get_accelerator():
             }
         }
     if torch.cuda.is_available():
-        resources.update({"num_gpus": 0.5})
+        resources.update({"num_gpus": 0.1})
     elif subprocess.run(["neuron-ls"], shell=True).returncode == 0:
         resources.update({"resources": {"neuron_cores": 2.0}})
     else:
@@ -66,8 +68,14 @@ class LLMService:
     llama_end_header: str = "<|end_header_id|>"
     mistral_start_header: str = "[INST]"
     mistral_end_header: str = "[/INST]"
-
-    def __init__(self, *args, **kwargs):
+    gemma_start_header: str = "<bos>"
+    gemma_end_header: str = "<eos>"
+    
+    def __init__(
+        self,
+        *args,
+        **kwargs
+    ):
         self.model, self.tokenizer = get_model(
             # model_path="KISTI-KONI/KONI-Llama3-8B-Instruct-20240729", # GPU (vllm) Model
             model_path="google/gemma-2-2b-it",  # GPU (vllm) Model
@@ -83,26 +91,35 @@ class LLMService:
             skip_special_tokens=True)
 
         self.bos_token = self.tokenizer.bos_token if self.tokenizer.bos_token else self.default_bos
-        self.eot_token = "<|eot_id|>" # self.tokenizer.eos_token if self.tokenizer.eos_token else self.default_eot
+        self.eot_token = self.tokenizer.eos_token if self.tokenizer.eos_token else self.default_eot
         if not  torch.cuda.is_available():
-            self.start_header = self.llama_start_header if "llama" in self.model.config.model_type else self.mistral_start_header
-            self.end_header = self.llama_end_header if "llama" in self.model.config.model_type else self.mistral_end_header
+            self.start_header = (self.llama_start_header 
+                                 if "llama" in self.model.config.model_type else 
+                                 self.gemma_start_header
+                                 if "gemma" in self.model.config.model_type else
+                                 self.mistral_start_header)
+            self.end_header = (self.llama_end_header 
+                               if "llama" in self.model.config.model_type else
+                               self.gemma_end_header
+                               if "gemma" in self.model.config.model_type else
+                               self.mistral_end_header)
         else:
             self.start_header = self.llama_start_header
             self.end_header = self.llama_end_header
         self.max_new_tokens = 500
         
-        logger = logging.getLogger("ray.serve")
-        logger.info("\n\n\nLLM Engine is ready\n\n\n")
-        logger.info(f"Model: {dir(self.model)}")
+        self.logger = logging.getLogger("ray.serve")
+        self.logger.info("\n\n\nLLM Engine is ready\n\n\n")
 
     def _template_header(self, role:str = "{role}") -> str:
         return f'{self.start_header}{role}{self.end_header}\n'
 
-    def get_prompt(self,
-                   user_input: str, 
-                   chat_history: list[tuple[str, str]] =[],
-                   system_prompt: str = "") -> str:
+    def get_prompt(
+        self,
+        user_input: str, 
+        chat_history: list[tuple[str, str]] =[],
+        system_prompt: str = ""
+    ) -> str:
         prompt_texts = [f"{self.bos_token}"]
         chat_template = self._template_header() + '{prompt}' + self.eot_token +'\n'
         generate_template = chat_template + self._template_header(role="assistant")
@@ -125,13 +142,20 @@ class LLMService:
         return "".join(prompt_texts) if not isinstance(prompt_texts[0], dict) else prompt_texts
 
 
-    def formatting(self, prompt: List[str] | List[dict], return_tensors: str = "pt") -> dict:
+    def formatting(
+        self, 
+        prompt: List[str] | List[dict], 
+        return_tensors: str = "pt"
+    ) -> dict:
         if isinstance(prompt, str):
             return self.tokenizer(prompt, return_tensors=return_tensors)
         else:
             return { "input_ids": self.tokenizer.apply_chat_template(prompt, return_tensors=return_tensors) }
 
-    def generate_config(self, **kwargs):
+    def generate_config(
+        self, 
+        **kwargs
+    ):
         generation_config = dict(
             do_sample=True,
             temperature=0.6,
@@ -143,7 +167,10 @@ class LLMService:
         generation_config.update(kwargs)
         return generation_config
 
-    def vllm_generate_config(self, **kwargs):
+    def vllm_generate_config(
+        self, 
+        **kwargs
+    ):
         from vllm.sampling_params import SamplingParams
         return SamplingParams(
             repetition_penalty=1.0,
@@ -154,20 +181,23 @@ class LLMService:
             max_tokens=self.max_new_tokens)
 
     @torch.inference_mode()
-    def _make_summary(self,
-                      input_text: str,
-                      input_prompt: str = None,
-                      input_history: List[str] = [],
-                      use_fewshot: bool = False) -> str:
-        chat_template = {
-            "user_input": input_text,
-            "chat_history": DEFAULT_SUMMARY_FEW_SHOT if len(input_history) == 0 and use_fewshot else input_history,
-            "system_prompt": DEFAULT_SUMMARY_SYSTEM_PROMPT if input_prompt is None else input_prompt
-            }
-        prompt = self.get_prompt(**chat_template)
+    def _make_summary(
+        self,
+        input_text: str,
+        input_prompt: str = None,
+        input_history: List[str] = [],
+        use_fewshot: bool = False
+    ) -> str:
+        prompt = self._set_templat(
+            input_text=input_text, 
+            input_prompt=input_prompt, 
+            input_history=input_history, 
+            use_fewshot=use_fewshot)
         if torch.cuda.is_available(): # vllm generation
-            from vllm.sampling_params import SamplingParams
-            output = self.model.generate(prompt, sampling_params=self.vllm_generate_config(), use_tqdm=False)
+            output = self.model.generate(
+                prompt, 
+                sampling_params=self.vllm_generate_config(), 
+                use_tqdm=False)
             output_str= output[0].outputs[0].text
         else: # ipex, ov generation
             inputs = self.formatting(prompt=prompt)
@@ -176,8 +206,53 @@ class LLMService:
 
         return output_str.replace(". ", ".\n")
 
+    def _set_templat(
+        self,
+        input_text:str,
+        input_prompt:str = None,
+        input_history:List[str] = [],
+        use_fewshot: bool = False
+    ):
+        return self.get_prompt(
+            user_input=input_text,
+            chat_history=DEFAULT_SUMMARY_FEW_SHOT if len(input_history) == 0 and use_fewshot else input_history,
+            system_prompt=DEFAULT_SUMMARY_SYSTEM_PROMPT if input_prompt is None else input_prompt)
+    
     @torch.inference_mode()
-    def generate_stream(self, input_text: str, input_prompt: str = None):
+    def _make_batch_summary(
+        self,
+        batch_input_text: List[str],
+        batch_input_prompt: List[str] = None,
+        batch_input_history: List[List[str]] = [],
+        use_fewshot: bool = False
+    ) -> str:
+        prompt = [
+            self._set_templat(
+                input_text=input_text, 
+                input_prompt=input_prompt, 
+                input_history=input_history, 
+                use_fewshot=use_fewshot) 
+            for input_text, input_prompt, input_history in list(
+                zip_longest(batch_input_text, batch_input_prompt, batch_input_history, fillvalue=[]))]
+        if torch.cuda.is_available(): # vllm generation
+            output = self.model.generate(
+                prompt, 
+                sampling_params=self.vllm_generate_config(), 
+                use_tqdm=False)
+            output_str = [out.outputs[0].text for out in output]
+        else: # ipex, ov generation
+            inputs = self.formatting(prompt=prompt)
+            output = self.model.generate(**self.generate_config(**inputs))
+            output_str = self.tokenizer.decode(output, skip_special_tokens=True)
+        output_str = [out.replace(". ", ".\n") for out in output_str]
+        return output_str
+
+    @torch.inference_mode()
+    def generate_stream(
+        self, 
+        input_text: str, 
+        input_prompt: str = None
+    ):
         if input_prompt is not None:
             input_text = input_prompt + "\n" + input_text
         inputs = self.formatting(prompt=input_text.strip(), return_tensors="pt")
@@ -190,14 +265,22 @@ class LLMService:
             yield new_text
 
     @torch.inference_mode()
-    def generate_stream_cuda(self, input_text: str, input_prompt: str = None):
+    def generate_stream_cuda(
+        self, 
+        input_text: str, 
+        input_prompt: str = None
+    ):
         # inputs = self.formatting(prompt=prompt , return_tensors="pt")
         response = self._make_summary(input_text=input_text, input_prompt=input_prompt)
         for new_text in response:
             yield new_text
 
     @torch.inference_mode()
-    def _raw_generate(self, prompt: str, max_length: int = 4096):
+    def _raw_generate(
+        self, 
+        prompt: str, 
+        max_length: int = 4096
+    ):
         input_ids = self.formatting(prompt=prompt, return_tensors="pt")["input_ids"]
         for _ in range(max_length):
             outputs = self.model(input_ids=input_ids)[0]
@@ -207,9 +290,17 @@ class LLMService:
             input_ids = torch.concatenate([input_ids, next_token], axis=-1)
             yield self.tokenizer.decode(next_token[0], skip_special_tokens=True)
 
-    def summarize(self, input_text: str, input_prompt: str = None, stream: bool = False):
+    def summarize(
+        self, 
+        input_text: str|List[str], 
+        input_prompt: str|List[str] = None, 
+        stream: bool = False, 
+        batch: bool = False
+    ):
         if torch.cuda.is_available() and stream:
             return self.generate_stream_cuda(input_text=input_text, input_prompt=input_prompt)
+        elif batch:
+            return self._make_batch_summary(batch_input_text=input_text, batch_input_prompt=input_prompt)
         elif stream:
             return self.generate_stream(input_text=input_text, input_prompt=input_prompt)
         else:
