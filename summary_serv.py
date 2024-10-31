@@ -64,7 +64,7 @@ def text_postprocess(text:str) -> str:
 
 
 @serve.deployment(num_replicas=1)
-@serve.ingress(app)
+@serve.ingress(app=app)
 class APIIngress:
     def __init__(self, llm_handle: DeploymentHandle) -> None:
         self.service = llm_handle
@@ -185,8 +185,10 @@ def build_app(
     cli_args: Dict[str, str]
 ) -> serve.Application:
     return APIIngress.options(
-        placement_group_bundles=[{"CPU": 1.0}, {"CPU":1.0, "GPU": 0.4}], 
-        placement_group_strategy="STRICT_PACK"
+        placement_group_bundles=[{"CPU":1.0, "GPU": 0.4}], 
+        placement_group_strategy="STRICT_PACK",
         ).bind(
             LLMService.bind()
             )
+
+serve.start(http_options={"host":"0.0.0.0", "port": 8501})
