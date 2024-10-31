@@ -77,6 +77,7 @@ class APIIngress:
         request_prompt: List[Any],
         request_text: List[Any]
     ) -> List[str]:
+        logger.info(f"Batched request: {len(request_text)}")
         return await self.service.summarize.remote(
             input_prompt=request_prompt,
             input_text=request_text,
@@ -92,9 +93,6 @@ class APIIngress:
     ) -> SummaryResponse:
         result = ""
         # Generate predicted tokens
-        await self.batched_summary(
-                request_prompt=request.prompt,
-                request_text=text_preprocess(request.text))
         try:
             # ----------------------------------- #
             st = time.time()
@@ -107,13 +105,14 @@ class APIIngress:
             # print(result)
             end = time.time()
             # ----------------------------------- #
+            assert len(result) > 0, "Generation failed"
             print(f"Time: {end - st}")
         except AssertionError as e:
             result += e
         except Exception as e:
             print(traceback(e))
             server_logger.error("error" + traceback(e))
-            result += "Error in summarize"
+            result += "Generation failed"
         finally:
             return SummaryResponse(text=result)
 

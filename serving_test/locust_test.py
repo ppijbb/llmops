@@ -76,6 +76,9 @@ input_text = """---
 참석자 1: 그러니까 나머지 치아들은 다 만들어서 이제 제작이 되기 때문에 어떤 형태라든지 색깔 이런 것들은 가능하면 이제 예쁘고 원하시는 형태로 제작을 할 수 있어요. 근데 이제 다만 그 위에 앞니 두 개는 남겨놓잖아요. 그래서 얘랑 너무 동떨어지는 색깔이나 이렇게 하면 티가 날 수 있기 때문에 걔하고 조금 밸런스를 맞춰서 자연스러워 보이는 선에서 제작을 하는 게 나을 것 같습니다. 추후에 임플란트가 뼈랑 단단하게 굳고서 치아를 모양을 만들 때 한번 다시 한 번 말씀해 주시면 저희가 그거는 반영해서 치료 계획에 반영을 할 수 있습니다. 선생님 외에 다른 약속은 없어요. 그래서 그 선생님에 집중해서 진료 진행하겠습니다. 너무 긴장하지 마시고요. 잘 하겠습니다.
 """.strip()
 
+input_prompt =  "you are helpful CLAUDE agent."
+input_text = "안녕하세요를 중국어, 영어 일본어, 프랑스어, 스페인어 로 번역해줘"
+
 
 class TestingUser(HttpUser):
     wait_time = between(1, 5)  # Wait time between requests
@@ -84,7 +87,7 @@ class TestingUser(HttpUser):
     def summary_testing(self):
         headers = {'Content-Type': 'application/json'}
         payload = {'prompt': input_prompt, 'text': input_text}
-        response = self.client.post(url="http://localhost:8501/summarize_llama",
+        response = self.client.post(url="http://localhost:8000/summarize_llama",
                                     headers=headers,
                                     json=payload)  # Replace with your actual endpoint
         # Add assertions or other logic here to validate the response if needed
