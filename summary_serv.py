@@ -198,6 +198,14 @@ class APIIngress:
 
     @app.post(
         "/transcript_gemma", 
+        description='''
+        language code
+        - Korean: ko
+        - English: en
+        - Chinese: zh
+        - French: fr
+        - Spanish: es
+        ''',
         response_model=TranscriptResponse)
     async def transcript(
         self,
@@ -231,7 +239,15 @@ class APIIngress:
             return TranscriptResponse(text=result)
 
     @app.post(
-        "/transcript", 
+        "/transcript",
+        description='''
+        language code
+        - Korean: ko
+        - English: en
+        - Chinese: zh
+        - French: fr
+        - Spanish: es
+        ''',
         response_model=TranscriptResponse)
     async def transcript_gpt(
         self,
@@ -239,7 +255,8 @@ class APIIngress:
         service: OpenAIService = Depends(get_gpt_service)
     ) -> TranscriptResponse:
         result = ""
-
+        print("source", request.source_language)
+        print("target", request.target_language)
         try:
             # ----------------------------------- #
             st = time.time()

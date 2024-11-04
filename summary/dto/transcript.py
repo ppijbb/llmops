@@ -2,11 +2,11 @@ import json
 import traceback
 from typing import Optional, List
 from pydantic import BaseModel, Field, computed_field
-
+from summary.enum.transcript import TargetLanguages
 
 class TranscriptRequest(BaseModel):
-    source_language: Optional[str] = Field(None)
-    target_language: Optional[List[str]] = Field(None)
+    source_language: Optional[TargetLanguages] = Field(None)
+    target_language: Optional[List[TargetLanguages]] = Field(None)
     text: str = Field(...)
 
 class TranscriptResponse(BaseModel):
