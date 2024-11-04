@@ -61,6 +61,7 @@ def text_postprocess(text:str) -> str:
         text = "* " + "* ".join(text.split("* ")[:-1])
         if text.endswith("\n---"):
             "---"
+    text = text.replace("```json", "").replace("```", "")
     return text.replace("* ", "").replace("---", "").strip()
 
 
@@ -212,8 +213,9 @@ class APIIngress:
             # assert len(request.text ) > 200, "Text is too short"
             result += await self.batched_transcript(
                 request_prompt=None,
-                request_text=text_preprocess(request.text))
+                request_text=f'source text: {text_preprocess(request.text)}')
             # result = text_postprocess(result)
+            result = result.replace("```json", "").replace("```", "").replace("\ntrasncripted result:\n", "").replace("*\n","").strip()
             # print(result)
             end = time.time()
             # ----------------------------------- #

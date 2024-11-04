@@ -98,7 +98,7 @@ class LLMService:
                 case "llama":
                     self.start_header = self.llama_start_header 
                     self.end_header = self.llama_end_header
-                case "gemma":
+                case "gemma2":
                     self.start_header = self.gemma_start_header
                     self.end_header = self.gemma_end_header
                 case "mistral":
@@ -136,7 +136,7 @@ class LLMService:
                 prompt_texts.append(template_dict(role=history_role, prompt=history_response.strip()))
             prompt_texts.append(template_dict(
                 role="user",
-                prompt=f'{system_prompt+"\n\n" if "gemma" not in self.local_model_type else ""}{user_input.strip()}'))
+                prompt=f'{system_prompt if "gemma" in self.local_model_type else ""}\n\n{user_input}'.strip()))
             prompt_texts = self.tokenizer.apply_chat_template(prompt_texts, tokenize=False)
         else:
             prompt_texts = [f"{self.bos_token}"]
@@ -261,6 +261,7 @@ class LLMService:
                 default_system_prompt=default_system_prompt) 
             for batch_input_text, batch_input_prompt, batch_input_history in list(
                 zip_longest(input_text, input_prompt, input_history, fillvalue=[]))]
+        print(prompt)
         return self._generate(prompt)
 
     @torch.inference_mode()
@@ -350,6 +351,7 @@ class LLMService:
     ):
         default_few_shots: str = prompt.DEFAULT_TRANSCRIPT_FEW_SHOT,
         default_system_prompt: str = prompt.DEFAULT_TRANSCRIPT_SYSTEM_PROMPT
+        
         return self._generation_wrapper(
             stream=stream, batch=batch,
             **dict(
@@ -367,6 +369,7 @@ class LLMService:
     ):
         default_few_shots: str = prompt.DEFAULT_TRANSCRIPT_FEW_SHOT,
         default_system_prompt: str = prompt.DEFAULT_TRANSCRIPT_SUMMARIZE_SYSTEM_PROMPT
+        
         return self._generation_wrapper(
             stream=stream, batch=batch,
             **dict(

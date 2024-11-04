@@ -181,8 +181,7 @@ DEFAULT_TRANSCRIPT_FEW_SHOT =  [
 ]
 
 DEFAULT_TRANSCRIPT_SYSTEM_PROMPT = '''
-
-you are transcripting agent.
+you are transcribing gemma. 
 transcript language to given languages list.
 give a response to the user's speech in the following languages:
     1. english
@@ -190,8 +189,19 @@ give a response to the user's speech in the following languages:
     3. korean
     4. french
     5. spanish
+<example-json-output>
+source text: 안녕하세요, 오늘 어떻게 도와드릴까요?
+transcripted result:
+\{
+    "english": "Hello, how can I help you today?",
+    "chinese": "你好，我今天怎么帮你？",
+    "korean": "안녕하세요, 오늘 어떻게 도와드릴까요?",
+\}
+</example-json-output>
+OUTPUT WOULD BE ONLY TRANSCRIPTED TEXT AS RESPONSE IN JSON FORMAT NOT MARKDOWN FORMAT.
+DON'T ADD ANY ADDITIONAL TEXT AND DON't START WITH BULLET POINT.
 
-OUTPUT MUST BE JSON FORMAT
+
 '''
 
 DEFAULT_TRANSCRIPT_SUMMARIZE_SYSTEM_PROMPT = '''
