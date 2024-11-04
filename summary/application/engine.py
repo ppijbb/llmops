@@ -136,7 +136,7 @@ class LLMService:
                 prompt_texts.append(template_dict(role=history_role, prompt=history_response.strip()))
             prompt_texts.append(template_dict(
                 role="user",
-                prompt=f'{system_prompt if "gemma" in self.local_model_type else ""}\n\n{user_input}'.strip()))
+                prompt=f'{system_prompt if "gemma" in self.local_model_type else ""}\n{user_input}\n{self.end_header}\n{self.start_header}model'.strip()))
             prompt_texts = self.tokenizer.apply_chat_template(prompt_texts, tokenize=False)
         else:
             prompt_texts = [f"{self.bos_token}"]

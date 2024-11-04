@@ -215,7 +215,7 @@ class APIIngress:
                 request_prompt=None,
                 request_text=f'source text: {text_preprocess(request.text)}')
             # result = text_postprocess(result)
-            result = result.replace("```json", "").replace("```", "").replace("\ntrasncripted result:\n", "").replace("*\n","").strip()
+            result = result.replace("```json", "").replace("```", "").replace("\ntrasncripted result:\n", "").replace("*\n","").replace("\n\n", "\n").strip()
             # print(result)
             end = time.time()
             # ----------------------------------- #
