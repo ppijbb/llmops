@@ -15,7 +15,8 @@ tokenizers>=0.15.2
 fairscale>=0.4.13
 fire>=0.6.0
 diffusers==0.15.0
-transformers>=4.38.2
+flash-attn @https://github.com/Dao-AILab/flash-attention/releases/download/v2.6.3/flash_attn-2.6.3+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
+msgpack>=1.1.0
 transformers @git+https://github.com/huggingface/transformers.git
 accelerate>=0.25.0
 peft>=0.11.1
@@ -40,7 +41,7 @@ pyyaml>=6.0.1
 setuptools-rust>=1.9.0
 protobuf>=4.25.3
 nncf>=2.11.0
-vllm==0.3.3
+vllm>=0.3.3
 bitsandbytes>=0.43.1
 --extra-index-url https://pypi.nvidia.com
 # optimum-nvidia>=0.1.0b7

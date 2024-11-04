@@ -21,5 +21,20 @@ services:
     environment:
       - FLASK_ENV=development
       - MAX_JOBS=4
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4gb
+        reservations:
+          cpus: '2'
+          memory: 4gb
+          devices:
+          - capabilities: ["nvidia-compute"]
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
     command:
       - poetry run serve run summary_serv:build_app
