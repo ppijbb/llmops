@@ -27,9 +27,9 @@ ray[serve]>=2.32.0
 onnx>=1.16.1
 onnxruntime>=1.18.1
 openvino>=2024.3.0
-# optimum
+huggingface-hub==0.23.2
 # optimum @git+https://github.com/huggingface/optimum.git
-# optimum[onnxruntime] # @git+https://github.com/huggingface/optimum.git
+optimum[onnxruntime] # @git+https://github.com/huggingface/optimum.git
 # optimum[ipex] # @git+https://github.com/huggingface/optimum-intel.git
 # optimum[openvino] # @git+https://github.com/huggingface/optimum-intel.git
 # optimum[neuronx] # @git+https://github.com/huggingface/optimum-neuron.git
@@ -44,7 +44,7 @@ pyyaml>=6.0.1
 setuptools-rust>=1.9.0
 protobuf>=4.25.3
 nncf>=2.11.0
-vllm>=0.5.0
+vllm>=0.6.0
 bitsandbytes>=0.43.1
 --extra-index-url https://pypi.nvidia.com
 # optimum-nvidia>=0.1.0b7
@@ -53,11 +53,11 @@ bitsandbytes>=0.43.1
 torch==2.4.0+cu121
 torchvision==0.19.0+cu121
 torchaudio==2.4.0+cu121
---extra-index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/
-ipex-llm==2.1.0b20240718
---extra-index-url https://developer.intel.com/ipex-whl-stable-xpu/
-intel-extension-for-pytorch==2.1.30+xpu
-oneccl_bind_pt==2.1.300+xpu
+# --extra-index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/
+# ipex-llm==2.1.0b20240718
+# --extra-index-url https://developer.intel.com/ipex-whl-stable-xpu/
+# intel-extension-for-pytorch==2.1.30+xpu
+# oneccl_bind_pt==2.1.300+xpu
 # --extra-index-url https://pip.repos.neuron.amazonaws.com
 # neuronx-cc>=2.13.66
 # torch-neuronx>=2.1.2.2.1.0
