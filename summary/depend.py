@@ -21,7 +21,7 @@ def get_model(
             from optimum.onnxruntime import ORTModelForCausalLM      
             from vllm import LLM
             model = LLM(
-                model = model_path,
+                model=model_path,
                 # quantization="bitsandbytes",
                 # load_format="bitsandbytes",
                 max_model_len=4096,

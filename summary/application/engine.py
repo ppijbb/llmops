@@ -68,8 +68,8 @@ class LLMService:
     llama_end_header: str = "<|end_header_id|>"
     mistral_start_header: str = "[INST]"
     mistral_end_header: str = "[/INST]"
-    gemma_start_header: str = "<bos>"
-    gemma_end_header: str = "<eos>"
+    gemma_start_header: str = "<start_of_turn>"
+    gemma_end_header: str = "<end_of_turn>"
     
     def __init__(
         self,
@@ -92,24 +92,25 @@ class LLMService:
 
         self.bos_token = self.tokenizer.bos_token if self.tokenizer.bos_token else self.default_bos
         self.eot_token = self.tokenizer.eos_token if self.tokenizer.eos_token else self.default_eot
-        if not  torch.cuda.is_available():
+        if torch.cuda.is_available():
+            self.local_model_type = self.model.llm_engine.model_config.hf_text_config.model_type
             self.start_header = (self.llama_start_header 
-                                 if "llama" in self.model.config.model_type else 
+                                 if "llama" in self.local_model_type else 
                                  self.gemma_start_header
-                                 if "gemma" in self.model.config.model_type else
+                                 if "gemma" in self.local_model_type else
                                  self.mistral_start_header)
             self.end_header = (self.llama_end_header 
-                               if "llama" in self.model.config.model_type else
+                               if "llama" in self.local_model_type else
                                self.gemma_end_header
-                               if "gemma" in self.model.config.model_type else
+                               if "gemma" in self.local_model_type else
                                self.mistral_end_header)
         else:
+            self.local_model_type = 'llama'
             self.start_header = self.llama_start_header
             self.end_header = self.llama_end_header
-        self.max_new_tokens = 500
-        
+        self.max_new_tokens = 1000
         self.logger = logging.getLogger("ray.serve")
-        self.logger.info("\n\n\nLLM Engine is ready\n\n\n")
+        self.logger.info(f"\n\n\n{self.local_model_type} LLM Engine is ready\n\n\n")
 
     def _template_header(self, role:str = "{role}") -> str:
         return f'{self.start_header}{role}{self.end_header}\n'
@@ -120,24 +121,31 @@ class LLMService:
         chat_history: list[tuple[str, str]] =[],
         system_prompt: str = ""
     ) -> str:
-        prompt_texts = [f"{self.bos_token}"]
-        chat_template = self._template_header() + '{prompt}' + self.eot_token +'\n'
-        generate_template = chat_template + self._template_header(role="assistant")
-
         def template_dict(role, prompt):
-            return { "role": role, "prompt": prompt }
+            return { "role": role, ("content" if "gemma" in self.local_model_type else "prompt"): prompt }
+        
+        if any([model_name in self.local_model_type for model_name in ["gemma", ]]):
+            prompt_texts = []
+            if system_prompt != '':
+                prompt_texts.append(template_dict(role="user" if "gemma" in self.local_model_type else "system", prompt=system_prompt))
+                if len(chat_history) == 0:
+                    prompt_texts.append(template_dict(role="assistant", prompt="I UNDER STAND."))
+            for history_role, history_response in chat_history:
+                prompt_texts.append(template_dict(role=history_role, prompt=history_response.strip()))
+            prompt_texts.append(template_dict(role="user", prompt=user_input.strip()))
+            prompt_texts = self.tokenizer.apply_chat_template(prompt_texts, tokenize=False)
+        else:
+            prompt_texts = [f"{self.bos_token}"]
+            chat_template = self._template_header() + '{prompt}' + self.eot_token +'\n'
+            generate_template = chat_template + self._template_header(role="assistant")
+            
+            if system_prompt != '':
+                prompt_texts.append(chat_template.format(role="system", prompt=system_prompt.strip()))
 
-        if system_prompt != '':
-            prompt_texts.append(chat_template.format(role="system", prompt=system_prompt.strip()))
-            # prompt_texts.append(template_dict(role="system", prompt=system_prompt))
+            for history_role, history_response in chat_history:
+                prompt_texts.append(chat_template.format(role=history_role, prompt=history_response.strip()))
 
-        for history_role, history_response in chat_history:
-            # print(history_role, history_response)
-            prompt_texts.append(chat_template.format(role=history_role, prompt=history_response.strip()))
-            # prompt_texts.append(template_dict(role=history_role, prompt=history_reponse.strip()))
-
-        prompt_texts.append(generate_template.format(role="user", prompt=user_input.strip()))
-        # prompt_texts.append(template_dict(role="user", prompt=user_input.strip()))
+            prompt_texts.append(generate_template.format(role="user", prompt=user_input.strip()))
 
         return "".join(prompt_texts) if not isinstance(prompt_texts[0], dict) else prompt_texts
 
@@ -201,7 +209,7 @@ class LLMService:
     ):
         if torch.cuda.is_available(): # vllm generation
             output = self.model.generate(
-                prompt, 
+                prompts=prompt,
                 sampling_params=self.vllm_generate_config(), 
                 use_tqdm=False)
             output_str = [out.outputs[0].text for out in output]
@@ -242,7 +250,6 @@ class LLMService:
         default_system_prompt: str = prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT,
         **kwargs
     ) -> str:
-        print(input_text)
         prompt = [
             self._set_templat(
                 input_text=batch_input_text, 
@@ -253,6 +260,7 @@ class LLMService:
                 default_system_prompt=default_system_prompt) 
             for batch_input_text, batch_input_prompt, batch_input_history in list(
                 zip_longest(input_text, input_prompt, input_history, fillvalue=[]))]
+        print(prompt)
         return self._generate(prompt)
 
     @torch.inference_mode()
