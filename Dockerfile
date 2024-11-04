@@ -6,6 +6,8 @@ ENV HF_TOKEN=${HF_TOKEN}
 ENV VLLM_TARGET_DEVICE=${VLLM_TARGET_DEVICE}
 
 COPY . /app
+WORKDIR /app
+
 # Set the working directory
 RUN pip install poetry
 RUN poetry lock && poetry install
