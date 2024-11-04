@@ -180,8 +180,22 @@ class APIIngress:
         finally:
             return SummaryResponse(text=result)
 
+    @serve.batch(
+        max_batch_size=4, 
+        batch_wait_timeout_s=0.1)
+    async def batched_transcript(
+        self, 
+        request_prompt: List[Any],
+        request_text: List[Any]
+    ) -> List[str]:
+        logger.info(f"Batched request: {len(request_text)}")
+        return await self.service.transcript.remote(
+            input_prompt=request_prompt,
+            input_text=request_text,
+            batch=True)
+
     @app.post(
-        "/transcript_llama", 
+        "/transcript_gemma", 
         response_model=SummaryResponse)
     async def transcript(
         self,
@@ -190,14 +204,15 @@ class APIIngress:
     ) -> SummaryResponse:
         result = ""
         # Generate predicted tokens
+        result += await self.batched_transcript(
+                request_prompt=request.prompt,
+                request_text=text_preprocess(request.text))
         try:
             # ----------------------------------- #
             st = time.time()
             # result += ray.get(service.summarize.remote(ray.put(request.text)))
             # assert len(request.text ) > 200, "Text is too short"
-            result += await self.batched_summary(
-                request_prompt=request.prompt,
-                request_text=text_preprocess(request.text))
+
             # result = text_postprocess(result)
             # print(result)
             end = time.time()
@@ -228,7 +243,7 @@ class APIIngress:
             # result += ray.get(service.summarize.remote(ray.put(request.text)))
             # assert len(request.text ) > 200, "Text is too short"
             input_text = text_preprocess(request.text)
-            result += await service.summarize(
+            result += await service.transcript(
                 input_prompt=request.prompt,
                 input_text=input_text)
             # result = text_postprocess(result)
@@ -245,6 +260,71 @@ class APIIngress:
         finally:
             return SummaryResponse(text=result)
 
+    @app.post(
+        "/transcript_gemma/summarize", 
+        response_model=SummaryResponse)
+    async def transcript(
+        self,
+        request: SummaryRequest,
+        # service: LLMService = Depends(get_llm_service)
+    ) -> SummaryResponse:
+        result = ""
+        # Generate predicted tokens
+        result += await self.batched_transcript(
+                request_prompt=request.prompt,
+                request_text=text_preprocess(request.text))
+        try:
+            # ----------------------------------- #
+            st = time.time()
+            # result += ray.get(service.summarize.remote(ray.put(request.text)))
+            # assert len(request.text ) > 200, "Text is too short"
+
+            # result = text_postprocess(result)
+            # print(result)
+            end = time.time()
+            # ----------------------------------- #
+            assert len(result) > 0, "Generation failed"
+            print(f"Time: {end - st}")
+        except AssertionError as e:
+            result += e
+        except Exception as e:
+            print(traceback(e))
+            server_logger.error("error" + traceback(e))
+            result += "Generation failed"
+        finally:
+            return SummaryResponse(text=result)
+
+    @app.post(
+        "/transcript/summarize", 
+        response_model=SummaryResponse)
+    async def transcript_gpt(
+        self,
+        request: SummaryRequest,
+        service: OpenAIService = Depends(get_gpt_service)
+    ) -> SummaryResponse:
+        result = ""
+        try:
+            # ----------------------------------- #
+            st = time.time()
+            # result += ray.get(service.summarize.remote(ray.put(request.text)))
+            # assert len(request.text ) > 200, "Text is too short"
+            input_text = text_preprocess(request.text)
+            result += await service.transcript_summarize(
+                input_prompt=request.prompt,
+                input_text=input_text)
+            # result = text_postprocess(result)
+            # print(result)
+            end = time.time()
+            # ----------------------------------- #
+            # print(f"Time: {end - st}")
+        except AssertionError as e:
+            server_logger.warn("error" + traceback(e))
+            result += e
+        except Exception as e:
+            server_logger.warn("error" + traceback(e))
+            result += "Error in summarize"
+        finally:
+            return SummaryResponse(text=result)
 
 def build_app(
     cli_args: Dict[str, str]

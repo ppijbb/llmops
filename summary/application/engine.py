@@ -14,7 +14,7 @@ from threading import Thread
 from ray import serve
 
 from summary.depend import get_model, get_claude, get_gpt
-from summary.application.const import DEFAULT_SUMMARY_FEW_SHOT, DEFAULT_SUMMARY_SYSTEM_PROMPT
+from summary.application.const import prompt
 
 from summary.application.anthropic import ClaudeService
 from summary.application.open_ai import OpenAIService
@@ -179,61 +179,26 @@ class LLMService:
             temperature=0.3,
             top_p=0.9,
             max_tokens=self.max_new_tokens)
-
-    @torch.inference_mode()
-    def _make_summary(
-        self,
-        input_text: str,
-        input_prompt: str = None,
-        input_history: List[str] = [],
-        use_fewshot: bool = False
-    ) -> str:
-        prompt = self._set_templat(
-            input_text=input_text, 
-            input_prompt=input_prompt, 
-            input_history=input_history, 
-            use_fewshot=use_fewshot)
-        if torch.cuda.is_available(): # vllm generation
-            output = self.model.generate(
-                prompt, 
-                sampling_params=self.vllm_generate_config(), 
-                use_tqdm=False)
-            output_str= output[0].outputs[0].text
-        else: # ipex, ov generation
-            inputs = self.formatting(prompt=prompt)
-            output = self.model.generate(**self.generate_config(**inputs))
-            output_str = self.tokenizer.decode(output[0], skip_special_tokens=True)
-
-        return output_str.replace(". ", ".\n")
-
+    
     def _set_templat(
         self,
         input_text:str,
         input_prompt:str = None,
         input_history:List[str] = [],
-        use_fewshot: bool = False
+        use_fewshot: bool = False,
+        default_few_shots: str = prompt.DEFAULT_SUMMARY_FEW_SHOT,
+        default_system_prompt: str = prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT
     ):
         return self.get_prompt(
             user_input=input_text,
-            chat_history=DEFAULT_SUMMARY_FEW_SHOT if len(input_history) == 0 and use_fewshot else input_history,
-            system_prompt=DEFAULT_SUMMARY_SYSTEM_PROMPT if input_prompt is None else input_prompt)
+            chat_history=default_few_shots if len(input_history) == 0 and use_fewshot else input_history,
+            system_prompt=default_system_prompt if input_prompt is None else input_prompt)
     
     @torch.inference_mode()
-    def _make_batch_summary(
-        self,
-        batch_input_text: List[str],
-        batch_input_prompt: List[str] = None,
-        batch_input_history: List[List[str]] = [],
-        use_fewshot: bool = False
-    ) -> str:
-        prompt = [
-            self._set_templat(
-                input_text=input_text, 
-                input_prompt=input_prompt, 
-                input_history=input_history, 
-                use_fewshot=use_fewshot) 
-            for input_text, input_prompt, input_history in list(
-                zip_longest(batch_input_text, batch_input_prompt, batch_input_history, fillvalue=[]))]
+    def _generate(
+        self, 
+        prompt: str, 
+    ):
         if torch.cuda.is_available(): # vllm generation
             output = self.model.generate(
                 prompt, 
@@ -244,14 +209,58 @@ class LLMService:
             inputs = self.formatting(prompt=prompt)
             output = self.model.generate(**self.generate_config(**inputs))
             output_str = self.tokenizer.decode(output, skip_special_tokens=True)
-        output_str = [out.replace(". ", ".\n") for out in output_str]
-        return output_str
+        return [out.replace(". ", ".\n") for out in output_str]
+
+    @torch.inference_mode()
+    def _make_generate(
+        self,
+        input_text: str,
+        input_prompt: str = None,
+        input_history: List[str] = [],
+        use_fewshot: bool = False,
+        default_few_shots: str = prompt.DEFAULT_SUMMARY_FEW_SHOT,
+        default_system_prompt: str = prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT,
+        **kwargs
+    ) -> str:
+        prompt = self._set_templat(
+            input_text=input_text, 
+            input_prompt=input_prompt, 
+            input_history=input_history, 
+            use_fewshot=use_fewshot,
+            default_few_shots=default_few_shots,
+            default_system_prompt=default_system_prompt)
+        return self._generate(prompt)[0]
+ 
+    @torch.inference_mode()
+    def _make_batch_generate(
+        self,
+        input_text: List[str],
+        input_prompt: List[str] = None,
+        input_history: List[List[str]] = [],
+        use_fewshot: bool = False,
+        default_few_shots: str = prompt.DEFAULT_SUMMARY_FEW_SHOT,
+        default_system_prompt: str = prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT,
+        **kwargs
+    ) -> str:
+        print(input_text)
+        prompt = [
+            self._set_templat(
+                input_text=batch_input_text, 
+                input_prompt=batch_input_prompt, 
+                input_history=batch_input_history, 
+                use_fewshot=use_fewshot,
+                default_few_shots=default_few_shots,
+                default_system_prompt=default_system_prompt) 
+            for batch_input_text, batch_input_prompt, batch_input_history in list(
+                zip_longest(input_text, input_prompt, input_history, fillvalue=[]))]
+        return self._generate(prompt)
 
     @torch.inference_mode()
     def generate_stream(
         self, 
         input_text: str, 
-        input_prompt: str = None
+        input_prompt: str = None,
+        **kwargs
     ):
         if input_prompt is not None:
             input_text = input_prompt + "\n" + input_text
@@ -268,10 +277,11 @@ class LLMService:
     def generate_stream_cuda(
         self, 
         input_text: str, 
-        input_prompt: str = None
+        input_prompt: str = None,
+        **kwargs
     ):
         # inputs = self.formatting(prompt=prompt , return_tensors="pt")
-        response = self._make_summary(input_text=input_text, input_prompt=input_prompt)
+        response = self._make_generate(input_text=input_text, input_prompt=input_prompt)
         for new_text in response:
             yield new_text
 
@@ -279,7 +289,8 @@ class LLMService:
     def _raw_generate(
         self, 
         prompt: str, 
-        max_length: int = 4096
+        max_length: int = 4096,
+        **kwargs
     ):
         input_ids = self.formatting(prompt=prompt, return_tensors="pt")["input_ids"]
         for _ in range(max_length):
@@ -290,6 +301,21 @@ class LLMService:
             input_ids = torch.concatenate([input_ids, next_token], axis=-1)
             yield self.tokenizer.decode(next_token[0], skip_special_tokens=True)
 
+    def _generation_wrapper(
+        self, 
+        stream: bool = False,
+        batch: bool = False,
+        **kwargs
+    ):
+        if torch.cuda.is_available() and stream:
+            return self.generate_stream_cuda(**kwargs)
+        elif batch:
+            return self._make_batch_generate(**kwargs)
+        elif stream:
+            return self.generate_stream(**kwargs)
+        else:
+            return self._make_generate(**kwargs)
+
     def summarize(
         self, 
         input_text: str|List[str], 
@@ -297,11 +323,46 @@ class LLMService:
         stream: bool = False, 
         batch: bool = False
     ):
-        if torch.cuda.is_available() and stream:
-            return self.generate_stream_cuda(input_text=input_text, input_prompt=input_prompt)
-        elif batch:
-            return self._make_batch_summary(batch_input_text=input_text, batch_input_prompt=input_prompt)
-        elif stream:
-            return self.generate_stream(input_text=input_text, input_prompt=input_prompt)
-        else:
-            return self._make_summary(input_text=input_text, input_prompt=input_prompt)
+        default_few_shots: str = prompt.DEFAULT_SUMMARY_FEW_SHOT,
+        default_system_prompt: str = prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT
+        return self._generation_wrapper(
+            stream=stream, batch=batch,
+            **dict(
+                input_text=input_text, 
+                input_prompt=input_prompt, 
+                default_few_shots=default_few_shots, 
+                default_system_prompt=default_system_prompt))
+
+    def transcript(
+        self, 
+        input_text: str|List[str], 
+        input_prompt: str|List[str] = None, 
+        stream: bool = False, 
+        batch: bool = False
+    ):
+        default_few_shots: str = prompt.DEFAULT_TRANSCRIPT_FEW_SHOT,
+        default_system_prompt: str = prompt.DEFAULT_TRANSCRIPT_SYSTEM_PROMPT
+        return self._generation_wrapper(
+            stream=stream, batch=batch,
+            **dict(
+                input_text=input_text, 
+                input_prompt=input_prompt, 
+                default_few_shots=default_few_shots, 
+                default_system_prompt=default_system_prompt))
+
+    def transcript_summarize(
+        self, 
+        input_text: str|List[str], 
+        input_prompt: str|List[str] = None, 
+        stream: bool = False, 
+        batch: bool = False
+    ):
+        default_few_shots: str = prompt.DEFAULT_TRANSCRIPT_FEW_SHOT,
+        default_system_prompt: str = prompt.DEFAULT_TRANSCRIPT_SUMMARIZE_SYSTEM_PROMPT
+        return self._generation_wrapper(
+            stream=stream, batch=batch,
+            **dict(
+                input_text=input_text, 
+                input_prompt=input_prompt, 
+                default_few_shots=default_few_shots, 
+                default_system_prompt=default_system_prompt))

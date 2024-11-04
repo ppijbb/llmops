@@ -2,7 +2,7 @@ import os
 import openai
 import logging
 
-from summary.application.const import DEFAULT_SUMMARY_FEW_SHOT, DEFAULT_SUMMARY_SYSTEM_PROMPT
+from summary.application.const import prompt
 
 
 class OpenAIService:
@@ -28,6 +28,19 @@ class OpenAIService:
 
     async def summarize(self, input_text:str , input_prompt:str=None):
         result = self.generate(
-            input_prompt=input_prompt if input_prompt else DEFAULT_SUMMARY_SYSTEM_PROMPT, 
+            input_prompt=input_prompt if input_prompt else prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT, 
             input_text=input_text)
         return result.choices[0].message.content
+
+    async def transcript(self, input_text:str , input_prompt:str=None):
+        result = self.generate(
+            input_prompt=input_prompt if input_prompt else prompt.DEFAULT_TRANSCRIPT_SYSTEM_PROMPT, 
+            input_text=input_text)
+        return result.choices[0].message.content
+  
+    async def transcript_summarize(self, input_text:str , input_prompt:str=None):
+        result = self.generate(
+            input_prompt=input_prompt if input_prompt else prompt.DEFAULT_TRANSCRIPT_SUMMARIZE_SYSTEM_PROMPT, 
+            input_text=input_text)
+        return result.choices[0].message.content
+      
