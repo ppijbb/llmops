@@ -164,13 +164,35 @@ DEFAULT_SUMMARY_SYSTEM_PROMPT = '''
     - 총 비용
         - 240만원(120만원 씩 두개)
 '''
-DEFAULT_TRANSCRIPT_FEW_SHOT = '''
+DEFAULT_TRANSCRIPT_FEW_SHOT =  [
+    ("user", 
+'''안녕하세요, 오늘 어떻게 도와드릴까요?'''),
+    ("assistant",
 '''
+\{
+    "en": "Hello, how can I help you today?",
+    "ch": "你好，我今天怎么帮你？",
+    "jp": "こんにちは、今日はどういたしましょうか？",
+    "fr": "Bonjour, comment puis-je vous aider aujourd'hui ?",
+    "sp": "Hola, ¿cómo puedo ayudarte hoy?",
+    "de": "Hallo, wie kann ich Ihnen heute helfen?",
+    "it": "Ciao, come posso aiutarti oggi?"    
+\}'''),
+]
 
 DEFAULT_TRANSCRIPT_SYSTEM_PROMPT = '''
-
+you are transcripting agent.
+transcript language to given languages list.
+give a response to the user's speech in the following languages:
+- english
+- chinese
+- korean
+- french
+- spanish
+OUTPUT MUST BE JSON FORMAT
 '''
 
 DEFAULT_TRANSCRIPT_SUMMARIZE_SYSTEM_PROMPT = '''
-
+summarize all infomations from given script.
+simple and clear summary.
 '''

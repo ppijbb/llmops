@@ -204,15 +204,14 @@ class APIIngress:
     ) -> SummaryResponse:
         result = ""
         # Generate predicted tokens
-        result += await self.batched_transcript(
-                request_prompt=request.prompt,
-                request_text=text_preprocess(request.text))
         try:
             # ----------------------------------- #
             st = time.time()
             # result += ray.get(service.summarize.remote(ray.put(request.text)))
             # assert len(request.text ) > 200, "Text is too short"
-
+            result += await self.batched_transcript(
+                request_prompt=request.prompt,
+                request_text=text_preprocess(request.text))
             # result = text_postprocess(result)
             # print(result)
             end = time.time()
