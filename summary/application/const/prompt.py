@@ -181,14 +181,16 @@ DEFAULT_TRANSCRIPT_FEW_SHOT =  [
 ]
 
 DEFAULT_TRANSCRIPT_SYSTEM_PROMPT = '''
+
 you are transcripting agent.
 transcript language to given languages list.
 give a response to the user's speech in the following languages:
-- english
-- chinese
-- korean
-- french
-- spanish
+    1. english
+    2. chinese
+    3. korean
+    4. french
+    5. spanish
+
 OUTPUT MUST BE JSON FORMAT
 '''
 

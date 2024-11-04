@@ -26,6 +26,7 @@ from summary.application.engine import (
     LLMService, OpenAIService, llm_ready,
     get_llm_service, get_gpt_service)
 from summary.dto import SummaryRequest, SummaryResponse
+from summary.dto import TranscriptRequest, TranscriptResponse
 from summary.logger import setup_logger
 import traceback
 import os
@@ -110,8 +111,8 @@ class APIIngress:
         except AssertionError as e:
             result += e
         except Exception as e:
-            print(traceback(e))
-            server_logger.error("error" + traceback(e))
+            print(traceback.format_exc())
+            server_logger.error("error" + e)
             result += "Generation failed"
         finally:
             return SummaryResponse(text=result)
@@ -143,8 +144,8 @@ class APIIngress:
         except AssertionError as e:
             result += e
         except Exception as e:
-            print(traceback(e))
-            server_logger.error("error" + traceback(e))
+            print(traceback.format_exc())
+            server_logger.error("error" + e)
             result += "Error in summarize"
 
 
@@ -172,10 +173,10 @@ class APIIngress:
             # ----------------------------------- #
             # print(f"Time: {end - st}")
         except AssertionError as e:
-            server_logger.warn("error" + traceback(e))
+            server_logger.warn("error" + e)
             result += e
         except Exception as e:
-            server_logger.warn("error" + traceback(e))
+            server_logger.warn("error" + e)
             result += "Error in summarize"
         finally:
             return SummaryResponse(text=result)
@@ -196,12 +197,12 @@ class APIIngress:
 
     @app.post(
         "/transcript_gemma", 
-        response_model=SummaryResponse)
+        response_model=TranscriptResponse)
     async def transcript(
         self,
-        request: SummaryRequest,
+        request: TranscriptRequest,
         # service: LLMService = Depends(get_llm_service)
-    ) -> SummaryResponse:
+    ) -> TranscriptResponse:
         result = ""
         # Generate predicted tokens
         try:
@@ -210,7 +211,7 @@ class APIIngress:
             # result += ray.get(service.summarize.remote(ray.put(request.text)))
             # assert len(request.text ) > 200, "Text is too short"
             result += await self.batched_transcript(
-                request_prompt=request.prompt,
+                request_prompt=None,
                 request_text=text_preprocess(request.text))
             # result = text_postprocess(result)
             # print(result)
@@ -221,21 +222,22 @@ class APIIngress:
         except AssertionError as e:
             result += e
         except Exception as e:
-            print(traceback(e))
-            server_logger.error("error" + traceback(e))
+            print(traceback.format_exc())
+            server_logger.error("error" + e)
             result += "Generation failed"
         finally:
-            return SummaryResponse(text=result)
+            return TranscriptResponse(text=result)
 
     @app.post(
         "/transcript", 
-        response_model=SummaryResponse)
+        response_model=TranscriptResponse)
     async def transcript_gpt(
         self,
-        request: SummaryRequest,
+        request: TranscriptRequest,
         service: OpenAIService = Depends(get_gpt_service)
-    ) -> SummaryResponse:
+    ) -> TranscriptResponse:
         result = ""
+
         try:
             # ----------------------------------- #
             st = time.time()
@@ -243,21 +245,21 @@ class APIIngress:
             # assert len(request.text ) > 200, "Text is too short"
             input_text = text_preprocess(request.text)
             result += await service.transcript(
-                input_prompt=request.prompt,
+                input_prompt=None,
                 input_text=input_text)
             # result = text_postprocess(result)
             # print(result)
             end = time.time()
             # ----------------------------------- #
-            # print(f"Time: {end - st}")
+            print(f"Time: {end - st}")
         except AssertionError as e:
-            server_logger.warn("error" + traceback(e))
+            server_logger.warn("error" + e)
             result += e
         except Exception as e:
-            server_logger.warn("error" + traceback(e))
+            server_logger.warn("error" + e)
             result += "Error in summarize"
         finally:
-            return SummaryResponse(text=result)
+            return TranscriptResponse(text=result)
 
     @app.post(
         "/transcript_gemma/summarize", 
@@ -287,8 +289,8 @@ class APIIngress:
         except AssertionError as e:
             result += e
         except Exception as e:
-            print(traceback(e))
-            server_logger.error("error" + traceback(e))
+            print(traceback.format_exc())
+            server_logger.error("error" + e)
             result += "Generation failed"
         finally:
             return SummaryResponse(text=result)
@@ -317,10 +319,10 @@ class APIIngress:
             # ----------------------------------- #
             # print(f"Time: {end - st}")
         except AssertionError as e:
-            server_logger.warn("error" + traceback(e))
+            server_logger.warn("error" + e)
             result += e
         except Exception as e:
-            server_logger.warn("error" + traceback(e))
+            server_logger.warn("error" + e)
             result += "Error in summarize"
         finally:
             return SummaryResponse(text=result)
@@ -335,4 +337,4 @@ def build_app(
             LLMService.bind()
             )
 
-serve.start(http_options={"host":"0.0.0.0", "port": 8501})
+serve.start(http_options={"host": "0.0.0.0", "port": 8501})

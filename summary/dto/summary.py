@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional
 from pydantic import BaseModel, Field
 
 class SummaryRequest(BaseModel):
@@ -10,9 +10,3 @@ class SummaryResponse(BaseModel):
 
     class Config:
         from_attributes = True
-        
-class TranscriptRequest(BaseModel):
-    source_language: str = Field(...)
-    target_language: List[str] = Field(...)
-    text: str = Field(...)
-    

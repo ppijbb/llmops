@@ -94,16 +94,20 @@ class LLMService:
         self.eot_token = self.tokenizer.eos_token if self.tokenizer.eos_token else self.default_eot
         if torch.cuda.is_available():
             self.local_model_type = self.model.llm_engine.model_config.hf_text_config.model_type
-            self.start_header = (self.llama_start_header 
-                                 if "llama" in self.local_model_type else 
-                                 self.gemma_start_header
-                                 if "gemma" in self.local_model_type else
-                                 self.mistral_start_header)
-            self.end_header = (self.llama_end_header 
-                               if "llama" in self.local_model_type else
-                               self.gemma_end_header
-                               if "gemma" in self.local_model_type else
-                               self.mistral_end_header)
+            match self.local_model_type:
+                case "llama":
+                    self.start_header = self.llama_start_header 
+                    self.end_header = self.llama_end_header
+                case "gemma":
+                    self.start_header = self.gemma_start_header
+                    self.end_header = self.gemma_end_header
+                case "mistral":
+                    self.start_header = self.mistral_start_header
+                    self.end_header = self.mistral_end_header
+                case _:
+                    self.local_model_type = 'llama'
+                    self.start_header = self.llama_start_header
+                    self.end_header = self.llama_end_header
         else:
             self.local_model_type = 'llama'
             self.start_header = self.llama_start_header
@@ -126,25 +130,22 @@ class LLMService:
         
         if any([model_name in self.local_model_type for model_name in ["gemma", ]]):
             prompt_texts = []
-            if system_prompt != '':
-                prompt_texts.append(template_dict(role="user" if "gemma" in self.local_model_type else "system", prompt=system_prompt))
-                if len(chat_history) == 0:
-                    prompt_texts.append(template_dict(role="assistant", prompt="I UNDER STAND."))
+            if system_prompt != '' and "gemma" not in self.local_model_type:
+                prompt_texts.append(template_dict(role="system", prompt=system_prompt))
             for history_role, history_response in chat_history:
                 prompt_texts.append(template_dict(role=history_role, prompt=history_response.strip()))
-            prompt_texts.append(template_dict(role="user", prompt=user_input.strip()))
+            prompt_texts.append(template_dict(
+                role="user",
+                prompt=f'{system_prompt+"\n\n" if "gemma" not in self.local_model_type else ""}{user_input.strip()}'))
             prompt_texts = self.tokenizer.apply_chat_template(prompt_texts, tokenize=False)
         else:
             prompt_texts = [f"{self.bos_token}"]
             chat_template = self._template_header() + '{prompt}' + self.eot_token +'\n'
             generate_template = chat_template + self._template_header(role="assistant")
-            
             if system_prompt != '':
                 prompt_texts.append(chat_template.format(role="system", prompt=system_prompt.strip()))
-
             for history_role, history_response in chat_history:
                 prompt_texts.append(chat_template.format(role=history_role, prompt=history_response.strip()))
-
             prompt_texts.append(generate_template.format(role="user", prompt=user_input.strip()))
 
         return "".join(prompt_texts) if not isinstance(prompt_texts[0], dict) else prompt_texts
@@ -165,8 +166,8 @@ class LLMService:
         **kwargs
     ):
         generation_config = dict(
-            do_sample=True,
-            temperature=0.6,
+            do_sample=False,
+            temperature=0.2,
             max_new_tokens=self.max_new_tokens,
             penalty_alpha=0.5,
             no_repeat_ngram_size=5,
@@ -260,7 +261,6 @@ class LLMService:
                 default_system_prompt=default_system_prompt) 
             for batch_input_text, batch_input_prompt, batch_input_history in list(
                 zip_longest(input_text, input_prompt, input_history, fillvalue=[]))]
-        print(prompt)
         return self._generate(prompt)
 
     @torch.inference_mode()
