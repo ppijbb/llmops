@@ -1,6 +1,8 @@
 import os
-import openai
 import logging
+from typing import List
+
+import openai
 
 from summary.application.const import prompt
 
@@ -32,9 +34,11 @@ class OpenAIService:
             input_text=input_text)
         return result.choices[0].message.content
 
-    async def transcript(self, input_text:str , input_prompt:str=None):
+    async def transcript(self, input_text:str , source_language:str, target_language:List[str], input_prompt:str=None):
+        default_system_prompt: str = prompt.DEFAULT_TRANSCRIPT_SYSTEM_PROMPT
+        default_system_prompt += prompt.TRANSCRIPTION_LANGUAGE_PROMPT.format(source=source_language, target=target_language)
         result = self.generate(
-            input_prompt=input_prompt if input_prompt else prompt.DEFAULT_TRANSCRIPT_SYSTEM_PROMPT, 
+            input_prompt=input_prompt if input_prompt else default_system_prompt, 
             input_text=input_text)
         return result.choices[0].message.content
   

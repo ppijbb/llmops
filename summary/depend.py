@@ -18,7 +18,7 @@ def get_model(
         # Load model in 4 bit,
         # which convert the relevant layers in the model into INT4 format
         if torch.cuda.is_available(): # if device on GPT
-            from optimum.onnxruntime import ORTModelForCausalLM      
+            # from optimum.onnxruntime import ORTModelForCausalLM      
             from vllm import LLM
             model = LLM(
                 model=model_path,

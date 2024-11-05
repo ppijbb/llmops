@@ -184,19 +184,19 @@ class APIIngress:
         return await self.service.transcript.remote(
             input_prompt=request_prompt,
             input_text=request_text,
-            soruce_lang=source_language,
-            target_lang=str(request.target_language),
+            soruce_language=source_language,
+            target_language=str(target_language),
             batch=True)
 
     @app.post(
         "/transcript_gemma", 
         description='''
-        language code
-        - Korean: ko
-        - English: en
-        - Chinese: zh
-        - French: fr
-        - Spanish: es
+language code
+    - Korean: ko
+    - English: en
+    - Chinese: zh
+    - French: fr
+    - Spanish: es
         ''',
         response_model=TranscriptResponse)
     async def transcript(
@@ -213,8 +213,8 @@ class APIIngress:
             # assert len(request.text ) > 200, "Text is too short"
             result += await self.batched_transcript(
                 request_prompt=None,
-                soruce_lang=request.source_language,
-                target_lang=str(request.target_language),
+                source_language=request.source_language.value,
+                target_language=str([lang.value for lang in request.target_language]),
                 request_text=f'source text: {text_preprocess(request.text)}')
             result = text_postprocess(result)
             # print(result)
@@ -234,12 +234,12 @@ class APIIngress:
     @app.post(
         "/transcript",
         description='''
-        language code
-        - Korean: ko
-        - English: en
-        - Chinese: zh
-        - French: fr
-        - Spanish: es
+ language code
+    - Korean: ko
+    - English: en
+    - Chinese: zh
+    - French: fr
+    - Spanish: es
         ''',
         response_model=TranscriptResponse)
     async def transcript_gpt(
@@ -248,8 +248,6 @@ class APIIngress:
         service: OpenAIService = Depends(get_gpt_service)
     ) -> TranscriptResponse:
         result = ""
-        print("source", request.source_language)
-        print("target", request.target_language)
         try:
             # ----------------------------------- #
             st = time.time()
@@ -258,8 +256,8 @@ class APIIngress:
             input_text = text_preprocess(request.text)
             result += await service.transcript(
                 input_prompt=None,
-                soruce_lang=request.source_language,
-                target_lang=request.target_language,
+                source_language=request.source_language.value,
+                target_language=str([lang.value for lang in request.target_language]),
                 input_text=input_text)
             # result = text_postprocess(result)
             # print(result)
@@ -280,13 +278,16 @@ class APIIngress:
         response_model=SummaryResponse)
     async def transcript(
         self,
-        request: SummaryRequest,
+        request: TranscriptRequest,
+
         # service: LLMService = Depends(get_llm_service)
     ) -> SummaryResponse:
         result = ""
         # Generate predicted tokens
         result += await self.batched_transcript(
-                request_prompt=request.prompt,
+                request_prompt=None,
+                soruce_lang=request.source_language,
+                target_lang=request.target_language,
                 request_text=text_preprocess(request.text))
         try:
             # ----------------------------------- #
