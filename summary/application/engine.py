@@ -344,13 +344,15 @@ class LLMService:
 
     def transcript(
         self, 
-        input_text: str|List[str], 
+        input_text: str|List[str],
+        soruce_lang:str,
+        target_lang:str,
         input_prompt: str|List[str] = None, 
         stream: bool = False, 
         batch: bool = False
     ):
-        default_few_shots: str = prompt.DEFAULT_TRANSCRIPT_FEW_SHOT,
-        default_system_prompt: str = prompt.DEFAULT_TRANSCRIPT_SYSTEM_PROMPT
+        default_few_shots: str = prompt.DEFAULT_TRANSCRIPT_FEW_SHOT
+        default_system_prompt: str = prompt.DEFAULT_TRANSCRIPT_SYSTEM_PROMPT.format(source=soruce_lang, target=target_lang)
         
         return self._generation_wrapper(
             stream=stream, batch=batch,
@@ -363,12 +365,14 @@ class LLMService:
     def transcript_summarize(
         self, 
         input_text: str|List[str], 
+        soruce_lang:str,
+        target_lang:str,
         input_prompt: str|List[str] = None, 
         stream: bool = False, 
         batch: bool = False
     ):
-        default_few_shots: str = prompt.DEFAULT_TRANSCRIPT_FEW_SHOT,
-        default_system_prompt: str = prompt.DEFAULT_TRANSCRIPT_SUMMARIZE_SYSTEM_PROMPT
+        default_few_shots: str = prompt.DEFAULT_TRANSCRIPT_FEW_SHOT
+        default_system_prompt: str = prompt.DEFAULT_TRANSCRIPT_SUMMARIZE_SYSTEM_PROMPT.format(source=soruce_lang, target=target_lang)
         
         return self._generation_wrapper(
             stream=stream, batch=batch,

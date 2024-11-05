@@ -27,6 +27,7 @@ from summary.application.engine import (
     get_llm_service, get_gpt_service)
 from summary.dto import SummaryRequest, SummaryResponse
 from summary.dto import TranscriptRequest, TranscriptResponse
+from summary.utils.text_process import text_preprocess, text_postprocess
 from summary.logger import setup_logger
 import traceback
 import os
@@ -50,19 +51,6 @@ server_logger.info("""
 #  Server Started  #
 ####################
 """)
-
-
-def text_preprocess(text: str) -> str:
-    return text
-    # return f"[대화]\n{text}\n---\n[요약]\n" if "[대화]" not in text and "[요약]" not in text else text
-
-def text_postprocess(text:str) -> str:
-    if not text.endswith("\n---"):
-        text = "* " + "* ".join(text.split("* ")[:-1])
-        if text.endswith("\n---"):
-            "---"
-    text = text.replace("```json", "").replace("```", "")
-    return text.replace("* ", "").replace("---", "").strip()
 
 
 @serve.deployment(num_replicas=1)
@@ -188,12 +176,16 @@ class APIIngress:
     async def batched_transcript(
         self, 
         request_prompt: List[Any],
-        request_text: List[Any]
+        request_text: List[Any],
+        source_language: str,
+        target_language: str
     ) -> List[str]:
         logger.info(f"Batched request: {len(request_text)}")
         return await self.service.transcript.remote(
             input_prompt=request_prompt,
             input_text=request_text,
+            soruce_lang=source_language,
+            target_lang=str(request.target_language),
             batch=True)
 
     @app.post(
@@ -221,9 +213,10 @@ class APIIngress:
             # assert len(request.text ) > 200, "Text is too short"
             result += await self.batched_transcript(
                 request_prompt=None,
+                soruce_lang=request.source_language,
+                target_lang=str(request.target_language),
                 request_text=f'source text: {text_preprocess(request.text)}')
-            # result = text_postprocess(result)
-            result = result.replace("```json", "").replace("```", "").replace("\ntrasncripted result:\n", "").replace("*\n","").replace("\n\n", "\n").strip()
+            result = text_postprocess(result)
             # print(result)
             end = time.time()
             # ----------------------------------- #
@@ -265,6 +258,8 @@ class APIIngress:
             input_text = text_preprocess(request.text)
             result += await service.transcript(
                 input_prompt=None,
+                soruce_lang=request.source_language,
+                target_lang=request.target_language,
                 input_text=input_text)
             # result = text_postprocess(result)
             # print(result)

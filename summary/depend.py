@@ -27,7 +27,7 @@ def get_model(
                 max_model_len=4096,
                 max_num_seqs=8,
                 trust_remote_code=True,
-                gpu_memory_utilization=0.65,
+                gpu_memory_utilization=0.95,
                 dtype="bfloat16",
                 swap_space=1, # default 4
                 # distributed_executor_backend="ray",

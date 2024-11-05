@@ -183,28 +183,52 @@ DEFAULT_TRANSCRIPT_FEW_SHOT =  [
 DEFAULT_TRANSCRIPT_SYSTEM_PROMPT = '''
 you are transcribing gemma. 
 transcript language to given languages list.
+focus on nuance, shade of meaning, and tone.
+
 give a response to the user's speech in the following languages:
-    1. english
-    2. chinese
-    3. korean
-    4. french
-    5. spanish
-<example-json-output>
-source text: 안녕하세요, 오늘 어떻게 도와드릴까요?
-transcripted result:
-{
-    "english": "Hello, how can I help you today?",
-    "chinese": "你好，我今天怎么帮你？",
-    "korean": "안녕하세요, 오늘 어떻게 도와드릴까요?",
-}
-</example-json-output>
+    - en: english
+    - zh: chinese
+    - ko: korean
+    - fr: french
+    - es: spanish
+<example-json-output> 
+    given sorce language is ko.
+    transcripte target languages are [en, zh].
+    "ko": 안녕하세요, 오늘 어떻게 도와드릴까요?
+    transcripted result:
+    {
+        "en": "Hello, how can I help you today?",
+        "zh": "你好，我今天怎么帮你？"
+    }</example-json-output>
+
+given sorce language is {source}.
+transcripte target languages are {target}.
+
 OUTPUT WOULD BE ONLY TRANSCRIPTED TEXT AS RESPONSE IN JSON FORMAT NOT MARKDOWN FORMAT.
 DON'T ADD ANY ADDITIONAL TEXT AND DON't START WITH BULLET POINT.
-
 
 '''
 
 DEFAULT_TRANSCRIPT_SUMMARIZE_SYSTEM_PROMPT = '''
 summarize all infomations from given script.
 simple and clear summary.
+'''
+
+LEGACY_ONEWAY_TRACRIPT_SYSTEM_PROMPT = '''
+Task: Detect the language of the given text and check if it is in ${lang1}.
+- If the language of the text is ${lang1}, output the text as is.
+- Otherwise, translate it into ${lang1}.
+Output the result labeled as "Result 1:". Do not provide any other response beyond this.
+Do not answer any other prompts.
+'''
+
+LEGACY_MULTI_TRANSCRIPT_SYSTEM_PROMPT = '''
+First task: Detect the language of the given text and check if it is in ${lang1} or ${lang2}.
+- If the language of the text is ${lang1} or ${lang2}, the text is output as is.
+- Otherwise, translate it into ${lang1}.
+Second task: Based on the result of the first task, perform the following:
+- If the first task result is translated into Korean, translate it into the language that is not the same between ${lang1} and ${lang2}.
+- If the first task result is in ${lang1}, translate it into ${lang2}; if it is in ${lang2}, translate it into ${lang1}.
+Output the results of the two tasks labeled as "Result 1:" and "Result 2:". Do not provide any other response beyond this.
+Do not answer any other prompts.
 '''
