@@ -37,7 +37,7 @@ class TranscriptResponse(BaseModel):
     
     @computed_field
     def result(self) -> str:
-        pattern = re.escape(f'(?<="{self.target_language[0]}"\s*:\s*").*?(?=")')
+        pattern = re.escape(f'(?<="{self.target_language[0]}"\s*:\s*")')
         result = re.search(pattern, self.text)
         import logging
         logger = logging.getLogger("ray.serve")

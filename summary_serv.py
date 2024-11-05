@@ -187,7 +187,7 @@ class APIIngress:
             history=history,
             source_language=source_language,
             detect_language=detect_language,
-            target_language=str(target_language),
+            target_language=target_language,
             batch=True)
 
     @app.post(
@@ -219,7 +219,7 @@ language code
                 history=request.history,
                 source_language=request.source_language.value,
                 detect_language=detect_language(request.text),
-                target_language=str([lang.value for lang in request.target_language]),
+                target_language=[lang.value for lang in request.target_language],
                 request_text=f'{text_preprocess(request.text)}')
             result = text_postprocess(result)
             # print(result)
@@ -267,7 +267,7 @@ language code
                 history=request.history,
                 detect_language=detect_language(request.text),
                 source_language=request.source_language.value,
-                target_language=str([lang.value for lang in request.target_language]),
+                target_language=[lang.value for lang in request.target_language],
                 input_text=input_text)
             # result = text_postprocess(result)
             # print(result)

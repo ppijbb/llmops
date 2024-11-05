@@ -256,7 +256,7 @@ class LLMService:
         input_history: List[List[str]] = [],
         use_fewshot: bool = False,
         default_few_shots: str = prompt.DEFAULT_SUMMARY_FEW_SHOT,
-        default_system_prompt: str = prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT,
+        default_system_prompt: str|List[str] = prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT,
         **kwargs
     ) -> str:
         prompt = [
@@ -356,18 +356,21 @@ class LLMService:
         source_language:str,
         detect_language:str,
         target_language:str,
-        history: List[str] = [""],
+        history: List[str]|List[List[str]] = [""],
         input_prompt: str|List[str] = None, 
         stream: bool = False, 
         batch: bool = False
     ): 
         default_few_shots: str = prompt.DEFAULT_TRANSCRIPT_FEW_SHOT
         default_system_prompt: str = prompt.DEFAULT_TRANSCRIPT_SYSTEM_PROMPT
-        default_system_prompt += prompt.TRANSCRIPTION_LANGUAGE_PROMPT.format(
-            history=["\n".join([f"\t{_h}" for _h in h]) for h in history],
-            source=source_language,
-            detect=detect_language,
-            target=target_language)
+        user_system_prompt = [
+            default_system_prompt + prompt.TRANSCRIPTION_LANGUAGE_PROMPT.format(
+            history="\n".join([f"\t{_h}" for _h in h]),
+            source=s,
+            detect=d,
+            target=t)
+        for s,d,t,h in zip(source_language, detect_language, target_language, history)]
+        
         if isinstance(input_text, list):
             input_text = [f"source language: {text}" for text in input_text]
         
@@ -375,9 +378,9 @@ class LLMService:
             stream=stream, batch=batch,
             **dict(
                 input_text=input_text, 
-                input_prompt=input_prompt, 
+                input_prompt=user_system_prompt, 
                 default_few_shots=default_few_shots, 
-                default_system_prompt=default_system_prompt))
+                default_system_prompt=user_system_prompt))
 
     def transcript_summarize(
         self, 
@@ -385,23 +388,25 @@ class LLMService:
         source_language:str,
         detect_language:str,
         target_language:str,        
-        history: List[str] = [""],
+        history: List[str]|List[List[str]] = [""],
         input_prompt: str|List[str] = None, 
         stream: bool = False, 
         batch: bool = False
     ):
         default_few_shots: str = prompt.DEFAULT_TRANSCRIPT_FEW_SHOT
         default_system_prompt: str = prompt.DEFAULT_TRANSCRIPT_SUMMARIZE_SYSTEM_PROMPT.format(source=source_language, target=target_language)
-        default_system_prompt += prompt.TRANSCRIPTION_LANGUAGE_PROMPT.format(
-            history=["\n".join([f"\t{_h}" for _h in h]) for h in history],
-            source=source_language,
-            detect=detect_language, 
-            target=target_language)
-        
+        user_system_prompt = [
+            default_system_prompt + prompt.TRANSCRIPTION_LANGUAGE_PROMPT.format(
+            history="\n".join([f"\t{_h}" for _h in h]),
+            source=s,
+            detect=d,
+            target=t)
+        for s,d,t,h in zip(source_language, detect_language, target_language, history)]
+
         return self._generation_wrapper(
             stream=stream, batch=batch,
             **dict(
                 input_text=input_text, 
-                input_prompt=input_prompt, 
+                input_prompt=user_system_prompt, 
                 default_few_shots=default_few_shots, 
                 default_system_prompt=default_system_prompt))
