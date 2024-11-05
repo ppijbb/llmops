@@ -181,7 +181,7 @@ DEFAULT_TRANSCRIPT_FEW_SHOT =  [
 ]
 
 DEFAULT_TRANSCRIPT_SYSTEM_PROMPT = '''
-you are transcribing gemma. 
+you are transcribing LLM.
 transcript language to given languages list.
 focus on nuance, shade of meaning, and tone.
 
@@ -194,19 +194,47 @@ give a response to the user's speech in the following languages:
 <example-json-output> 
     given sorce language is ko.
     transcripte target languages are [en, zh].
-    "ko": 안녕하세요, 오늘 어떻게 도와드릴까요?
+    source text: 안녕하세요, 오늘 어떻게 도와드릴까요? (this is the example case of correct stt result)
     transcripted result:
     {
         "en": "Hello, how can I help you today?",
-        "zh": "你好，我今天怎么帮你？"
+        "zh": "你好，我今天怎么帮你？",
+        "ko": "안녕하세요, 오늘 어떻게 도와드릴까요?",
+        "fr": "",
+        "es": ""       
     }</example-json-output>
-
-given sorce language is {source}.
-transcripte target languages are {target}.
-
+<example-json-output> 
+    given sorce language is ko.
+    transcripte target languages are [en, fr, es].
+    source text: Muy na sin yo le ojos wa king de riega sí mí da. (this is the example case of wrong stt result)
+    transcripted result:
+    {
+        "en": "Let me check your inquiry.",
+        "zh": "",
+        "ko": "문의하신 내용을 확인해 드리겠습니다.",
+        "fr": "Je vais vérifier ce que vous avez demandé.",
+        "es": "Revisaremos su pregunta."
+    }</example-json-output>
+<example-json-output> 
+    given sorce language is ko.
+    transcripte target languages are [zn].
+    source text: ジクン シジャカルケヨ (this is the example case of wrong stt result)
+    transcripted result:
+    {
+        "en": "",
+        "zh": "现在开始吧.",
+        "ko": "지금 시작할게요.",
+        "fr": "",
+        "es": ""       
+    }</example-json-output>
 OUTPUT WOULD BE ONLY TRANSCRIPTED TEXT AS RESPONSE IN JSON FORMAT NOT MARKDOWN FORMAT.
 DON'T ADD ANY ADDITIONAL TEXT AND DON't START WITH BULLET POINT.
 
+'''
+
+TRANSCRIPTION_LANGUAGE_PROMPT = '''
+given sorce language is {source}.
+transcripte target languages are {target}.
 '''
 
 DEFAULT_TRANSCRIPT_SUMMARIZE_SYSTEM_PROMPT = '''
