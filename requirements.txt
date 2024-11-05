@@ -18,7 +18,7 @@ fairscale>=0.4.13
 fire>=0.6.0
 diffusers>=0.15.0
 msgpack>=1.1.0
-flash-attn @https://github.com/Dao-AILab/flash-attention/releases/download/v2.6.3/flash_attn-2.6.3+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
+# flash-attn @https://github.com/Dao-AILab/flash-attention/releases/download/v2.6.3/flash_attn-2.6.3+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
 transformer-engine>=1.11.0
 transformers>=4.46.1
 # @git+https://github.com/huggingface/transformers.git
