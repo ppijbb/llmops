@@ -24,8 +24,8 @@ class TranscriptRequest(BaseModel):
 
 class TranscriptResponse(BaseModel):
     text: str = Field(..., exclude=True)
-    source_language: str = Field(...)
-    target_language: List[str] = Field([])
+    source_language: str = Field(..., exclude=True)
+    target_language: List[str] = Field([], exclude=True)
     class Config:
         from_attributes = True
 
@@ -37,13 +37,9 @@ class TranscriptResponse(BaseModel):
     
     @computed_field
     def result(self) -> str:
-        pattern = re.escape(f'(?<="{self.target_language[0]}"\s*:\s*")')
-        result = re.search(pattern, self.text)
-        import logging
-        logger = logging.getLogger("ray.serve")
-
-        logger.warn(f"{pattern} result: {result}")
-        return result
+        # 패턴에 맞는 모든 키-값 쌍 찾기
+        pattern = rf'"{re.escape(self.target_language[0])}"\s*:\s*"(.*?)"'
+        return re.findall(pattern, self.text)[0]
     
     @computed_field
     def transcribed(self) -> dict:

@@ -63,6 +63,24 @@ class OpenAIService:
             input_text=input_text)
         return result.choices[0].message.content
   
+    async def transcript_legacy(
+        self, 
+        input_text:str , 
+        source_language:str,
+        detect_language:str,
+        target_language:List[str], 
+        input_prompt:str=None,
+        history:List[str]=[""]
+    ) -> str:
+        default_system_prompt = prompt.LEGACY_MULTI_TRANSCRIPT_SYSTEM_PROMPT.format(
+            lang1=source_language,
+            lang2=target_language[0])
+        
+        result = self.generate(
+            input_prompt=input_prompt if input_prompt else default_system_prompt, 
+            input_text=input_text)
+        return result.choices[0].message.content
+  
     async def transcript_summarize(
         self, 
         input_text:str, 

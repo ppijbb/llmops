@@ -265,7 +265,55 @@ language code
             result += await service.transcript(
                 input_prompt=None,
                 history=request.history,
-                detect_language=detect_language(request.text),
+                detect_language=detect_language(input_text),
+                source_language=request.source_language.value,
+                target_language=[lang.value for lang in request.target_language],
+                input_text=input_text)
+            # result = text_postprocess(result)
+            # print(result)
+            end = time.time()
+            # ----------------------------------- #
+            print(f"Time: {end - st}")
+        except AssertionError as e:
+            server_logger.warn("error" + e)
+            result += e
+        except Exception as e:
+            server_logger.warn("error" + e)
+            result += "Error in summarize"
+        finally:
+            return TranscriptResponse(
+                text=result,
+                source_language=request.source_language.value,
+                target_language=[lang.value for lang in request.target_language])
+
+    @app.post(
+        "/transcript_legacy",
+        description='''
+ language code
+    - Korean: ko
+    - English: en
+    - Chinese: zh
+    - French: fr
+    - Spanish: es
+        ''',
+        response_model=TranscriptResponse)
+    async def transcript_legacy(
+        self,
+        request: TranscriptRequest,
+        service: OpenAIService = Depends(get_gpt_service)
+    ) -> TranscriptResponse:
+        result = ""
+        
+        try:
+            # ----------------------------------- #
+            st = time.time()
+            # result += ray.get(service.summarize.remote(ray.put(request.text)))
+            # assert len(request.text ) > 200, "Text is too short"
+            input_text = text_preprocess(request.text)
+            result += await service.transcript_legacy(
+                input_prompt=None,
+                history=request.history,
+                detect_language=detect_language(input_text),
                 source_language=request.source_language.value,
                 target_language=[lang.value for lang in request.target_language],
                 input_text=input_text)

@@ -269,7 +269,7 @@ class LLMService:
                 default_system_prompt=default_system_prompt) 
             for batch_input_text, batch_input_prompt, batch_input_history in list(
                 zip_longest(input_text, input_prompt, input_history, fillvalue=[]))]
-        print(prompt)
+        # print(prompt)
         return self._generate(prompt)
 
     @torch.inference_mode()
