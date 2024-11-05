@@ -4,16 +4,16 @@ services:
   app:
     env_file:
       - .env
+    volumes:
+      - .:/app
     build:
       context: .
       dockerfile: Dockerfile
       args:
         - HF_TOKEN=$HF_TOKEN
         - OPENAI_API_KEY=$OPENAI_API_KEY
-    volumes:
-      - .:/app
-    devices:
-      - /dev/neuron0:/dev/neuron0
+    # devices:
+    #   - /dev/neuron0:/dev/neuron0
     ports:
       - target: 8501       ## 컨테이너 내부 포트
         published: 8501    ## 호스트OS에서 공개할 포트
@@ -25,16 +25,20 @@ services:
       resources:
         limits:
           cpus: '2'
-          memory: 4gb
+          memory: 6gb
         reservations:
           cpus: '2'
-          memory: 4gb
+          memory: 6gb
           devices:
-          - capabilities: ["nvidia-compute"]
+          - driver: nvidia
+            device_ids: ['0']
+            capabilities: [gpu]
       restart_policy:
         condition: on-failure
         delay: 5s
         max_attempts: 3
         window: 120s
-    command:
-      - poetry run serve run summary_serv:build_app
+    command: 
+      - serve 
+      - run
+      - summary_serv:build_app
