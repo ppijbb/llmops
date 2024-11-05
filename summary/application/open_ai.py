@@ -12,7 +12,11 @@ class OpenAIService:
         self.client = openai.OpenAI(
             api_key=os.environ["OPENAI_API_KEY"])
 
-    def generate(self, input_text:str , input_prompt:str ):
+    def generate(
+        self, 
+        input_text:str, 
+        input_prompt:str
+    ):
         return self.client.chat.completions.create(
             model="gpt-4o-mini",
             max_tokens=2048,
@@ -28,21 +32,42 @@ class OpenAIService:
             ]
         )
 
-    async def summarize(self, input_text:str , input_prompt:str=None):
+    async def summarize(
+        self, 
+        input_text:str , 
+        input_prompt:str=None
+    ) -> str:
         result = self.generate(
             input_prompt=input_prompt if input_prompt else prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT, 
             input_text=input_text)
         return result.choices[0].message.content
 
-    async def transcript(self, input_text:str , source_language:str, target_language:List[str], input_prompt:str=None):
+    async def transcript(
+        self, 
+        input_text:str , 
+        source_language:str,
+        detect_language:str,
+        target_language:List[str], 
+        input_prompt:str=None,
+        history:List[str]=[""]
+    ) -> str:
         default_system_prompt: str = prompt.DEFAULT_TRANSCRIPT_SYSTEM_PROMPT
-        default_system_prompt += prompt.TRANSCRIPTION_LANGUAGE_PROMPT.format(source=source_language, target=target_language)
+        default_system_prompt += prompt.TRANSCRIPTION_LANGUAGE_PROMPT.format(
+            history="\n".join([f"\t{h}" for h in history]),
+            source=source_language,
+            detect=detect_language, 
+            target=target_language)
+        
         result = self.generate(
             input_prompt=input_prompt if input_prompt else default_system_prompt, 
             input_text=input_text)
         return result.choices[0].message.content
   
-    async def transcript_summarize(self, input_text:str , input_prompt:str=None):
+    async def transcript_summarize(
+        self, 
+        input_text:str, 
+        input_prompt:str=None
+    ) -> str:
         result = self.generate(
             input_prompt=input_prompt if input_prompt else prompt.DEFAULT_TRANSCRIPT_SUMMARIZE_SYSTEM_PROMPT, 
             input_text=input_text)

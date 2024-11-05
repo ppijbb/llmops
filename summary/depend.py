@@ -6,6 +6,8 @@ from transformers import AutoTokenizer
 from .application.open_ai import OpenAIService
 from .application.anthropic import ClaudeService
 
+os.environ["VLLM_CPU_OMP_THREADS_BIND"] = "0-29"
+
 
 def get_model(
     model_path: str = "/home/conan/workspace/kyi/play-llama/Meta-Llama-3-8B",
@@ -25,16 +27,16 @@ def get_model(
                 # quantization="bitsandbytes",
                 # load_format="bitsandbytes",
                 max_model_len=2048,
-                max_num_seqs=8,
+                max_num_seqs=16,
                 trust_remote_code=True,
-                gpu_memory_utilization=0.70,
+                gpu_memory_utilization=0.95,
                 dtype="bfloat16",
                 swap_space=4, # default 4
                 # quantization="awq",                
                 # distributed_executor_backend="ray",
                 tensor_parallel_size=1,
                 pipeline_parallel_size=1,
-                enforce_eager=False,
+                enforce_eager=True,
                 block_size=8, 
             )
 

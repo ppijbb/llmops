@@ -1,4 +1,5 @@
 import json
+import re
 import traceback
 from typing import Optional, List
 from pydantic import BaseModel, Field, computed_field
@@ -7,6 +8,7 @@ from summary.enum.transcript import TargetLanguages
 class TranscriptRequest(BaseModel):
     source_language: TargetLanguages = Field(None)
     target_language: List[TargetLanguages] = Field(None)
+    history: Optional[List[str]] = Field([""])
     text: str = Field(...)
     
     class Config:
@@ -15,12 +17,15 @@ class TranscriptRequest(BaseModel):
                 "id" : 1,
                 "source_language" : "ko",
                 "target_language" : ["en", "zh", "fr", "es"],
-                "text" : "안녕하세요, 오늘 어떻게 도와드릴까요?"
+                "history": ["안녕하세요."],
+                "text" : "오늘 어떻게 도와드릴까요?"
             }
         }
 
 class TranscriptResponse(BaseModel):
-    text: str
+    text: str = Field(..., exclude=True)
+    source_language: str = Field(...)
+    target_language: List[str] = Field([])
     class Config:
         from_attributes = True
 
@@ -29,6 +34,16 @@ class TranscriptResponse(BaseModel):
             result.update({target: ""})
         else:
             pass
+    
+    @computed_field
+    def result(self) -> str:
+        pattern = re.escape(f'(?<="{self.target_language[0]}"\s*:\s*").*?(?=")')
+        result = re.search(pattern, self.text)
+        import logging
+        logger = logging.getLogger("ray.serve")
+
+        logger.warn(f"{pattern} result: {result}")
+        return result
     
     @computed_field
     def transcribed(self) -> dict:

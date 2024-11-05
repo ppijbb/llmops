@@ -204,47 +204,52 @@ Caution:
 
 <example-json-output> 
     given sorce language is ko.
+    detected language is ko.
     transcripte target languages are [en, zh].
     source history:
-
+        
     source text: 안녕하세요, 오늘 어떻게 도와드릴까요? (this is the example case of correct STT result)
     transcripted result:
     {
-        "ko": "안녕하세요, 오늘 어떻게 도와드릴까요?", (need to translate with source text)
+        "ko": "안녕하세요, 오늘 어떻게 도와드릴까요?", (fix the source text from detected pronunciation)
         "en": "Hello, how can I help you today?", (need to translate with source text)
         "zh": "你好，我今天怎么帮你？", (need to translate with source text)
     }</example-json-output>
 <example-json-output> 
     given sorce language is ko.
+    detected language is es.
     transcripte target languages are [en, fr, es].
     source history: 
         안녕하세요, 오늘 어떻게 도와드릴까요? (this is the example case of correct STT result)
     source text: Muy na sin yo le ojos wa king de riega sí mí da. (this is the example case of wrong STT result)
     transcripted result:
     {
-        "ko": "문의하신 내용을 확인해 드리겠습니다.",
+        "ko": "문의하신 내용을 확인해 드리겠습니다.", (fix the source text from detected pronunciation)
         "en": "Let me check your inquiry.", (need to translate with fixed source text)
         "fr": "Je vais vérifier ce que vous avez demandé.", (need to translate with fixed source text)
         "es": "Revisaremos su pregunta." (need to translate with fixed source text)
     }</example-json-output>
 <example-json-output> 
     given sorce language is ko.
+    detected language is ja.
     transcripte target languages are [zn].
     source history: 
         안녕하세요, 오늘 어떻게 도와드릴까요? (this is the example case of correct STT result)
     source text: ジクン シジャカルケヨ (this is the example case of wrong STT result)
     transcripted result:
     {
-        "ko": "지금 시작할게요.", (this is corrected soruce text)
+        "ko": "지금 시작할게요.", (fix the source text from detected pronunciation)
         "zh": "现在开始吧.", (need to translate with fixed source text)
     }</example-json-output>
 
 '''
 
 TRANSCRIPTION_LANGUAGE_PROMPT = '''
+source history:
+{history}
 given sorce language is {source}.
-transcripte target languages are {target}.
-'''
+detected language is {detect}.
+transcripte target languages are {target}.'''
 
 DEFAULT_TRANSCRIPT_SUMMARIZE_SYSTEM_PROMPT = '''
 summarize all infomations from given script.

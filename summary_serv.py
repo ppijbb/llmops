@@ -1,9 +1,7 @@
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = "0"
-os.environ["VLLM_CPU_KVCACHE_SPACE"] = "2"
-os.environ["VLLM_CPU_OMP_THREADS_BIND"] = "0-29"
+
 # os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = "0"
 # os.environ["OMP_NUM_THREADS"] = "2"
 # os.environ["ENABLE_SDP_FUSION"] = "1"
@@ -15,25 +13,25 @@ os.environ["VLLM_CPU_OMP_THREADS_BIND"] = "0-29"
 # os.environ["KMP_SETTINGS"] = "1"
 # os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 # os.environ["DNNL_PRIMITIVE_CACHE_CAPACITY"] = "1024"
-import torch
 
-from fastapi import FastAPI, Depends
-from fastapi.responses import StreamingResponse
 import logging
 from typing import Any, List, Dict
 import time
+import traceback
+
+from fastapi import FastAPI, Depends
+from fastapi.responses import StreamingResponse
+from ray import serve
+from ray.serve.handle import DeploymentHandle
+
 from summary.application.engine import (
     LLMService, OpenAIService, llm_ready,
     get_llm_service, get_gpt_service)
 from summary.dto import SummaryRequest, SummaryResponse
 from summary.dto import TranscriptRequest, TranscriptResponse
 from summary.utils.text_process import text_preprocess, text_postprocess
+from summary.utils.lang_detect import detect_language
 from summary.logger import setup_logger
-import traceback
-import os
-from ray import serve
-from ray.serve.handle import DeploymentHandle
-
 
 def format_llm_output(rlt_text):
     return {
@@ -178,13 +176,17 @@ class APIIngress:
         request_prompt: List[Any],
         request_text: List[Any],
         source_language: str,
-        target_language: str
+        detect_language: str,
+        target_language: str,
+        history: List[str]
     ) -> List[str]:
         logger.info(f"Batched request: {len(request_text)}")
         return await self.service.transcript.remote(
             input_prompt=request_prompt,
             input_text=request_text,
-            soruce_language=source_language,
+            history=history,
+            source_language=source_language,
+            detect_language=detect_language,
             target_language=str(target_language),
             batch=True)
 
@@ -206,6 +208,7 @@ language code
     ) -> TranscriptResponse:
         result = ""
         # Generate predicted tokens
+
         try:
             # ----------------------------------- #
             st = time.time()
@@ -213,9 +216,11 @@ language code
             # assert len(request.text ) > 200, "Text is too short"
             result += await self.batched_transcript(
                 request_prompt=None,
+                history=request.history,
                 source_language=request.source_language.value,
+                detect_language=detect_language(request.text),
                 target_language=str([lang.value for lang in request.target_language]),
-                request_text=f'source text: {text_preprocess(request.text)}')
+                request_text=f'{text_preprocess(request.text)}')
             result = text_postprocess(result)
             # print(result)
             end = time.time()
@@ -229,7 +234,10 @@ language code
             server_logger.error("error" + e)
             result += "Generation failed"
         finally:
-            return TranscriptResponse(text=result)
+            return TranscriptResponse(
+                text=result,
+                source_language=request.source_language.value,
+                target_language=[lang.value for lang in request.target_language])
 
     @app.post(
         "/transcript",
@@ -256,6 +264,8 @@ language code
             input_text = text_preprocess(request.text)
             result += await service.transcript(
                 input_prompt=None,
+                history=request.history,
+                detect_language=detect_language(request.text),
                 source_language=request.source_language.value,
                 target_language=str([lang.value for lang in request.target_language]),
                 input_text=input_text)
@@ -271,7 +281,10 @@ language code
             server_logger.warn("error" + e)
             result += "Error in summarize"
         finally:
-            return TranscriptResponse(text=result)
+            return TranscriptResponse(
+                text=result,
+                source_language=request.source_language.value,
+                target_language=[lang.value for lang in request.target_language])
 
     @app.post(
         "/transcript_gemma/summarize", 
@@ -284,17 +297,17 @@ language code
     ) -> SummaryResponse:
         result = ""
         # Generate predicted tokens
-        result += await self.batched_transcript(
-                request_prompt=None,
-                soruce_lang=request.source_language,
-                target_lang=request.target_language,
-                request_text=text_preprocess(request.text))
+
         try:
             # ----------------------------------- #
             st = time.time()
             # result += ray.get(service.summarize.remote(ray.put(request.text)))
             # assert len(request.text ) > 200, "Text is too short"
-
+            result += await self.batched_transcript(
+                request_prompt=None,
+                source_lang=request.source_language,
+                target_lang=request.target_language,
+                request_text=text_preprocess(request.text))
             # result = text_postprocess(result)
             # print(result)
             end = time.time()

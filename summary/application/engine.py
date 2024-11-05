@@ -172,14 +172,14 @@ class LLMService:
         **kwargs
     ):
         generation_config = dict(
-            do_sample=False,
-            temperature=0.7,
+            do_sample=True,
+            temperature=0.3,
             max_new_tokens=self.max_new_tokens,
             # penalty_alpha=0.5,
-            no_repeat_ngram_size=5,
+            # no_repeat_ngram_size=5,
             frequency_penalty=0.0,
             presence_penalty=0.0,
-            top_p=0.95,
+            top_p=0.99,
             use_cache=True)
         generation_config.update(kwargs)
         return generation_config
@@ -353,16 +353,23 @@ class LLMService:
     def transcript(
         self, 
         input_text: str|List[str],
-        soruce_language:str,
+        source_language:str,
+        detect_language:str,
         target_language:str,
+        history: List[str] = [""],
         input_prompt: str|List[str] = None, 
         stream: bool = False, 
         batch: bool = False
     ): 
         default_few_shots: str = prompt.DEFAULT_TRANSCRIPT_FEW_SHOT
         default_system_prompt: str = prompt.DEFAULT_TRANSCRIPT_SYSTEM_PROMPT
-        
-        default_system_prompt += prompt.TRANSCRIPTION_LANGUAGE_PROMPT.format(source=soruce_language, target=target_language)
+        default_system_prompt += prompt.TRANSCRIPTION_LANGUAGE_PROMPT.format(
+            history=["\n".join([f"\t{_h}" for _h in h]) for h in history],
+            source=source_language,
+            detect=detect_language,
+            target=target_language)
+        if isinstance(input_text, list):
+            input_text = [f"source language: {text}" for text in input_text]
         
         return self._generation_wrapper(
             stream=stream, batch=batch,
@@ -375,15 +382,21 @@ class LLMService:
     def transcript_summarize(
         self, 
         input_text: str|List[str], 
-        soruce_language:str,
-        target_language:str,
+        source_language:str,
+        detect_language:str,
+        target_language:str,        
+        history: List[str] = [""],
         input_prompt: str|List[str] = None, 
         stream: bool = False, 
         batch: bool = False
     ):
         default_few_shots: str = prompt.DEFAULT_TRANSCRIPT_FEW_SHOT
-        default_system_prompt: str = prompt.DEFAULT_TRANSCRIPT_SUMMARIZE_SYSTEM_PROMPT.format(source=soruce_language, target=target_language)
-        default_system_prompt += prompt.TRANSCRIPTION_LANGUAGE_PROMPT.format(source=soruce_language, target=target_language)
+        default_system_prompt: str = prompt.DEFAULT_TRANSCRIPT_SUMMARIZE_SYSTEM_PROMPT.format(source=source_language, target=target_language)
+        default_system_prompt += prompt.TRANSCRIPTION_LANGUAGE_PROMPT.format(
+            history=["\n".join([f"\t{_h}" for _h in h]) for h in history],
+            source=source_language,
+            detect=detect_language, 
+            target=target_language)
         
         return self._generation_wrapper(
             stream=stream, batch=batch,
