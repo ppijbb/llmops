@@ -6,6 +6,7 @@ services:
       - .env
     volumes:
       - .:/app
+      - /home/conan/.cache:/root/.cache
     build:
       context: .
       dockerfile: Dockerfile
@@ -25,10 +26,10 @@ services:
       resources:
         limits:
           cpus: '2'
-          memory: 6gb
+          memory: 16gb
         reservations:
           cpus: '2'
-          memory: 6gb
+          memory: 16gb
           devices:
           - driver: nvidia
             device_ids: ['0']
