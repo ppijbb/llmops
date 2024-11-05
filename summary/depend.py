@@ -24,16 +24,18 @@ def get_model(
                 model=model_path,
                 # quantization="bitsandbytes",
                 # load_format="bitsandbytes",
-                max_model_len=4096,
+                max_model_len=2048,
                 max_num_seqs=8,
                 trust_remote_code=True,
-                gpu_memory_utilization=0.95,
+                gpu_memory_utilization=0.70,
                 dtype="bfloat16",
-                swap_space=1, # default 4
+                swap_space=4, # default 4
+                # quantization="awq",                
                 # distributed_executor_backend="ray",
                 tensor_parallel_size=1,
                 pipeline_parallel_size=1,
-                enforce_eager=True,
+                enforce_eager=False,
+                block_size=8, 
             )
 
         elif subprocess.run(["neuron-ls"], shell=True).returncode == 0: # if device on neuron

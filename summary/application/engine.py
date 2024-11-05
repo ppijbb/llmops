@@ -112,12 +112,18 @@ class LLMService:
             self.local_model_type = 'llama'
             self.start_header = self.llama_start_header
             self.end_header = self.llama_end_header
-        self.max_new_tokens = 1000
+        self.max_new_tokens = 2048
         self.logger = logging.getLogger("ray.serve")
         self.logger.info(f"\n\n\n{self.local_model_type} LLM Engine is ready\n\n\n")
 
     def _template_header(self, role:str = "{role}") -> str:
         return f'{self.start_header}{role}{self.end_header}\n'
+
+    def _model_processor(self, user_input, system_prompt):
+        if "gemma" in self.local_model_type:
+            return f'{system_prompt}\n\n{user_input}\n{self.end_header}\n\n{self.start_header}'.strip() + 'model\n'
+        else:
+            return f'{user_input}'.strip()
 
     def get_prompt(
         self,
@@ -136,7 +142,7 @@ class LLMService:
                 prompt_texts.append(template_dict(role=history_role, prompt=history_response.strip()))
             prompt_texts.append(template_dict(
                 role="user",
-                prompt=f'{system_prompt if "gemma" in self.local_model_type else ""}\n{user_input}\n{self.end_header}\n{self.start_header}model'.strip()))
+                prompt=self._model_processor(user_input, system_prompt)))
             prompt_texts = self.tokenizer.apply_chat_template(prompt_texts, tokenize=False)
         else:
             prompt_texts = [f"{self.bos_token}"]
@@ -167,11 +173,13 @@ class LLMService:
     ):
         generation_config = dict(
             do_sample=False,
-            temperature=0.2,
+            temperature=0.7,
             max_new_tokens=self.max_new_tokens,
-            penalty_alpha=0.5,
+            # penalty_alpha=0.5,
             no_repeat_ngram_size=5,
-            top_p=0.9,
+            frequency_penalty=0.0,
+            presence_penalty=0.0,
+            top_p=0.95,
             use_cache=True)
         generation_config.update(kwargs)
         return generation_config

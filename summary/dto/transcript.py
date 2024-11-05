@@ -24,10 +24,21 @@ class TranscriptResponse(BaseModel):
     class Config:
         from_attributes = True
 
+    def _verified_response(self, target: str, result: dict) -> dict:
+        if not target in result:
+            result.update({target: ""})
+        else:
+            pass
+    
     @computed_field
     def transcribed(self) -> dict:
         try:
             result = json.loads(self.text)
+            self._verified_response("en", result)
+            self._verified_response("zh", result)
+            self._verified_response("fr", result)
+            self._verified_response("ko", result)
+            self._verified_response("es", result)
             result.update({
                 "status": "success",
                 "detail": "ok"
