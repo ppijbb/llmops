@@ -44,36 +44,36 @@ class TranslateResponse(BaseModel):
     
     @computed_field
     def result(self) -> str:
-        result = list(self._as_json(self.target_language[0]).items())
+        result = list(self._as_json(self.target_language[0]).values())
         return result[0] if len(result) > 0 else self.text
     
     @computed_field
     def translations(self) -> dict:
+        import logging
+        logger = logging.getLogger("ray.serve")
+        logger.error(self.text)
         try:
             result = json.loads(self.text)
-            self._verified_response(TargetLanguages.KOREAN.vlaue, result)
-            self._verified_response(TargetLanguages.ENGLISH.vlaue, result)
-            self._verified_response(TargetLanguages.CHINESE.vlaue, result)
-            self._verified_response(TargetLanguages.FRENCH.vlaue, result)            
-            self._verified_response(TargetLanguages.SPANISH.vlaue, result)
+            self._verified_response(TargetLanguages.KOREAN.value, result)
+            self._verified_response(TargetLanguages.ENGLISH.value, result)
+            self._verified_response(TargetLanguages.CHINESE.value, result)
+            self._verified_response(TargetLanguages.FRENCH.value, result)            
+            self._verified_response(TargetLanguages.SPANISH.value, result)
             result.update({
                 "status": "success",
                 "detail": "ok"
             })
         except Exception as e:
-            import logging
-            logger = logging.getLogger("ray.serve")
-            logger.error(self.text + "\n" + TargetLanguages.ENGLISH.vlaue)
             # print(traceback.format_exc())
             result = {
                 "status": "error",
                 "detail": "failed to parse json"
             }
-            result.update(self._as_json(TargetLanguages.ENGLISH.vlaue))
-            result.update(self._as_json(TargetLanguages.CHINESE.vlaue))
-            result.update(self._as_json(TargetLanguages.FRENCH.vlaue))
-            result.update(self._as_json(TargetLanguages.KOREAN.vlaue))
-            result.update(self._as_json(TargetLanguages.SPANISH.vlaue))
+            result.update(self._as_json(TargetLanguages.ENGLISH.value))
+            result.update(self._as_json(TargetLanguages.CHINESE.value))
+            result.update(self._as_json(TargetLanguages.FRENCH.value))
+            result.update(self._as_json(TargetLanguages.KOREAN.value))
+            result.update(self._as_json(TargetLanguages.SPANISH.value))
             
         finally:
             return result
