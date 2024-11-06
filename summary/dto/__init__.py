@@ -1,2 +1,2 @@
 from .summary import SummaryRequest, SummaryResponse
-from .transcript import TranscriptRequest, TranscriptResponse
+from .translate import TranslateRequest, TranslateResponse

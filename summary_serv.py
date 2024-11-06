@@ -28,7 +28,7 @@ from summary.application.engine import (
     LLMService, OpenAIService, llm_ready,
     get_llm_service, get_gpt_service)
 from summary.dto import SummaryRequest, SummaryResponse
-from summary.dto import TranscriptRequest, TranscriptResponse
+from summary.dto import TranslateRequest, TranslateResponse
 from summary.utils.text_process import text_preprocess, text_postprocess
 from summary.utils.lang_detect import detect_language
 from summary.logger import setup_logger
@@ -171,7 +171,7 @@ class APIIngress:
     @serve.batch(
         max_batch_size=4, 
         batch_wait_timeout_s=0.1)
-    async def batched_transcript(
+    async def batched_translate(
         self, 
         request_prompt: List[Any],
         request_text: List[Any],
@@ -181,7 +181,7 @@ class APIIngress:
         history: List[str]
     ) -> List[str]:
         logger.info(f"Batched request: {len(request_text)}")
-        return await self.service.transcript.remote(
+        return await self.service.translate.remote(
             input_prompt=request_prompt,
             input_text=request_text,
             history=history,
@@ -191,7 +191,7 @@ class APIIngress:
             batch=True)
 
     @app.post(
-        "/transcript_gemma", 
+        "/translate_gemma", 
         description='''
 language code
     - Korean: ko
@@ -200,12 +200,12 @@ language code
     - French: fr
     - Spanish: es
         ''',
-        response_model=TranscriptResponse)
-    async def transcript(
+        response_model=TranslateResponse)
+    async def translate(
         self,
-        request: TranscriptRequest,
+        request: TranslateRequest,
         # service: LLMService = Depends(get_llm_service)
-    ) -> TranscriptResponse:
+    ) -> TranslateResponse:
         result = ""
         # Generate predicted tokens
 
@@ -214,7 +214,7 @@ language code
             st = time.time()
             # result += ray.get(service.summarize.remote(ray.put(request.text)))
             # assert len(request.text ) > 200, "Text is too short"
-            result += await self.batched_transcript(
+            result += await self.batched_translate(
                 request_prompt=None,
                 history=request.history,
                 source_language=request.source_language.value,
@@ -234,13 +234,13 @@ language code
             server_logger.error("error" + e)
             result += "Generation failed"
         finally:
-            return TranscriptResponse(
+            return TranslateResponse(
                 text=result,
                 source_language=request.source_language.value,
                 target_language=[lang.value for lang in request.target_language])
 
     @app.post(
-        "/transcript",
+        "/translate",
         description='''
  language code
     - Korean: ko
@@ -249,12 +249,12 @@ language code
     - French: fr
     - Spanish: es
         ''',
-        response_model=TranscriptResponse)
-    async def transcript_gpt(
+        response_model=TranslateResponse)
+    async def translate_gpt(
         self,
-        request: TranscriptRequest,
+        request: TranslateRequest,
         service: OpenAIService = Depends(get_gpt_service)
-    ) -> TranscriptResponse:
+    ) -> TranslateResponse:
         result = ""
         try:
             # ----------------------------------- #
@@ -262,7 +262,7 @@ language code
             # result += ray.get(service.summarize.remote(ray.put(request.text)))
             # assert len(request.text ) > 200, "Text is too short"
             input_text = text_preprocess(request.text)
-            result += await service.transcript(
+            result += await service.translate(
                 input_prompt=None,
                 history=request.history,
                 detect_language=detect_language(input_text),
@@ -281,13 +281,13 @@ language code
             server_logger.warn("error" + e)
             result += "Error in summarize"
         finally:
-            return TranscriptResponse(
+            return TranslateResponse(
                 text=result,
                 source_language=request.source_language.value,
                 target_language=[lang.value for lang in request.target_language])
 
     @app.post(
-        "/transcript_legacy",
+        "/translate_legacy",
         description='''
  language code
     - Korean: ko
@@ -296,12 +296,12 @@ language code
     - French: fr
     - Spanish: es
         ''',
-        response_model=TranscriptResponse)
-    async def transcript_legacy(
+        response_model=TranslateResponse)
+    async def translate_legacy(
         self,
-        request: TranscriptRequest,
+        request: TranslateRequest,
         service: OpenAIService = Depends(get_gpt_service)
-    ) -> TranscriptResponse:
+    ) -> TranslateResponse:
         result = ""
         
         try:
@@ -310,7 +310,7 @@ language code
             # result += ray.get(service.summarize.remote(ray.put(request.text)))
             # assert len(request.text ) > 200, "Text is too short"
             input_text = text_preprocess(request.text)
-            result += await service.transcript_legacy(
+            result += await service.translate_legacy(
                 input_prompt=None,
                 history=request.history,
                 detect_language=detect_language(input_text),
@@ -329,17 +329,17 @@ language code
             server_logger.warn("error" + e)
             result += "Error in summarize"
         finally:
-            return TranscriptResponse(
+            return TranslateResponse(
                 text=result,
                 source_language=request.source_language.value,
                 target_language=[lang.value for lang in request.target_language])
 
     @app.post(
-        "/transcript_gemma/summarize", 
+        "/translate_gemma/summarize", 
         response_model=SummaryResponse)
     async def transcript(
         self,
-        request: TranscriptRequest,
+        request: TranslateRequest,
 
         # service: LLMService = Depends(get_llm_service)
     ) -> SummaryResponse:
@@ -351,7 +351,7 @@ language code
             st = time.time()
             # result += ray.get(service.summarize.remote(ray.put(request.text)))
             # assert len(request.text ) > 200, "Text is too short"
-            result += await self.batched_transcript(
+            result += await self.batched_translate(
                 request_prompt=None,
                 source_lang=request.source_language,
                 target_lang=request.target_language,
@@ -372,7 +372,7 @@ language code
             return SummaryResponse(text=result)
 
     @app.post(
-        "/transcript/summarize", 
+        "/translate/summarize", 
         response_model=SummaryResponse)
     async def transcript_gpt(
         self,
@@ -386,7 +386,7 @@ language code
             # result += ray.get(service.summarize.remote(ray.put(request.text)))
             # assert len(request.text ) > 200, "Text is too short"
             input_text = text_preprocess(request.text)
-            result += await service.transcript_summarize(
+            result += await service.translate_summarize(
                 input_prompt=request.prompt,
                 input_text=input_text)
             # result = text_postprocess(result)

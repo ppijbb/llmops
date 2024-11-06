@@ -42,7 +42,7 @@ class OpenAIService:
             input_text=input_text)
         return result.choices[0].message.content
 
-    async def transcript(
+    async def translate(
         self, 
         input_text:str , 
         source_language:str,
@@ -51,8 +51,8 @@ class OpenAIService:
         input_prompt:str=None,
         history:List[str]=[""]
     ) -> str:
-        default_system_prompt: str = prompt.DEFAULT_TRANSCRIPT_SYSTEM_PROMPT
-        default_system_prompt += prompt.TRANSCRIPTION_LANGUAGE_PROMPT.format(
+        default_system_prompt: str = prompt.DEFAULT_TRANSLATION_SYSTEM_PROMPT
+        default_system_prompt += prompt.TRANSLATION_LANGUAGE_PROMPT.format(
             history="\n".join([f"\t{h}" for h in history]),
             source=source_language,
             detect=detect_language, 
@@ -63,7 +63,7 @@ class OpenAIService:
             input_text=input_text)
         return result.choices[0].message.content
   
-    async def transcript_legacy(
+    async def translate_legacy(
         self, 
         input_text:str , 
         source_language:str,
@@ -72,7 +72,7 @@ class OpenAIService:
         input_prompt:str=None,
         history:List[str]=[""]
     ) -> str:
-        default_system_prompt = prompt.LEGACY_MULTI_TRANSCRIPT_SYSTEM_PROMPT.format(
+        default_system_prompt = prompt.LEGACY_MULTI_TRANSLATION_SYSTEM_PROMPT.format(
             lang1=source_language,
             lang2=target_language[0])
         
@@ -81,13 +81,13 @@ class OpenAIService:
             input_text=input_text)
         return result.choices[0].message.content
   
-    async def transcript_summarize(
+    async def translate_summarize(
         self, 
         input_text:str, 
         input_prompt:str=None
     ) -> str:
         result = self.generate(
-            input_prompt=input_prompt if input_prompt else prompt.DEFAULT_TRANSCRIPT_SUMMARIZE_SYSTEM_PROMPT, 
+            input_prompt=input_prompt if input_prompt else prompt.DEFAULT_TRANSLATION_SUMMARIZE_SYSTEM_PROMPT, 
             input_text=input_text)
         return result.choices[0].message.content
       

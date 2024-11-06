@@ -350,7 +350,7 @@ class LLMService:
                 default_few_shots=default_few_shots, 
                 default_system_prompt=default_system_prompt))
 
-    def transcript(
+    def translate(
         self, 
         input_text: str|List[str],
         source_language:str,
@@ -361,10 +361,10 @@ class LLMService:
         stream: bool = False, 
         batch: bool = False
     ): 
-        default_few_shots: str = prompt.DEFAULT_TRANSCRIPT_FEW_SHOT
-        default_system_prompt: str = prompt.DEFAULT_TRANSCRIPT_SYSTEM_PROMPT
+        default_few_shots: str = prompt.DEFAULT_TRANSLATION_FEW_SHOT
+        default_system_prompt: str = prompt.DEFAULT_TRANSLATION_SYSTEM_PROMPT
         user_system_prompt = [
-            default_system_prompt + prompt.TRANSCRIPTION_LANGUAGE_PROMPT.format(
+            default_system_prompt + prompt.TRANSLATION_LANGUAGE_PROMPT.format(
             history="\n".join([f"\t{_h}" for _h in h]),
             source=s,
             detect=d,
@@ -382,7 +382,7 @@ class LLMService:
                 default_few_shots=default_few_shots, 
                 default_system_prompt=user_system_prompt))
 
-    def transcript_summarize(
+    def translate_summarize(
         self, 
         input_text: str|List[str], 
         source_language:str,
@@ -393,10 +393,10 @@ class LLMService:
         stream: bool = False, 
         batch: bool = False
     ):
-        default_few_shots: str = prompt.DEFAULT_TRANSCRIPT_FEW_SHOT
-        default_system_prompt: str = prompt.DEFAULT_TRANSCRIPT_SUMMARIZE_SYSTEM_PROMPT.format(source=source_language, target=target_language)
+        default_few_shots: str = prompt.DEFAULT_TRANSLATION_FEW_SHOT
+        default_system_prompt: str = prompt.DEFAULT_TRANSLATION_SUMMARIZE_SYSTEM_PROMPT.format(source=source_language, target=target_language)
         user_system_prompt = [
-            default_system_prompt + prompt.TRANSCRIPTION_LANGUAGE_PROMPT.format(
+            default_system_prompt + prompt.TRANSLATION_LANGUAGE_PROMPT.format(
             history="\n".join([f"\t{_h}" for _h in h]),
             source=s,
             detect=d,

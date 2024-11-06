@@ -5,7 +5,7 @@ from typing import Optional, List
 from pydantic import BaseModel, Field, computed_field
 from summary.enum.transcript import TargetLanguages
 
-class TranscriptRequest(BaseModel):
+class TranslateRequest(BaseModel):
     source_language: TargetLanguages = Field(None)
     target_language: List[TargetLanguages] = Field(None)
     history: Optional[List[str]] = Field([""])
@@ -22,7 +22,7 @@ class TranscriptRequest(BaseModel):
             }
         }
 
-class TranscriptResponse(BaseModel):
+class TranslateResponse(BaseModel):
     text: str = Field(..., exclude=True)
     source_language: str = Field(..., exclude=True)
     target_language: List[str] = Field([], exclude=True)
@@ -39,10 +39,11 @@ class TranscriptResponse(BaseModel):
     def result(self) -> str:
         # 패턴에 맞는 모든 키-값 쌍 찾기
         pattern = rf'"{re.escape(self.target_language[0])}"\s*:\s*"(.*?)"'
-        return re.findall(pattern, self.text)[0]
+        result = re.findall(pattern, self.text)
+        return result[0] if len(result) > 0 else self.text
     
     @computed_field
-    def transcribed(self) -> dict:
+    def translations(self) -> dict:
         try:
             result = json.loads(self.text)
             self._verified_response("en", result)

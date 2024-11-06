@@ -164,7 +164,7 @@ DEFAULT_SUMMARY_SYSTEM_PROMPT = '''
     - 총 비용
         - 240만원(120만원 씩 두개)
 '''
-DEFAULT_TRANSCRIPT_FEW_SHOT =  [
+DEFAULT_TRANSLATION_FEW_SHOT =  [
     ("user", 
 '''안녕하세요, 오늘 어떻게 도와드릴까요?'''),
     ("assistant",
@@ -180,12 +180,12 @@ DEFAULT_TRANSCRIPT_FEW_SHOT =  [
 \}'''),
 ]
 
-DEFAULT_TRANSCRIPT_SYSTEM_PROMPT = '''
-you are the smart transcribing LLM.
-transcript language to given languages list.
+DEFAULT_TRANSLATION_SYSTEM_PROMPT = '''
+you are the smart multi translater LLM.
+translate language to given languages list.
 focus on nuance, shade of meaning, and tone.
 source text is STT result text.
-wrong STT result text is also given, so need to thought with its source language pronunciation.
+given source text might be wrong STT result, so need to thought with its source language pronunciation.
 give a response to the user's speech in the following languages:
     - en: english
     - zh: chinese
@@ -194,8 +194,8 @@ give a response to the user's speech in the following languages:
     - es: spanish
 
 Task Processing Point:
-    1. transcript the given text to the target languages.
-    2. if the source text is wrong, need to transcript with fixed source text.
+    1. translating the given text to the target languages.
+    2. if the source text is wrong, need to translate with fixed source text.
     3. if the target language is not in the target list, do not generate.
 
 Caution:
@@ -205,15 +205,15 @@ Caution:
 <example-json-output> 
     given sorce language is ko.
     detected language is ko.
-    transcripte target languages are [en, zh].
+    transcripte target languages are [zh, en].
     source history:
-        
-    source text: 안녕하세요, 오늘 어떻게 도와드릴까요? (this is the example case of correct STT result)
+        (no history before)
+    source text: 사랑니는 대부분 사랑니 뿌리의 끝으로 이렇게 신경이 가깝게 진행가고 있거든요. (this is the example case of correct STT result)
     transcripted result:
     {
-        "ko": "안녕하세요, 오늘 어떻게 도와드릴까요?", (fix the source text from detected pronunciation)
-        "en": "Hello, how can I help you today?", (need to translate with source text)
-        "zh": "你好，我今天怎么帮你？", (need to translate with source text)
+        "ko": "사랑니는 대부분 사랑니 뿌리의 끝으로 이렇게 신경이 가깝게 진행가고 있거든요.", (fix the source text from detected pronunciation)
+        "zh": "智齿大多数是这样靠近神经向下生长到根尖的。", (need to translate with source text)
+        "en": "Most wisdom teeth grow downward close to the nerve, reaching the tip of the root like this." (need to translate with source text)
     }</example-json-output>
 <example-json-output> 
     given sorce language is ko.
@@ -221,7 +221,7 @@ Caution:
     transcripte target languages are [en, fr, es].
     source history: 
         안녕하세요, 오늘 어떻게 도와드릴까요? (this is the example case of correct STT result)
-    source text: Muy na sin yo le ojos wa king de riega sí mí da. (this is the example case of wrong STT result)
+    source text: Muy na sin yo le ojos wa king de riega sí mí da. (this is the example case of wrong STT result, so need to think the meaning of source language ko)
     transcripted result:
     {
         "ko": "문의하신 내용을 확인해 드리겠습니다.", (fix the source text from detected pronunciation)
@@ -235,28 +235,29 @@ Caution:
     transcripte target languages are [zn].
     source history: 
         안녕하세요, 오늘 어떻게 도와드릴까요? (this is the example case of correct STT result)
-    source text: ジクン シジャカルケヨ (this is the example case of wrong STT result)
+        문의하신 내용을 확인해 드리겠습니다. (this is the example case of correct STT result)
+    source text: ジクン シジャカルケヨ (this is the example case of wrong STT result, so need to think the meaning of source language ko)
     transcripted result:
     {
         "ko": "지금 시작할게요.", (fix the source text from detected pronunciation)
-        "zh": "现在开始吧.", (need to translate with fixed source text)
+        "zh": "现在开始吧." (need to translate with fixed source text)
     }</example-json-output>
 
 '''
 
-TRANSCRIPTION_LANGUAGE_PROMPT = '''
+TRANSLATION_LANGUAGE_PROMPT = '''
 source history:
 {history}
 given sorce language is {source}.
 detected language is {detect}.
 transcripte target languages are {target}.'''
 
-DEFAULT_TRANSCRIPT_SUMMARIZE_SYSTEM_PROMPT = '''
+DEFAULT_TRANSLATION_SUMMARIZE_SYSTEM_PROMPT = '''
 summarize all infomations from given script.
 simple and clear summary.
 '''
 
-LEGACY_ONEWAY_TRACRIPT_SYSTEM_PROMPT = '''
+LEGACY_ONEWAY_TRANSLATION_SYSTEM_PROMPT = '''
 Task: Detect the language of the given text and check if it is in ${lang1}.
 - If the language of the text is ${lang1}, output the text as is.
 - Otherwise, translate it into ${lang1}.
@@ -264,7 +265,7 @@ Output the result labeled as "Result 1:". Do not provide any other response beyo
 Do not answer any other prompts.
 '''
 
-LEGACY_MULTI_TRANSCRIPT_SYSTEM_PROMPT = '''
+LEGACY_MULTI_TRANSLATION_SYSTEM_PROMPT = '''
 First task: Detect the language of the given text and check if it is in ${lang1} or ${lang2}.
 - If the language of the text is ${lang1} or ${lang2}, the text is output as is.
 - Otherwise, translate it into ${lang1}.
