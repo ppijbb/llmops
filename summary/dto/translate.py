@@ -5,6 +5,7 @@ from typing import Optional, List
 from pydantic import BaseModel, Field, computed_field
 from summary.enum.transcript import TargetLanguages
 
+
 class TranslateRequest(BaseModel):
     source_language: TargetLanguages = Field(None)
     target_language: List[TargetLanguages] = Field(None)
@@ -34,34 +35,45 @@ class TranslateResponse(BaseModel):
             result.update({target: ""})
         else:
             pass
+
+    def _as_json(self, target:str) -> dict:
+        # 패턴에 맞는 모든 키-값 쌍 찾기
+        pattern = rf'"{re.escape(target)}"\s*:\s*"(.*?)"'
+        result = re.findall(pattern, self.text)
+        return {target: result[0] if len(result) > 0 else ""}
     
     @computed_field
     def result(self) -> str:
-        # 패턴에 맞는 모든 키-값 쌍 찾기
-        pattern = rf'"{re.escape(self.target_language[0])}"\s*:\s*"(.*?)"'
-        result = re.findall(pattern, self.text)
+        result = list(self._as_json(self.target_language[0]).items())
         return result[0] if len(result) > 0 else self.text
     
     @computed_field
     def translations(self) -> dict:
         try:
             result = json.loads(self.text)
-            self._verified_response("en", result)
-            self._verified_response("zh", result)
-            self._verified_response("fr", result)
-            self._verified_response("ko", result)
-            self._verified_response("es", result)
+            self._verified_response(TargetLanguages.KOREAN.vlaue, result)
+            self._verified_response(TargetLanguages.ENGLISH.vlaue, result)
+            self._verified_response(TargetLanguages.CHINESE.vlaue, result)
+            self._verified_response(TargetLanguages.FRENCH.vlaue, result)            
+            self._verified_response(TargetLanguages.SPANISH.vlaue, result)
             result.update({
                 "status": "success",
                 "detail": "ok"
             })
-            return result
         except Exception as e:
+            import logging
+            logger = logging.getLogger("ray.serve")
+            logger.error(self.text + "\n" + TargetLanguages.ENGLISH.vlaue)
             # print(traceback.format_exc())
-            print(e)
             result = {
                 "status": "error",
                 "detail": "failed to parse json"
-        }
+            }
+            result.update(self._as_json(TargetLanguages.ENGLISH.vlaue))
+            result.update(self._as_json(TargetLanguages.CHINESE.vlaue))
+            result.update(self._as_json(TargetLanguages.FRENCH.vlaue))
+            result.update(self._as_json(TargetLanguages.KOREAN.vlaue))
+            result.update(self._as_json(TargetLanguages.SPANISH.vlaue))
+            
         finally:
             return result

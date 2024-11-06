@@ -190,10 +190,10 @@ class LLMService:
     ):
         from vllm.sampling_params import SamplingParams
         return SamplingParams(
-            repetition_penalty=1.0,
-            frequency_penalty=1.0,
-            presence_penalty=1.0,
-            temperature=0.3,
+            # repetition_penalty=1.0,
+            # frequency_penalty=1.0,
+            # presence_penalty=1.0,
+            temperature=0.5,
             top_p=0.9,
             max_tokens=self.max_new_tokens)
     
