@@ -25,6 +25,7 @@ class TranslateRequest(BaseModel):
 
 class TranslateResponse(BaseModel):
     text: str = Field(..., exclude=True)
+    original_text: str = Field(...)
     source_language: str = Field(..., exclude=True)
     target_language: List[str] = Field([], exclude=True)
     class Config:
@@ -49,9 +50,6 @@ class TranslateResponse(BaseModel):
     
     @computed_field
     def translations(self) -> dict:
-        import logging
-        logger = logging.getLogger("ray.serve")
-        logger.error(self.text)
         try:
             result = json.loads(self.text)
             self._verified_response(TargetLanguages.KOREAN.value, result)
@@ -64,10 +62,12 @@ class TranslateResponse(BaseModel):
                 "detail": "ok"
             })
         except Exception as e:
-            # print(traceback.format_exc())
+            import logging
+            logger = logging.getLogger("ray.serve")
+            logger.error(self.text)
             result = {
                 "status": "error",
-                "detail": "failed to parse json"
+                "detail": "failed to parse json. translations parsed from raw text"
             }
             result.update(self._as_json(TargetLanguages.ENGLISH.value))
             result.update(self._as_json(TargetLanguages.CHINESE.value))

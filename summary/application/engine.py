@@ -121,7 +121,7 @@ class LLMService:
 
     def _model_processor(self, user_input, system_prompt):
         if "gemma" in self.local_model_type:
-            return f'{system_prompt}\n\n{user_input}\n{self.end_header}\n\n{self.start_header}'.strip() + 'model\n'
+            return f'{system_prompt}\n{user_input}\n{self.end_header}\n{self.start_header}'.strip() + 'model\n'
         else:
             return f'{user_input}'.strip()
 
@@ -165,7 +165,9 @@ class LLMService:
         if isinstance(prompt, str):
             return self.tokenizer(prompt, return_tensors=return_tensors)
         else:
-            return { "input_ids": self.tokenizer.apply_chat_template(prompt, return_tensors=return_tensors) }
+            return { 
+                "input_ids": self.tokenizer.apply_chat_template(prompt, return_tensors=return_tensors)
+            }
 
     def generate_config(
         self, 
@@ -269,7 +271,7 @@ class LLMService:
                 default_system_prompt=default_system_prompt) 
             for batch_input_text, batch_input_prompt, batch_input_history in list(
                 zip_longest(input_text, input_prompt, input_history, fillvalue=[]))]
-        # print(prompt)
+        print(prompt)
         return self._generate(prompt)
 
     @torch.inference_mode()

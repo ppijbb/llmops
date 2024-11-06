@@ -29,7 +29,7 @@ def get_model(
                 max_model_len=2048,
                 max_num_seqs=16,
                 trust_remote_code=True,
-                gpu_memory_utilization=0.95,
+                gpu_memory_utilization=0.55,
                 dtype="bfloat16",
                 swap_space=4, # default 4
                 # quantization="awq",                

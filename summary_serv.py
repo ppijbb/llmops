@@ -236,6 +236,7 @@ language code
         finally:
             return TranslateResponse(
                 text=result,
+                original_text=request.text,
                 source_language=request.source_language.value,
                 target_language=[lang.value for lang in request.target_language])
 
@@ -283,6 +284,7 @@ language code
         finally:
             return TranslateResponse(
                 text=result,
+                original_text=request.text,
                 source_language=request.source_language.value,
                 target_language=[lang.value for lang in request.target_language])
 
@@ -331,6 +333,7 @@ language code
         finally:
             return TranslateResponse(
                 text=result,
+                original_text=request.text,
                 source_language=request.source_language.value,
                 target_language=[lang.value for lang in request.target_language])
 
@@ -407,7 +410,7 @@ def build_app(
     cli_args: Dict[str, str]
 ) -> serve.Application:
     return APIIngress.options(
-        placement_group_bundles=[{"CPU":1.0, "GPU": 0.4}], 
+        placement_group_bundles=[{"CPU":1.0, "GPU": 0.55}], 
         placement_group_strategy="STRICT_PACK",
         ).bind(
             LLMService.bind()
