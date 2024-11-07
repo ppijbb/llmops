@@ -37,56 +37,55 @@ class TranslateResponse(BaseModel):
         else:
             pass
     
+    def format_as_key_value_pairs(self, text):
+        # 정규식 변환 수행
+        formatted_text = re.sub(
+            r'"([^"]*?)"\s*"([^"]*?)"\s*', 
+            r'"\1" : "\2", ',
+            text
+        )
+        # 마지막 쉼표 제거
+        formatted_text = re.sub(
+            r'(,(|\s+)})',
+            r"}", 
+            formatted_text
+        )
+        return formatted_text
+
+    def replace_inner(self, match):
+        # 매칭된 문자열에서 가장 바깥쪽 "을 제외한 내부의 "를 '로 변환
+        content = match.group(1)  # 매칭된 문자열
+        if content is not None:
+            inner_content = re.sub(
+                r'(?<!^)"(?!$)', 
+                "'", 
+                content
+            )  # 가장 바깥쪽 " 제외
+            return f'"{inner_content}"'
+
     def _as_json(self, text):
         # JSON 형식에서 가장 바깥쪽 ""에 둘러싸인 값 안의 " 를 ' 로 변환
-        def format_as_key_value_pairs(self, text):
-            # 정규식 변환 수행
-            formatted_text = re.sub(
-                r'"([^"]*?)"\s*"([^"]*?)"\s*', 
-                r'"\1" : "\2", ',
-                text
-            )
-            # 마지막 쉼표 제거
-            formatted_text = re.sub(
-                r'(,(|\s+)})',
-                r"}", 
-                formatted_text
-            )
-            return formatted_text
-
-        def replace_inner(self, match):
-            # 매칭된 문자열에서 가장 바깥쪽 "을 제외한 내부의 "를 '로 변환
-            content = match.group(1)  # 매칭된 문자열
-            if content is not None:
-                inner_content = re.sub(
-                    r'(?<!^)"(?!$)', 
-                    "'", 
-                    content
-                )  # 가장 바깥쪽 " 제외
-                return f'"{inner_content}"'
-    
-        # 정규식을 사용하여 내부의 "를 '로 변환
-        return format_as_key_value_pairs(
+        return self.format_as_key_value_pairs(
             re.sub(
                 r'"(.*?)("|",($|\s+|\n+$)|"\s+:|":)(\n+|\s+|\n+$|\s+$)',
-                replace_inner, 
+                self.replace_inner, # 정규식을 사용하여 내부의 "를 '로 변환
                 text))
     
     def _parse_to_json(self, target:str) -> dict:
         # 패턴에 맞는 모든 키-값 쌍 찾기
         _escape = '}'
-        pattern = rf'"{target}"\s*:\s*"(.*?)"(,\s+\n+|{re.escape(_escape)}*$)'
+        pattern = rf'"{target}"[\s]+:[\s]+"(.*?)"(,\s+\n+|{re.escape(_escape)}*$)'
         result = re.search(pattern, self.text)
-        return {target: result if len(result) > 0 else ""}
+        return {target: result.group(1) if result is not None else ""}
     
     @computed_field
     def result(self) -> str:
-        result = list(self._parse_to_json(self.target_language[0]).values())
-        return result[0] if len(result) > 0 else self.text
+        return self._parse_to_json(self.target_language[0])[self.target_language[0]]
     
     @computed_field
     def translations(self) -> dict:
         try:
+            print(self._as_json(self.text))
             result = json.loads(self._as_json(self.text))
             self._verified_response(TargetLanguages.KOREAN.value, result)
             self._verified_response(TargetLanguages.ENGLISH.value, result)
