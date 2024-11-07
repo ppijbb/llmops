@@ -22,6 +22,8 @@ msgpack>=1.1.0
 # flash-attn @https://github.com/Dao-AILab/flash-attention/releases/download/v2.6.3/flash_attn-2.6.3+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
 transformer-engine>=1.11.0
 transformers>=4.46.1
+sentence-transformers>=3.2.1
+huggingface-hub==0.24.7
 # @git+https://github.com/huggingface/transformers.git
 accelerate>=0.25.0
 peft>=0.11.1
@@ -33,7 +35,7 @@ huggingface-hub==0.23.2
 optimum @git+https://github.com/huggingface/optimum.git
 # optimum[onnxruntime] # @git+https://github.com/huggingface/optimum.git
 # optimum[ipex] # @git+https://github.com/huggingface/optimum-intel.git
-# optimum[openvino] # @git+https://github.com/huggingface/optimum-intel.git
+optimum[openvino] # @git+https://github.com/huggingface/optimum-intel.git
 # optimum[neuronx] # @git+https://github.com/huggingface/optimum-neuron.git
 # optimum[habana] # @git+https://github.com/huggingface/optimum-habana.git
 # optimum[furiosa] # @git+https://github.com/huggingface/optimum-furiosa.git
@@ -57,8 +59,8 @@ torchvision==0.19.0+cu121
 torchtext==0.18.0
 torchaudio==2.4.0+cu121
 torch-tensorrt==2.4.0
-# --extra-index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/
-# ipex-llm==2.1.0b20240718
+--extra-index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/
+ipex-llm==2.2.0b20241106
 # --extra-index-url https://developer.intel.com/ipex-whl-stable-xpu/
 # intel-extension-for-pytorch==2.1.30+xpu
 # oneccl_bind_pt==2.1.300+xpu
