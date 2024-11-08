@@ -74,7 +74,7 @@ class TranslateResponse(BaseModel):
     def _parse_to_json(self, target:str) -> dict:
         # 패턴에 맞는 모든 키-값 쌍 찾기
         _escape = '}'
-        pattern = rf'"{target}"\s*:\s*"(.*?)("([\s,]*[\s\n]+"|[\n\s]*{_escape}[\n\s]*$))'
+        pattern = rf'"{target}"\s*:\s*"(.*?)("([\s,]*[\s\n]+"|[,\n\s]*{_escape}[\n\s]*$))'
         # print(pattern)
         # print(self.text)
         result = re.search(pattern, self.text)
