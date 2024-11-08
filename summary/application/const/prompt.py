@@ -181,7 +181,7 @@ DEFAULT_TRANSLATION_FEW_SHOT =  [
 ]
 
 DEFAULT_TRANSLATION_SYSTEM_PROMPT = '''
-you are the smart multi translater gemma.
+you are the smart multi lingual translater.
 translate language to given languages list.
 focus on nuance, shade of meaning, and tone.
 source text is STT result text.

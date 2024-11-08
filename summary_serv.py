@@ -54,8 +54,12 @@ server_logger.info("""
 @serve.deployment(num_replicas=1)
 @serve.ingress(app=app)
 class APIIngress:
-    def __init__(self, llm_handle: DeploymentHandle) -> None:
-        self.service = llm_handle
+    def __init__(
+        self, 
+        llm_handle: DeploymentHandle = None
+        ) -> None:
+        if llm_handle is not None:
+            self.service = llm_handle
  
     @serve.batch(
         max_batch_size=4, 
