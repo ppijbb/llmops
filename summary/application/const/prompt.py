@@ -257,7 +257,7 @@ summarize all infomations from given script.
 simple and clear summarize, from {source} to {target} languages summary should be written.
 here is summarize format.
 <example-output-format>
-# (title section with {target}, )
+# (title section with {target})
 ## (summary topic1 with {target})
 * (summary note with {target})
 * (summary note with {target})

@@ -76,7 +76,7 @@ class APIIngress:
             batch=True)
         
     @app.post(
-        "/summarize_llama", 
+        "/summarize_gemma", 
         response_model=SummaryResponse)
     async def summarize(
         self,
@@ -360,6 +360,7 @@ language code
             result += await self.batched_translate(
                 request_prompt=None,
                 source_language=request.source_language,
+                detect_language=detect_language(request.text),
                 target_language=request.target_language,
                 request_text=text_preprocess(request.text))
             # result = text_postprocess(result)
