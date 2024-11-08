@@ -21,6 +21,7 @@ import traceback
 
 from fastapi import FastAPI, Depends
 from fastapi.responses import StreamingResponse
+import torch
 from ray import serve
 from ray.serve.handle import DeploymentHandle
 
@@ -427,7 +428,7 @@ def build_app(
     cli_args: Dict[str, str]
 ) -> serve.Application:
     return APIIngress.options(
-        placement_group_bundles=[{"CPU":1.0, "GPU": 0.55}], 
+        placement_group_bundles=[{"CPU":1.0, "GPU": float(torch.cuda.is_available())}], 
         placement_group_strategy="STRICT_PACK",
         ).bind(
             LLMService.bind()
