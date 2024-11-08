@@ -13,7 +13,7 @@ st.set_page_config(
 
 
 input_language = """
-
+안녕하세요. 저는 미국에서 온 의사입니다. 오늘은 여러분의 치아 상태에 대해 설명해 드리겠습니다.
 """.strip()
 
 input_text = """---

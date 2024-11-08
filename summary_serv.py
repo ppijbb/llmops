@@ -182,17 +182,28 @@ class APIIngress:
         source_language: str,
         detect_language: str,
         target_language: str,
-        history: List[str]
+        history: List[str],
+        is_summary:bool = False
     ) -> List[str]:
         logger.info(f"Batched request: {len(request_text)}")
-        return await self.service.translate.remote(
-            input_prompt=request_prompt,
-            input_text=request_text,
-            history=history,
-            source_language=source_language,
-            detect_language=detect_language,
-            target_language=target_language,
-            batch=True)
+        if is_summary:
+            return await self.service.translate_summarize.remote(
+                input_prompt=request_prompt,
+                input_text=request_text,
+                history=history,
+                source_language=source_language,
+                detect_language=detect_language,
+                target_language=target_language,
+                batch=True)
+        else:
+            return await self.service.translate.remote(
+                input_prompt=request_prompt,
+                input_text=request_text,
+                history=history,
+                source_language=source_language,
+                detect_language=detect_language,
+                target_language=target_language,
+                batch=True)
 
     @app.post(
         "/translate_gemma", 
@@ -351,7 +362,6 @@ language code
     ) -> SummaryResponse:
         result = ""
         # Generate predicted tokens
-
         try:
             # ----------------------------------- #
             st = time.time()
@@ -360,9 +370,11 @@ language code
             result += await self.batched_translate(
                 request_prompt=None,
                 source_language=request.source_language,
+                history=request.history,
                 detect_language=detect_language(request.text),
                 target_language=request.target_language,
-                request_text=text_preprocess(request.text))
+                request_text=text_preprocess(request.text),
+                is_summary=True)
             # result = text_postprocess(result)
             # print(result)
             end = time.time()
