@@ -78,7 +78,8 @@ class LLMService:
     ):
         self.model, self.tokenizer = get_model(
             # model_path="KISTI-KONI/KONI-Llama3-8B-Instruct-20240729", # GPU (vllm) Model
-            model_path="google/gemma-2-2b-it",  # GPU (vllm) Model
+            # model_path="google/gemma-2-2b-it",  # GPU (vllm) Model
+            model_path="AIFunOver/gemma-2-2b-it-openvino-8bit", # CPU Model
             # model_path="Gunulhona/Llama-Merge-Small",  # GPU (vllm) Model
             # model_path="fakezeta/llama-3-8b-instruct-ov-int8",
             # model_path="Gunulhona/openvino-llama-3-ko-8B_int8",
@@ -94,24 +95,23 @@ class LLMService:
         self.eot_token = self.tokenizer.eos_token if self.tokenizer.eos_token else self.default_eot
         if torch.cuda.is_available():
             self.local_model_type = self.model.llm_engine.model_config.hf_text_config.model_type
-            match self.local_model_type:
-                case "llama":
-                    self.start_header = self.llama_start_header 
-                    self.end_header = self.llama_end_header
-                case "gemma2":
-                    self.start_header = self.gemma_start_header
-                    self.end_header = self.gemma_end_header
-                case "mistral":
-                    self.start_header = self.mistral_start_header
-                    self.end_header = self.mistral_end_header
-                case _:
-                    self.local_model_type = 'llama'
-                    self.start_header = self.llama_start_header
-                    self.end_header = self.llama_end_header
         else:
-            self.local_model_type = 'llama'
-            self.start_header = self.llama_start_header
-            self.end_header = self.llama_end_header
+            self.local_model_type = self.model.config.model_type
+
+        match self.local_model_type:
+            case "llama":
+                self.start_header = self.llama_start_header 
+                self.end_header = self.llama_end_header
+            case "gemma2":
+                self.start_header = self.gemma_start_header
+                self.end_header = self.gemma_end_header
+            case "mistral":
+                self.start_header = self.mistral_start_header
+                self.end_header = self.mistral_end_header
+            case _:
+                self.local_model_type = 'llama'
+                self.start_header = self.llama_start_header
+                self.end_header = self.llama_end_header
         self.max_new_tokens = 2048
         self.logger = logging.getLogger("ray.serve")
         self.logger.info(f"\n\n\n{self.local_model_type} LLM Engine is ready\n\n\n")
@@ -162,9 +162,16 @@ class LLMService:
         prompt: List[str] | List[dict], 
         return_tensors: str = "pt"
     ) -> dict:
-        if isinstance(prompt, str):
+        if isinstance(prompt, list) and isinstance(prompt[0], dict):
+            return [{
+                "input_ids": self.tokenizer.apply_chat_template(p, return_tensors=return_tensors)
+            } for p in prompt]
+        elif isinstance(prompt, list) and isinstance(prompt[0], str):
+            return self.tokenizer(prompt, return_tensors=return_tensors)
+        elif isinstance(prompt, str):
             return self.tokenizer(prompt, return_tensors=return_tensors)
         else:
+            # self.logger.info(prompt)
             return { 
                 "input_ids": self.tokenizer.apply_chat_template(prompt, return_tensors=return_tensors)
             }
@@ -179,8 +186,8 @@ class LLMService:
             max_new_tokens=self.max_new_tokens,
             # penalty_alpha=0.5,
             # no_repeat_ngram_size=5,
-            frequency_penalty=0.0,
-            presence_penalty=0.0,
+            # frequency_penalty=0.0,
+            # presence_penalty=0.0,
             top_p=0.99,
             use_cache=True)
         generation_config.update(kwargs)
@@ -225,9 +232,10 @@ class LLMService:
                 use_tqdm=False)
             output_str = [out.outputs[0].text for out in output]
         else: # ipex, ov generation
+            # self.logger.info(prompt)
             inputs = self.formatting(prompt=prompt)
             output = self.model.generate(**self.generate_config(**inputs))
-            output_str = self.tokenizer.decode(output, skip_special_tokens=True)
+            output_str = self.tokenizer.batch_decode(output, skip_special_tokens=True)
         return [out.replace(". ", ".\n") for out in output_str]
 
     @torch.inference_mode()
@@ -283,6 +291,7 @@ class LLMService:
     ):
         if input_prompt is not None:
             input_text = input_prompt + "\n" + input_text
+        # self.logger.warn(input_text)
         inputs = self.formatting(prompt=input_text.strip(), return_tensors="pt")
         inputs.update(dict(streamer=self.text_streamer))
         thread = Thread(
