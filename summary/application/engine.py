@@ -396,13 +396,13 @@ class LLMService:
         batch: bool = False
     ):
         default_few_shots: str = prompt.DEFAULT_TRANSLATION_FEW_SHOT
-        default_system_prompt: str = prompt.DEFAULT_TRANSLATION_SUMMARIZE_SYSTEM_PROMPT.format(source=source_language, target=target_language)
+        default_system_prompt: str = prompt.DEFAULT_TRANSLATION_SUMMARIZE_SYSTEM_PROMPT.format(
+            source=source_language, 
+            target=target_language)
         user_system_prompt = [
-            default_system_prompt + prompt.TRANSLATION_LANGUAGE_PROMPT.format(
-            history="\n".join([f"\t{_h}" for _h in h]),
+            default_system_prompt + prompt.DEFAULT_TRANSLATION_SUMMARIZE_SYSTEM_PROMPT.format(
             source=s,
-            detect=d,
-            target=t)
+            target=t[0])
         for s,d,t,h in zip(source_language, detect_language, target_language, history)]
 
         return self._generation_wrapper(

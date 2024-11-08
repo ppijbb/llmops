@@ -83,11 +83,15 @@ class OpenAIService:
   
     async def translate_summarize(
         self, 
-        input_text:str, 
-        input_prompt:str=None
+        input_text:str,
+        source_language:str="ko", 
+        target_language:List[str]=["en"],
+        input_prompt:str=None,
     ) -> str:
         result = self.generate(
-            input_prompt=input_prompt if input_prompt else prompt.DEFAULT_TRANSLATION_SUMMARIZE_SYSTEM_PROMPT, 
+            input_prompt=input_prompt if input_prompt else prompt.DEFAULT_TRANSLATION_SUMMARIZE_SYSTEM_PROMPT.format(
+                source=source_language,
+                target=target_language[0]), 
             input_text=input_text)
         return result.choices[0].message.content
       

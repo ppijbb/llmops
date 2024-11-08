@@ -347,7 +347,6 @@ language code
     async def transcript(
         self,
         request: TranslateRequest,
-
         # service: LLMService = Depends(get_llm_service)
     ) -> SummaryResponse:
         result = ""
@@ -360,8 +359,8 @@ language code
             # assert len(request.text ) > 200, "Text is too short"
             result += await self.batched_translate(
                 request_prompt=None,
-                source_lang=request.source_language,
-                target_lang=request.target_language,
+                source_language=request.source_language,
+                target_language=request.target_language,
                 request_text=text_preprocess(request.text))
             # result = text_postprocess(result)
             # print(result)
@@ -383,7 +382,7 @@ language code
         response_model=SummaryResponse)
     async def transcript_gpt(
         self,
-        request: SummaryRequest,
+        request: TranslateRequest,
         service: OpenAIService = Depends(get_gpt_service)
     ) -> SummaryResponse:
         result = ""
@@ -394,8 +393,9 @@ language code
             # assert len(request.text ) > 200, "Text is too short"
             input_text = text_preprocess(request.text)
             result += await service.translate_summarize(
-                input_prompt=request.prompt,
-                input_text=input_text)
+                input_text=input_text,
+                source_language=request.source_language,
+                target_language=request.target_language,)
             # result = text_postprocess(result)
             # print(result)
             end = time.time()

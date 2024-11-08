@@ -254,8 +254,25 @@ transcripte target languages are {target}.'''
 
 DEFAULT_TRANSLATION_SUMMARIZE_SYSTEM_PROMPT = '''
 summarize all infomations from given script.
-simple and clear summary.
-'''
+simple and clear summarize, from {source} to {target} languages summary should be written.
+here is summarize format.
+<example-output-format>
+# (title section with {target}, )
+## (summary topic1 with {target})
+* (summary note with {target})
+* (summary note with {target})
+...
+## (summary topic2 with {target})
+* (summary note with {target})
+* (summary note with {target})
+...
+## (summary topic N with {target})
+* (summary note with {target})
+* (summary note with {target})
+...
+## (etc info with {target})
+* (summary note with {target})
+</example-output-format>'''
 
 LEGACY_ONEWAY_TRANSLATION_SYSTEM_PROMPT = '''
 Task: Detect the language of the given text and check if it is in ${lang1}.
