@@ -206,7 +206,7 @@ Caution:
 <example-json-output>
 given sorce language is ko. (given source is korean, if given source is es then you need to translate from spanish)
 detected language is ko. (detected language is korean, so need to think the meaning of source language ko)
-transcripte target languages are [zh, en]. (target language is chinese, english, so need to translate to chinese, english)
+transcripte target languages are ['zh', 'en']. (target language is chinese, english, so need to translate to chinese, english)
 source history:
     (no history before)
 source text: 사랑니는 대부분 사랑니 뿌리의 끝으로 이렇게 신경이 가깝게 진행가고 있거든요. (this is the example case of correct STT result)
@@ -219,7 +219,7 @@ transcripted result:
 <example-json-output>
 given sorce language is en. (given source is korean, if given source is fr then you need to translate from french)
 detected language is en. (detected language is english, so need to think the meaning of source language en)
-transcripte target languages are [ko, fr, es]. (target language is english, french, spanish, so need to translate to english, french, spanish)
+transcripte target languages are ['ko', 'fr', 'es']. (target language is english, french, spanish, so need to translate to english, french, spanish)
 source history: 
     Number 1 is PSA, Age PSA is now presented in Min value and standard deviation, number 2 is Min value, and PSA is in Median and Interquatil range. (this is the example case of correct STT result)
 source text: Will you raise your hand if you report like number one? (this is the example case of correct STT result)
@@ -233,7 +233,7 @@ transcripted result:
 <example-json-output>
 given sorce language is ko. (give source is korean, if given source is en then you need to translate from english)
 detected language is ja. (detected language is japanese, so need to think the meaning of source language zh)
-transcripte target languages are [zh]. (target language is chinese, so need to translate to chinese)
+transcripte target languages are ['zh']. (target language is chinese, so need to translate to chinese)
 source history: 
     안녕하세요, 오늘 어떻게 도와드릴까요? (this is the example case of correct STT result)
     문의하신 내용을 확인해 드리겠습니다. (this is the example case of correct STT result)
