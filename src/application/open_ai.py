@@ -4,7 +4,7 @@ from typing import List
 
 import openai
 
-from summary.application.const import prompt
+from src.application.const import prompt
 
 
 class OpenAIService:

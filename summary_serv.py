@@ -25,14 +25,14 @@ import torch
 from ray import serve
 from ray.serve.handle import DeploymentHandle
 
-from summary.application.engine import (
+from src.application.engine import (
     LLMService, OpenAIService, llm_ready,
     get_llm_service, get_gpt_service)
-from summary.dto import SummaryRequest, SummaryResponse
-from summary.dto import TranslateRequest, TranslateResponse
-from summary.utils.text_process import text_preprocess, text_postprocess
-from summary.utils.lang_detect import detect_language
-from summary.logger import setup_logger
+from src.dto import SummaryRequest, SummaryResponse
+from src.dto import TranslateRequest, TranslateResponse
+from src.utils.text_process import text_preprocess, text_postprocess
+from src.utils.lang_detect import detect_language
+from src.logger import setup_logger
 
 def format_llm_output(rlt_text):
     return {
@@ -428,7 +428,7 @@ def build_app(
     cli_args: Dict[str, str]
 ) -> serve.Application:
     return APIIngress.options(
-        placement_group_bundles=[{"CPU":1.0, "GPU": float(torch.cuda.is_available())}], 
+        placement_group_bundles=[{"CPU":1.0, "GPU": float(torch.cuda.is_available())/2}], 
         placement_group_strategy="STRICT_PACK",
         ).bind(
             LLMService.bind()

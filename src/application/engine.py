@@ -13,11 +13,11 @@ from transformers.generation.streamers import TextIteratorStreamer
 from threading import Thread
 from ray import serve
 
-from summary.depend import get_model, get_claude, get_gpt
-from summary.application.const import prompt
+from src.depend import get_model, get_claude, get_gpt
+from src.application.const import prompt
 
-from summary.application.anthropic import ClaudeService
-from summary.application.open_ai import OpenAIService
+from src.application.anthropic import ClaudeService
+from src.application.open_ai import OpenAIService
 
 
 @asynccontextmanager
@@ -79,7 +79,8 @@ class LLMService:
         self.model, self.tokenizer = get_model(
             # model_path="KISTI-KONI/KONI-Llama3-8B-Instruct-20240729", # GPU (vllm) Model
             # model_path="google/gemma-2-2b-it",  # GPU (vllm) Model
-            model_path="AIFunOver/gemma-2-2b-it-openvino-8bit", # CPU Model
+            model_path="neuralmagic/gemma-2-2b-quantized.w8a16",
+            # model_path="AIFunOver/gemma-2-2b-it-openvino-8bit", # CPU Model
             # model_path="Gunulhona/Llama-Merge-Small",  # GPU (vllm) Model
             # model_path="fakezeta/llama-3-8b-instruct-ov-int8",
             # model_path="Gunulhona/openvino-llama-3-ko-8B_int8",
