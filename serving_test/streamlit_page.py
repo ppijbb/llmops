@@ -10,7 +10,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed",
     menu_items=None)
-
+st.page_link(
+    "pages/translation_test.py", label="translation test", icon="🔣"
+)
 
 input_prompt = """
 제시된 대화 내용을 아래 항목들에 대해서 결정된 내용만 정리.
