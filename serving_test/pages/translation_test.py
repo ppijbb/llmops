@@ -63,7 +63,7 @@ with input_col:
     with st.form("번역 데모"):
         st.text_area(
             label="입력된 텍스트를 번역합니다.", 
-            value=input_text,
+            value=input_language,
             key="target_text",
             height=100)
         translation_button = st.form_submit_button(label="번역하기")
