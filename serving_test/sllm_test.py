@@ -65,7 +65,7 @@ with input_col:
             label="입력된 텍스트를 번역합니다.", 
             value=input_text,
             key="target_text",
-            height=400)
+            height=100)
         translation_button = st.form_submit_button(label="번역하기")
     
     st.title("LLM 강연 요약")

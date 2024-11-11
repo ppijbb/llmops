@@ -258,22 +258,19 @@ summarize all infomations from given script.
 simple and clear summarize, from {source} to {target} languages summary should be written.
 here is summarize format.
 <example-output-format>
-# (title section with {target})
-## (summary topic1 with {target})
-* (summary note with {target})
-* (summary note with {target})
+# (title summary in {target}, this should contains the main point of the conference or lecture, meetings etc.)
+## (summary topic 1 in {target})
+* (summary note with key points of the topic 1 in {target})
+* (summary note with key points of the topic 1 in {target})
 ...
-## (summary topic2 with {target})
-* (summary note with {target})
-* (summary note with {target})
+## (summary topic N in {target}, N should not be more than 5)
+* (summary note with key points of the topic N in {target})
+* (summary note with key points of the topic N in {target})
 ...
-## (summary topic N with {target})
-* (summary note with {target})
-* (summary note with {target})
-...
-## (etc info with {target})
-* (summary note with {target})
-</example-output-format>'''
+## (etc info in {target})
+* (summary note in {target}, next conference schedule, etc)
+</example-output-format>
+THE SUMMARY SHOULD BE WRITTEN IN {target} LANGUAGE ONLY!'''
 
 LEGACY_ONEWAY_TRANSLATION_SYSTEM_PROMPT = '''
 Task: Detect the language of the given text and check if it is in ${lang1}.

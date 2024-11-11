@@ -176,7 +176,7 @@ class APIIngress:
     @serve.batch(
         max_batch_size=4, 
         batch_wait_timeout_s=0.1)
-    async def batched_translate(
+    async def batched_generation(
         self, 
         request_prompt: List[Any],
         request_text: List[Any],
@@ -230,7 +230,7 @@ language code
             st = time.time()
             # result += ray.get(service.summarize.remote(ray.put(request.text)))
             # assert len(request.text ) > 200, "Text is too short"
-            result += await self.batched_translate(
+            result += await self.batched_generation(
                 request_prompt=None,
                 history=request.history,
                 source_language=request.source_language.value,
@@ -368,12 +368,12 @@ language code
             st = time.time()
             # result += ray.get(service.summarize.remote(ray.put(request.text)))
             # assert len(request.text ) > 200, "Text is too short"
-            result += await self.batched_translate(
+            result += await self.batched_generation(
                 request_prompt=None,
-                source_language=request.source_language,
                 history=request.history,
                 detect_language=detect_language(request.text),
-                target_language=request.target_language,
+                source_language=request.source_language.value,
+                target_language=[lang.value for lang in request.target_language],
                 request_text=text_preprocess(request.text),
                 is_summary=True)
             # result = text_postprocess(result)
@@ -407,19 +407,20 @@ language code
             # assert len(request.text ) > 200, "Text is too short"
             input_text = text_preprocess(request.text)
             result += await service.translate_summarize(
+                history=[],
                 input_text=input_text,
-                source_language=request.source_language,
-                target_language=request.target_language,)
+                source_language=request.source_language.value,
+                target_language=[lang.value for lang in request.target_language])
             # result = text_postprocess(result)
             # print(result)
             end = time.time()
             # ----------------------------------- #
             # print(f"Time: {end - st}")
         except AssertionError as e:
-            server_logger.warn("error" + e)
+            server_logger.error("error" + e)
             result += e
         except Exception as e:
-            server_logger.warn("error" + e)
+            server_logger.error("error" + e)
             result += "Error in summarize"
         finally:
             return SummaryResponse(text=result)
