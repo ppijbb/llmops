@@ -79,7 +79,7 @@ class LLMService:
         self.model, self.tokenizer = get_model(
             # model_path="KISTI-KONI/KONI-Llama3-8B-Instruct-20240729", # GPU (vllm) Model
             # model_path="google/gemma-2-2b-it",  # GPU (vllm) Model
-            model_path="neuralmagic/gemma-2-2b-quantized.w8a16",
+            model_path="unsloth/gemma-2-2b-it-bnb-4bit",
             # model_path="AIFunOver/gemma-2-2b-it-openvino-8bit", # CPU Model
             # model_path="Gunulhona/Llama-Merge-Small",  # GPU (vllm) Model
             # model_path="fakezeta/llama-3-8b-instruct-ov-int8",
@@ -368,7 +368,7 @@ class LLMService:
         source_language:str,
         detect_language:str,
         target_language:str,
-        history: List[str]|List[List[str]] = [""],
+        history: List[str]|List[List[str]],
         input_prompt: str|List[str] = None, 
         stream: bool = False, 
         batch: bool = False
@@ -400,19 +400,22 @@ class LLMService:
         source_language:str,
         detect_language:str,
         target_language:str,        
-        history: List[str]|List[List[str]] = [""],
+        history: List[str]|List[List[str]],
         input_prompt: str|List[str] = None, 
         stream: bool = False, 
         batch: bool = False
     ):
         default_few_shots: str = prompt.DEFAULT_TRANSLATION_FEW_SHOT
-        default_system_prompt: str = prompt.DEFAULT_TRANSLATION_SUMMARIZE_SYSTEM_PROMPT.format(
-            source=source_language, 
-            target=target_language)
+        default_system_prompt: str = [
+            prompt.DEFAULT_TRANSLATION_SUMMARIZE_SYSTEM_PROMPT.format(
+                source=s,
+                target=",".join(t) if len(t)>2 else t[0])
+        for s,d,t,h in zip(source_language, detect_language, target_language, history)]
+        
         user_system_prompt = [
-            default_system_prompt + prompt.DEFAULT_TRANSLATION_SUMMARIZE_SYSTEM_PROMPT.format(
-            source=s,
-            target=t[0])
+            prompt.DEFAULT_TRANSLATION_SUMMARIZE_SYSTEM_PROMPT.format(
+                source=s,
+                target=",".join(t) if len(t)>2 else t[0])
         for s,d,t,h in zip(source_language, detect_language, target_language, history)]
 
         return self._generation_wrapper(
