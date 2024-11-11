@@ -84,6 +84,7 @@ class OpenAIService:
     async def translate_summarize(
         self, 
         input_text:str,
+        history:List[str],
         source_language:str="ko", 
         target_language:List[str]=["en"],
         input_prompt:str=None,
