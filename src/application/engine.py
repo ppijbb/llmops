@@ -203,8 +203,8 @@ class LLMService:
             # repetition_penalty=1.0,
             # frequency_penalty=1.0,
             # presence_penalty=1.0,
-            temperature=0.5,
-            top_p=0.9,
+            temperature=0.3,
+            top_p=0.99,
             max_tokens=self.max_new_tokens)
     
     def _set_templat(
