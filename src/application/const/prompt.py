@@ -274,7 +274,7 @@ Here is summarize format.
 * (summary note with key points of the topic N in {target})
 ...
 ## (etc info in {target})
-* (summary note in {target}, next conference schedule, etc)
+* (etc note in {target}, next conference schedule, etc... if nothing to write, pass this part)
 </example-output-format>
 THE SUMMARY SHOULD BE WRITTEN IN {target} LANGUAGE ONLY.
 DO NOT HAVE TO WRITE THE SPEAKER SAID, JUST WRITE THE KEY INFOMATIONS.'''
