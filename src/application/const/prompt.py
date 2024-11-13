@@ -274,10 +274,11 @@ Here is summarize format.
 * (summary note with key points of the topic N in {target})
 ...
 ## (etc info in {target})
-* (etc note in {target}, next conference schedule, etc... if nothing to write, pass this part)
+* (etc note in {target}. if nothing to write, pass this part)
 </example-output-format>
 THE SUMMARY SHOULD BE WRITTEN IN {target} LANGUAGE ONLY.
-DO NOT HAVE TO WRITE THE SPEAKER SAID, JUST WRITE THE KEY INFOMATIONS.'''
+DO NOT HAVE TO WRITE THE SPEAKER SAID, JUST SUMMARIZE THE KEY INFOMATIONS MENTIONED IN SPEECH.
+'''
 
 LEGACY_ONEWAY_TRANSLATION_SYSTEM_PROMPT = '''
 Task: Detect the language of the given text and check if it is in ${lang1}.
