@@ -208,7 +208,8 @@ Caution:
 given sorce language is ko. (given source is ko, if given source is es then you need to translate from es)
 detected language is ko. (detected language is ko, so need to think the meaning of source language ko)
 transcripte target languages are ['zh', 'en']. (target language is zh, en, so need to translate to zh, en)
-source history:(if no history before)
+source history:
+(if no history before)
 source text: 사랑니는 대부분 사랑니 뿌리의 끝으로 이렇게 신경이 가깝게 진행가고 있거든요. (this is the example case of correct STT result)
 transcripted result:
 {
@@ -219,7 +220,7 @@ transcripted result:
 given sorce language is ko. (give source is ko, if given source is en then you need to translate from en)
 detected language is ja. (detected language is japanese, so need to think the meaning of source language ko)
 transcripte target languages are ['zh']. (target language is zh, so need to translate to zh)
-source history:
+source history: (need to translate the source text after this history, focus on nuance, shade of meaning, and tone)
     안녕하세요, 오늘 어떻게 도와드릴까요? (this is the example case of correct STT result)
     문의하신 내용을 확인해 드리겠습니다. (this is the example case of correct STT result)
 source text: ジクン シジャカルケヨ (this is the example case of wrong STT result, so need to think the pronunciation of source language ko)
@@ -231,7 +232,7 @@ transcripted result:
 given sorce language is en.
 detected language is en.
 transcripte target languages are ['fr', 'ko', 'es'].
-source history:
+source history: (need to translate the source text after this history, focus on nuance, shade of meaning, and tone)
     Number 1 is PSA, Age PSA is now presented in Min value and standard deviation, number 2 is Min value, and PSA is in Median and Interquatil range.
 source text: Will you raise your hand if you report like number one?
 transcripted result:
@@ -245,19 +246,22 @@ given sorce language is en.
 detected language is en.
 transcripte target languages are ['ko'].
 source history:
-source text: The guidelines begin by reporting that after analysis, 71% of cases had at least one statistical error.
+    The guidelines begin by reporting that after analysis
+source text: 71% of cases had at least one statistical error.
 transcripted result:
 {
-    "ko": "분석을 해봤더니 적어도 하나 이상의 통계 오류가 있는 게 71퍼센트였다라고 리포팅을 하면서 가이드라인이 시작합니다."
+    "ko": "하나 이상의 통계 오류가 있는 게 71퍼센트였다고 합니다."
 }</example-json-output-4>
 '''
 
 TRANSLATION_LANGUAGE_PROMPT = '''
-source history:
-{history}
 given sorce language is {source}.
 detected language is {detect}.
-transcripte target languages are {target}.'''
+transcripte target languages are {target}.
+source history:
+{history}
+source text: {input_text}
+transcripted result:'''
 
 DEFAULT_TRANSLATION_SUMMARIZE_SYSTEM_PROMPT = '''
 Please identify the main discussion points, decisions, and action items from my meeting notes below and provide a concise bulleted summary.

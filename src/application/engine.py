@@ -375,13 +375,15 @@ class LLMService:
     ): 
         default_few_shots: str = prompt.DEFAULT_TRANSLATION_FEW_SHOT
         default_system_prompt: str = prompt.DEFAULT_TRANSLATION_SYSTEM_PROMPT
-        user_system_prompt = [
-            default_system_prompt + prompt.TRANSLATION_LANGUAGE_PROMPT.format(
-            history="\n".join([f"\t{_h}" for _h in h]),
-            source=s,
-            detect=d,
-            target=t)
-        for s,d,t,h in zip(source_language, detect_language, target_language, history)]
+        user_system_prompt = [default_system_prompt] * len(input_text)        
+        generation_prompt = [
+            prompt.TRANSLATION_LANGUAGE_PROMPT.format(
+                history="\n".join([f"\t{_h}" for _h in h]),
+                source=s,
+                detect=d,
+                target=t,
+                input_text=i)
+        for s,d,t,h,i in zip(source_language, detect_language, target_language, history, input_text)]
         
         if isinstance(input_text, list):
             input_text = [f"source language: {text}" for text in input_text]
@@ -389,7 +391,7 @@ class LLMService:
         return self._generation_wrapper(
             stream=stream, batch=batch,
             **dict(
-                input_text=input_text, 
+                input_text=generation_prompt, 
                 input_prompt=user_system_prompt, 
                 default_few_shots=default_few_shots, 
                 default_system_prompt=user_system_prompt))

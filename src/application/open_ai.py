@@ -53,15 +53,15 @@ class OpenAIService:
         history:List[str]=[""]
     ) -> str:
         default_system_prompt: str = prompt.DEFAULT_TRANSLATION_SYSTEM_PROMPT
-        default_system_prompt += prompt.TRANSLATION_LANGUAGE_PROMPT.format(
+        generation_prompt = prompt.TRANSLATION_LANGUAGE_PROMPT.format(
             history="\n".join([f"\t{h}" for h in history]),
             source=source_language,
             detect=detect_language, 
-            target=target_language)
-        
+            target=target_language,
+            input_text=input_text)
         result = self.generate(
             input_prompt=input_prompt if input_prompt else default_system_prompt, 
-            input_text=input_text)
+            input_text=generation_prompt)
         return result.choices[0].message.content
   
     async def translate_legacy(
