@@ -222,7 +222,7 @@ detected language is ja. (detected language is japanese, so need to think the me
 transcripte target languages are ['zh']. (target language is zh, so need to translate to zh)
 source history: (need to translate the source text after this history, focus on nuance, shade of meaning, and tone)
     안녕하세요, 오늘 어떻게 도와드릴까요? (this is the example case of correct STT result)
-    문의하신 내용을 확인해 드리겠습니다. (this is the example case of correct STT result)
+    문의하신 내용을 확인해 드리겠습니다. (this is the example case of correct STT result, given text must be translated after this latest history.)
 source text: ジクン シジャカルケヨ (this is the example case of wrong STT result, so need to think the pronunciation of source language ko)
 transcripted result:
 {
