@@ -79,9 +79,9 @@ class LLMService:
         self.model, self.tokenizer = get_model(
             # model_path="KISTI-KONI/KONI-Llama3-8B-Instruct-20240729", # GPU (vllm) Model
             # model_path="google/gemma-2-2b-it",  # GPU (vllm) Model
-            model_path="solidrust/gemma-2-9b-it-AWQ",
+            # model_path="solidrust/gemma-2-9b-it-AWQ",
             # model_path="unsloth/gemma-2-9b-it-bnb-4bit",
-            # model_path="AIFunOver/gemma-2-2b-it-openvino-8bit", # CPU Model
+            model_path="AIFunOver/gemma-2-2b-it-openvino-8bit", # CPU Model
             # model_path="Gunulhona/Llama-Merge-Small",  # GPU (vllm) Model
             # model_path="fakezeta/llama-3-8b-instruct-ov-int8",
             # model_path="Gunulhona/openvino-llama-3-ko-8B_int8",
@@ -183,7 +183,7 @@ class LLMService:
         **kwargs
     ):
         generation_config = dict(
-            do_sample=True,
+            do_sample=False,
             temperature=0.3,
             max_new_tokens=self.max_new_tokens,
             # penalty_alpha=0.5,
@@ -236,9 +236,11 @@ class LLMService:
         else: # ipex, ov generation
             # self.logger.info(prompt)
             inputs = self.formatting(prompt=prompt)
+            prefix_length = inputs["input_ids"].shape[-1]
+            print(prefix_length)
             output = self.model.generate(**self.generate_config(**inputs))
             output_str = self.tokenizer.batch_decode(output, skip_special_tokens=True)
-        return [out.replace(". ", ".\n") for out in output_str]
+        return [out[prefix_length:].replace(". ", ".\n") for out in output_str]
 
     @torch.inference_mode()
     def _make_generate(
