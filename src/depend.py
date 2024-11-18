@@ -24,15 +24,15 @@ def get_model(
             from vllm import LLM
             model = LLM(
                 model=model_path,
-                quantization="bitsandbytes",
-                load_format="bitsandbytes",
+                quantization="AWQ",
+                # quantization="bitsandbytes",
+                # load_format="bitsandbytes",
                 max_model_len=4096,
                 max_num_seqs=16,
                 trust_remote_code=True,
                 gpu_memory_utilization=0.55,
-                dtype="bfloat16",
+                # dtype="float16",
                 swap_space=4, # default 4
-                # quantization="awq",                
                 # distributed_executor_backend="ray",
                 tensor_parallel_size=1,
                 pipeline_parallel_size=1,
