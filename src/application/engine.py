@@ -79,7 +79,8 @@ class LLMService:
         self.model, self.tokenizer = get_model(
             # model_path="KISTI-KONI/KONI-Llama3-8B-Instruct-20240729", # GPU (vllm) Model
             # model_path="google/gemma-2-2b-it",  # GPU (vllm) Model
-            model_path="unsloth/gemma-2-2b-it-bnb-4bit",
+            model_path="solidrust/gemma-2-9b-it-AWQ",
+            # model_path="unsloth/gemma-2-9b-it-bnb-4bit",
             # model_path="AIFunOver/gemma-2-2b-it-openvino-8bit", # CPU Model
             # model_path="Gunulhona/Llama-Merge-Small",  # GPU (vllm) Model
             # model_path="fakezeta/llama-3-8b-instruct-ov-int8",
