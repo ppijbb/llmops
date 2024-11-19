@@ -102,20 +102,15 @@ class APIIngress:
         """
         async with httpx.AsyncClient() as client:
             # 요청 메타데이터 추출
-            method = request.method
             url = f"http://{self.demo_address}/{path}"  # 요청 경로 재구성
-            headers = dict(request.headers)
-            body = await request.body()
-            cookies = request.cookies
-
             # 요청을 Streamlit 서버로 전달
             try:
                 streamlit_response = await client.request(
-                    method=method,
+                    method=request.method,
                     url=url,
-                    headers=headers,
-                    content=body,
-                    cookies=cookies,
+                    headers=request.headers,
+                    content=await request.body(),
+                    # cookies=request.cookies,
                     timeout=3.0
                 )
             except httpx.RequestError as e:
@@ -216,61 +211,75 @@ class APIIngress:
         "/demo/{path:path}")
     async def proxy_websocket(self,path: str, websocket: WebSocket):
         """
-        FastAPI에서 WebSocket 요청을 Streamlit 서버로 중계하며, 쿠키를 전달합니다.
+        FastAPI에서 WebSocket 요청을 Streamlit 서버로 중계하며, 쿠키를 전달하고,
+        WebSocket 연결을 적절히 업그레이드합니다.
         """
         await websocket.accept()  # 클라이언트 WebSocket 연결 수락
 
         # 클라이언트의 요청 헤더에서 쿠키 추출
-        cookies = websocket.headers.get('cookie', '')
+        cookies = websocket.headers.get('cookie', '')  # 클라이언트에서 받은 쿠키를 추출
 
-        # WebSocket 연결에 사용할 HTTP 헤더 (쿠키 포함)
+        # WebSocket 연결에 사용할 HTTP 헤더 (쿠키 및 Upgrade 헤더 포함)
         headers = {
-            'Cookie': cookies  # 클라이언트에서 받은 쿠키를 Streamlit으로 전달
+            'Cookie': cookies,  # 클라이언트에서 받은 쿠키를 Streamlit으로 전달
+            'Connection': 'Upgrade',  # WebSocket 연결을 위한 Upgrade 헤더
+            'Upgrade': 'websocket',  # WebSocket 프로토콜 업그레이드 요청
         }
 
-        # Streamlit WebSocket 서버 연결 (쿠키를 포함한 헤더로 연결)
-        async with websockets.connect(f"ws://{self.demo_address}/{path}", extra_headers=headers) as streamlit_ws:
-            # 클라이언트와 Streamlit 간 메시지 중계
-            async def to_streamlit():
-                async for message in websocket.iter_text():
-                    await streamlit_ws.send(message)
+        # Streamlit WebSocket 서버 연결 (쿠키 및 Upgrade 헤더 포함)
+        try:
+            async with websockets.connect(f"ws://{self.demo_address}/{path}", extra_headers=headers) as streamlit_ws:
+                # 클라이언트와 Streamlit 간 메시지 중계
+                async def to_streamlit():
+                    async for message in websocket.iter_text():
+                        await streamlit_ws.send(message)
 
-            async def to_client():
-                async for message in streamlit_ws:
-                    await websocket.send_text(message)
+                async def to_client():
+                    async for message in streamlit_ws:
+                        await websocket.send_text(message)
 
-            # 양방향 데이터 전송 처리
-            await asyncio.gather(to_streamlit(), to_client())
+                # 양방향 데이터 전송 처리
+                await asyncio.gather(to_streamlit(), to_client())
+        except Exception as e:
+            logger.error(f"Error while proxying websocket: {e}")
+            await websocket.close()
     
     @app.websocket(
         "/_stcore/{path:path}")
     async def proxy_websocket(self, path: str, websocket: WebSocket):
         """
-        FastAPI에서 WebSocket 요청을 Streamlit 서버로 중계하며, 쿠키를 전달합니다.
+        FastAPI에서 WebSocket 요청을 Streamlit 서버로 중계하며, 쿠키를 전달하고,
+        WebSocket 연결을 적절히 업그레이드합니다.
         """
         await websocket.accept()  # 클라이언트 WebSocket 연결 수락
 
         # 클라이언트의 요청 헤더에서 쿠키 추출
-        cookies = websocket.headers.get('cookie', '')
+        cookies = websocket.headers.get('cookie', '')  # 클라이언트에서 받은 쿠키를 추출
 
-        # WebSocket 연결에 사용할 HTTP 헤더 (쿠키 포함)
+        # WebSocket 연결에 사용할 HTTP 헤더 (쿠키 및 Upgrade 헤더 포함)
         headers = {
-            'Cookie': cookies  # 클라이언트에서 받은 쿠키를 Streamlit으로 전달
+            'Cookie': cookies,  # 클라이언트에서 받은 쿠키를 Streamlit으로 전달
+            'Connection': 'Upgrade',  # WebSocket 연결을 위한 Upgrade 헤더
+            'Upgrade': 'websocket',  # WebSocket 프로토콜 업그레이드 요청
         }
 
-        # Streamlit WebSocket 서버 연결 (쿠키를 포함한 헤더로 연결)
-        async with websockets.connect(f"ws://{self.demo_address}/_stcore/{path}", extra_headers=headers) as streamlit_ws:
-            # 클라이언트와 Streamlit 간 메시지 중계
-            async def to_streamlit():
-                async for message in websocket.iter_text():
-                    await streamlit_ws.send(message)
+        # Streamlit WebSocket 서버 연결 (쿠키 및 Upgrade 헤더 포함)
+        try:
+            async with websockets.connect(f"ws://{self.demo_address}/_stcore/{path}", extra_headers=headers) as streamlit_ws:
+                # 클라이언트와 Streamlit 간 메시지 중계
+                async def to_streamlit():
+                    async for message in websocket.iter_text():
+                        await streamlit_ws.send(message)
 
-            async def to_client():
-                async for message in streamlit_ws:
-                    await websocket.send_text(message)
+                async def to_client():
+                    async for message in streamlit_ws:
+                        await websocket.send_text(message)
 
-            # 양방향 데이터 전송 처리
-            await asyncio.gather(to_streamlit(), to_client())
+                # 양방향 데이터 전송 처리
+                await asyncio.gather(to_streamlit(), to_client())
+        except Exception as e:
+            logger.error(f"Error while proxying websocket: {e}")
+            await websocket.close()
 
     @app.post(
         "/summarize_gemma", 
