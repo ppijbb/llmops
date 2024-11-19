@@ -18,9 +18,14 @@ import logging
 from typing import Any, List, Dict
 import time
 import traceback
+import requests
+import httpx
+import websockets
+import asyncio
 
-from fastapi import FastAPI, Depends
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, Depends, Request, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse, Response
 import torch
 from ray import serve
 from ray.serve.handle import DeploymentHandle
@@ -43,6 +48,13 @@ app = FastAPI(
     title="dialog summary",
     lifespan=llm_ready,
     )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*", "/demo/*"],
+    allow_methods=["*"],
+    allow_headers=["*"]
+    )
+
 logger = logging.getLogger("ray.serve")
 server_logger = setup_logger()
 server_logger.info("""
@@ -50,6 +62,7 @@ server_logger.info("""
 #  Server Started  #
 ####################
 """)
+
 
 
 @serve.deployment(num_replicas=1)
@@ -75,7 +88,139 @@ class APIIngress:
             input_prompt=request_prompt,
             input_text=request_text,
             batch=True)
-        
+    
+    @app.api_route(
+        "/demo/{path:path}", 
+        response_class=Response, 
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"] )
+    async def serve_streamlit(self,path: str, request: Request):
+        """
+        FastAPI에서 들어온 요청을 Streamlit 서버로 전달하고 응답을 반환합니다.
+        """
+        async with httpx.AsyncClient() as client:
+            # 요청 메타데이터 추출
+            method = request.method
+            url = f"http://localhost:8504/{path}"  # 요청 경로 재구성
+            headers = dict(request.headers)
+            body = await request.body()
+
+            # 요청을 Streamlit 서버로 전달
+            try:
+                streamlit_response = await client.request(
+                    method=method,
+                    url=url,
+                    headers=headers,
+                    content=body,
+                    timeout=30.0
+                )
+            except httpx.RequestError as e:
+                return Response(
+                    content=f"Error connecting to Streamlit server: {e}",
+                    status_code=502
+                )
+
+            # 응답 변환 후 반환 (비-스트리밍 방식)
+            return Response(
+                content=streamlit_response.content,
+                status_code=streamlit_response.status_code,
+                headers={key: value for key, value in streamlit_response.headers.items() if key.lower() != "content-encoding"}
+            )
+
+    @app.api_route(
+        "/static/{path:path}", 
+        response_class=Response, 
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"] )
+    async def serve_streamlit(self,path: str, request: Request):
+        """
+        FastAPI에서 들어온 요청을 Streamlit 서버로 전달하고 응답을 반환합니다.
+        """
+        async with httpx.AsyncClient() as client:
+            # 요청 메타데이터 추출
+            method = request.method
+            url = f"http://localhost:8504/static/{path}"  # 요청 경로 재구성
+            headers = dict(request.headers)
+            body = await request.body()
+
+            # 요청을 Streamlit 서버로 전달
+            try:
+                streamlit_response = await client.request(
+                    method=method,
+                    url=url,
+                    headers=headers,
+                    content=body,
+                    timeout=30.0
+                )
+            except httpx.RequestError as e:
+                return Response(
+                    content=f"Error connecting to Streamlit server: {e}",
+                    status_code=502
+                )
+
+            # 응답 변환 후 반환 (비-스트리밍 방식)
+            return Response(
+                content=streamlit_response.content,
+                status_code=streamlit_response.status_code,
+                headers={key: value for key, value in streamlit_response.headers.items() if key.lower() != "content-encoding"}
+            )
+            
+    @app.api_route(
+        "/_stcore/{path:path}", 
+        response_class=Response, 
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"] )
+    async def serve_streamlit(self,path: str, request: Request):
+        """
+        FastAPI에서 들어온 요청을 Streamlit 서버로 전달하고 응답을 반환합니다.
+        """
+        async with httpx.AsyncClient() as client:
+            # 요청 메타데이터 추출
+            method = request.method
+            url = f"http://localhost:8504/_stcore/{path}"  # 요청 경로 재구성
+            headers = dict(request.headers)
+            body = await request.body()
+
+            # 요청을 Streamlit 서버로 전달
+            try:
+                streamlit_response = await client.request(
+                    method=method,
+                    url=url,
+                    headers=headers,
+                    content=body,
+                    timeout=30.0
+                )
+            except httpx.RequestError as e:
+                return Response(
+                    content=f"Error connecting to Streamlit server: {e}",
+                    status_code=502
+                )
+
+            # 응답 변환 후 반환 (비-스트리밍 방식)
+            return Response(
+                content=streamlit_response.content,
+                status_code=streamlit_response.status_code,
+                headers={key: value for key, value in streamlit_response.headers.items() if key.lower() != "content-encoding"}
+            )
+            
+    @app.websocket("/demo/{path:path}")
+    async def proxy_websocket(self,path: str, websocket: WebSocket):
+        """
+        FastAPI에서 WebSocket 요청을 Streamlit 서버로 중계합니다.
+        """
+        await websocket.accept()  # 클라이언트 WebSocket 연결 수락
+
+        # Streamlit WebSocket 서버 연결
+        async with websockets.connect(f"ws://localhost:8504/{path}") as streamlit_ws:
+            # 클라이언트와 Streamlit 간 메시지 중계
+            async def to_streamlit():
+                async for message in websocket.iter_text():
+                    await streamlit_ws.send(message)
+
+            async def to_client():
+                async for message in streamlit_ws:
+                    await websocket.send_text(message)
+
+            # 양방향 데이터 전송 처리
+            await asyncio.gather(to_streamlit(), to_client())
+
     @app.post(
         "/summarize_gemma", 
         response_model=SummaryResponse)
