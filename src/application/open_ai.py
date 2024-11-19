@@ -59,8 +59,9 @@ class OpenAIService:
             source=source_language,
             detect=detect_language, 
             target=target_language,
-            context=" ".join[history[-1] if len(history)>0 else "", input_text],
+            context=" ".join([history[-1] if len(history)>0 else "", input_text]),
             input_text=input_text)
+        print(generation_prompt)
         result = self.generate(
             input_prompt=input_prompt if input_prompt else default_system_prompt, 
             input_text=generation_prompt)

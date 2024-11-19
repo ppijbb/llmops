@@ -385,7 +385,7 @@ class LLMService:
                 source=s,
                 detect=d,
                 target=t,
-                context=" ".join[h[-1] if len(h)>0 else "", i],
+                context=" ".join([h[-1] if len(h)>0 else "", i]),
                 input_text=i)
         for s,d,t,h,i in zip(source_language, detect_language, target_language, history, input_text)]
         
