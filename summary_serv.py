@@ -50,6 +50,7 @@ app = FastAPI(
     )
 app.add_middleware(
     CORSMiddleware,
+    allow_credentials=True,
     allow_origins=["*", "/demo/*"],
     allow_methods=["*"],
     allow_headers=["*"]
@@ -74,6 +75,7 @@ class APIIngress:
         ) -> None:
         if llm_handle is not None:
             self.service = llm_handle
+        self.demo_address = "192.168.1.55:8504"
  
     @serve.batch(
         max_batch_size=4, 
@@ -92,7 +94,8 @@ class APIIngress:
     @app.api_route(
         "/demo/{path:path}", 
         response_class=Response, 
-        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"] )
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+        include_in_schema=False)
     async def serve_streamlit(self,path: str, request: Request):
         """
         FastAPI에서 들어온 요청을 Streamlit 서버로 전달하고 응답을 반환합니다.
@@ -100,9 +103,10 @@ class APIIngress:
         async with httpx.AsyncClient() as client:
             # 요청 메타데이터 추출
             method = request.method
-            url = f"http://localhost:8504/{path}"  # 요청 경로 재구성
+            url = f"http://{self.demo_address}/{path}"  # 요청 경로 재구성
             headers = dict(request.headers)
             body = await request.body()
+            cookies = request.cookies
 
             # 요청을 Streamlit 서버로 전달
             try:
@@ -111,7 +115,8 @@ class APIIngress:
                     url=url,
                     headers=headers,
                     content=body,
-                    timeout=30.0
+                    cookies=cookies,
+                    timeout=3.0
                 )
             except httpx.RequestError as e:
                 return Response(
@@ -129,7 +134,8 @@ class APIIngress:
     @app.api_route(
         "/static/{path:path}", 
         response_class=Response, 
-        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"] )
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+        include_in_schema=False)
     async def serve_streamlit(self,path: str, request: Request):
         """
         FastAPI에서 들어온 요청을 Streamlit 서버로 전달하고 응답을 반환합니다.
@@ -137,9 +143,11 @@ class APIIngress:
         async with httpx.AsyncClient() as client:
             # 요청 메타데이터 추출
             method = request.method
-            url = f"http://localhost:8504/static/{path}"  # 요청 경로 재구성
+            url = f"http://{self.demo_address}/static/{path}"  # 요청 경로 재구성
             headers = dict(request.headers)
             body = await request.body()
+            cookies = request.cookies
+
 
             # 요청을 Streamlit 서버로 전달
             try:
@@ -148,7 +156,8 @@ class APIIngress:
                     url=url,
                     headers=headers,
                     content=body,
-                    timeout=30.0
+                    cookies=cookies,
+                    timeout=3.0
                 )
             except httpx.RequestError as e:
                 return Response(
@@ -166,7 +175,8 @@ class APIIngress:
     @app.api_route(
         "/_stcore/{path:path}", 
         response_class=Response, 
-        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"] )
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+        include_in_schema=False)
     async def serve_streamlit(self,path: str, request: Request):
         """
         FastAPI에서 들어온 요청을 Streamlit 서버로 전달하고 응답을 반환합니다.
@@ -174,9 +184,10 @@ class APIIngress:
         async with httpx.AsyncClient() as client:
             # 요청 메타데이터 추출
             method = request.method
-            url = f"http://localhost:8504/_stcore/{path}"  # 요청 경로 재구성
+            url = f"http://{self.demo_address}/_stcore/{path}"  # 요청 경로 재구성
             headers = dict(request.headers)
             body = await request.body()
+            cookies = request.cookies
 
             # 요청을 Streamlit 서버로 전달
             try:
@@ -185,7 +196,8 @@ class APIIngress:
                     url=url,
                     headers=headers,
                     content=body,
-                    timeout=30.0
+                    cookies=cookies,
+                    timeout=3.0
                 )
             except httpx.RequestError as e:
                 return Response(
@@ -200,15 +212,54 @@ class APIIngress:
                 headers={key: value for key, value in streamlit_response.headers.items() if key.lower() != "content-encoding"}
             )
             
-    @app.websocket("/demo/{path:path}")
+    @app.websocket(
+        "/demo/{path:path}")
     async def proxy_websocket(self,path: str, websocket: WebSocket):
         """
-        FastAPI에서 WebSocket 요청을 Streamlit 서버로 중계합니다.
+        FastAPI에서 WebSocket 요청을 Streamlit 서버로 중계하며, 쿠키를 전달합니다.
         """
         await websocket.accept()  # 클라이언트 WebSocket 연결 수락
 
-        # Streamlit WebSocket 서버 연결
-        async with websockets.connect(f"ws://localhost:8504/{path}") as streamlit_ws:
+        # 클라이언트의 요청 헤더에서 쿠키 추출
+        cookies = websocket.headers.get('cookie', '')
+
+        # WebSocket 연결에 사용할 HTTP 헤더 (쿠키 포함)
+        headers = {
+            'Cookie': cookies  # 클라이언트에서 받은 쿠키를 Streamlit으로 전달
+        }
+
+        # Streamlit WebSocket 서버 연결 (쿠키를 포함한 헤더로 연결)
+        async with websockets.connect(f"ws://{self.demo_address}/{path}", extra_headers=headers) as streamlit_ws:
+            # 클라이언트와 Streamlit 간 메시지 중계
+            async def to_streamlit():
+                async for message in websocket.iter_text():
+                    await streamlit_ws.send(message)
+
+            async def to_client():
+                async for message in streamlit_ws:
+                    await websocket.send_text(message)
+
+            # 양방향 데이터 전송 처리
+            await asyncio.gather(to_streamlit(), to_client())
+    
+    @app.websocket(
+        "/_stcore/{path:path}")
+    async def proxy_websocket(self, path: str, websocket: WebSocket):
+        """
+        FastAPI에서 WebSocket 요청을 Streamlit 서버로 중계하며, 쿠키를 전달합니다.
+        """
+        await websocket.accept()  # 클라이언트 WebSocket 연결 수락
+
+        # 클라이언트의 요청 헤더에서 쿠키 추출
+        cookies = websocket.headers.get('cookie', '')
+
+        # WebSocket 연결에 사용할 HTTP 헤더 (쿠키 포함)
+        headers = {
+            'Cookie': cookies  # 클라이언트에서 받은 쿠키를 Streamlit으로 전달
+        }
+
+        # Streamlit WebSocket 서버 연결 (쿠키를 포함한 헤더로 연결)
+        async with websockets.connect(f"ws://{self.demo_address}/_stcore/{path}", extra_headers=headers) as streamlit_ws:
             # 클라이언트와 Streamlit 간 메시지 중계
             async def to_streamlit():
                 async for message in websocket.iter_text():
