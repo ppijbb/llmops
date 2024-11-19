@@ -24,9 +24,9 @@ def get_model(
             from vllm import LLM
             model = LLM(
                 model=model_path,
-                quantization="AWQ",
-                # quantization="bitsandbytes",
-                # load_format="bitsandbytes",
+                # quantization="AWQ",
+                quantization="bitsandbytes",
+                load_format="bitsandbytes",
                 max_model_len=4096,
                 max_num_seqs=16,
                 trust_remote_code=True,
