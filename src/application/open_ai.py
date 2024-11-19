@@ -60,7 +60,6 @@ class OpenAIService:
             detect=detect_language, 
             target=target_language,
             input_text=input_text)
-        self.logger.info(f"generation_prompt: {generation_prompt}")
         result = self.generate(
             input_prompt=input_prompt if input_prompt else default_system_prompt, 
             input_text=generation_prompt)

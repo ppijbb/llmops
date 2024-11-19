@@ -239,8 +239,8 @@ class LLMService:
             prefix_length = inputs["input_ids"].shape[-1]
             print(prefix_length)
             output = self.model.generate(**self.generate_config(**inputs))
-            output_str = self.tokenizer.batch_decode(output, skip_special_tokens=True)
-        return [out[prefix_length:].replace(". ", ".\n") for out in output_str]
+            output_str = self.tokenizer.batch_decode(output, skip_special_tokens=True)[prefix_length:]
+        return [out.replace(". ", ".\n") for out in output_str]
 
     @torch.inference_mode()
     def _make_generate(
