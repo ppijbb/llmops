@@ -11,6 +11,7 @@ class OpenAIService:
     def __init__(self):
         self.client = openai.OpenAI(
             api_key=os.environ["OPENAI_API_KEY"])
+        self.logger = logging.getLogger("ray.serve")
 
     def generate(
         self, 
@@ -20,7 +21,7 @@ class OpenAIService:
         return self.client.chat.completions.create(
             model="gpt-4o-mini",
             max_tokens=2048,
-            temperature=0,
+            temperature=0.6,
             messages=[
                 {
                     "role": "system",
@@ -54,11 +55,12 @@ class OpenAIService:
     ) -> str:
         default_system_prompt: str = prompt.DEFAULT_TRANSLATION_SYSTEM_PROMPT
         generation_prompt = prompt.TRANSLATION_LANGUAGE_PROMPT.format(
-            history="\n".join([f"\t{h}" for h in history]),
+            history="\n".join([f"\t{h}" for h in history][-1:]),
             source=source_language,
             detect=detect_language, 
             target=target_language,
             input_text=input_text)
+        self.logger.info(f"generation_prompt: {generation_prompt}")
         result = self.generate(
             input_prompt=input_prompt if input_prompt else default_system_prompt, 
             input_text=generation_prompt)
@@ -75,7 +77,7 @@ class OpenAIService:
     ) -> str:
         default_system_prompt = prompt.LEGACY_MULTI_TRANSLATION_SYSTEM_PROMPT.format(
             lang1=source_language,
-            lang2=target_language[0])
+            lang2=target_language[0]).strip()
         
         result = self.generate(
             input_prompt=input_prompt if input_prompt else default_system_prompt, 
