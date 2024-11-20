@@ -164,67 +164,8 @@ DEFAULT_SUMMARY_SYSTEM_PROMPT = '''
     - 총 비용
         - 240만원(120만원 씩 두개)
 '''
-DEFAULT_TRANSLATION_FEW_SHOT =  [
-    ("user", 
-'''안녕하세요, 오늘 어떻게 도와드릴까요?'''),
-    ("assistant",
-'''
-\{
-    "en": "Hello, how can I help you today?",
-    "ch": "你好，我今天怎么帮你？",
-    "jp": "こんにちは、今日はどういたしましょうか？",
-    "fr": "Bonjour, comment puis-je vous aider aujourd'hui ?",
-    "sp": "Hola, ¿cómo puedo ayudarte hoy?",
-    "de": "Hallo, wie kann ich Ihnen heute helfen?",
-    "it": "Ciao, come posso aiutarti oggi?"    
-\}'''),
-]
 
-DEFAULT_TRANSLATION_SYSTEM_PROMPT = '''
-You are the native level multi lingual translator.
-Translate language to given languages list.
-Given target text might be wrong transcripted STT, so need to thought with its source language pronunciation.
-
-# Target Languages
-- ko: Translate as if you are a native Korean speaker.
-- en: Translate as if you are a native English speaker.
-- fr: Translate as if you are a native French speaker.
-- es: Translate as if you are a native Spanish speaker.
-- zh: Translate as if you are a native Chinese speaker.
-
-# Task Processing Point
-- Translating the target text, focus on nuance, shade of meaning and tone from source context.
-- No infomation should not be dropped or distorted.
-- If the target text is wrong, need to translate from pronunciation as fixed target text.
-- If the target language is not in the target list, do not generate.
-
-<example-json-output-1>
-sorce language is ko.(given source is ko, if given source is es then you need to translate from es)
-detected language is ko.(detected language is ko, so need to think the meaning of source language ko)
-target languages are ['zh', 'en'].(target language is zh, en, so need to translate to zh, en)
-source history:
-(if no history before, context would be empty)
-source context: 사랑니는 대부분 사랑니 뿌리의 끝으로 이렇게 신경이 가깝게 진행가고 있거든요.(example case of correct STT result)
-target text: 사랑니는 대부분 사랑니 뿌리의 끝으로 이렇게 신경이 가깝게 진행가고 있거든요.(translation must be target language only!)
-translation result:
-{
-    "en": "Most wisdom teeth grow downward close to the nerve, reaching the tip of the root like this.",
-    "zh": "大多数智齿都是这样，往根尖方向生长，靠近神经的。"
-}</example-json-output-1>
-<example-json-output-2>
-sorce language is ko.(give source is ko, if given source is en then you need to translate from en)
-detected language is ja.(detected language is ja, so need to think the meaning of source language ko)
-target languages are ['zh'].(target language is zh, so need to translate to zh)
-source history:(think about the situations and nuance from history and do translation.)
-    안녕하세요, 오늘 어떻게 도와드릴까요?
-    문의하신 내용을 확인해 드리겠습니다.
-    테스트입니다. 테스트.
-source context: 테스트입니다. 테스트. ジクン シジャカルケヨ(base on context, translate the target text)
-target text: ジクン シジャカルケヨ(example case of wrong STT result, in this case you need to think the pronunciation of source language. "지금 시작할게요." would be a fixed target text in this case.)
-translation result:
-{
-    "zh": "现在开始吧."
-}</example-json-output-2>
+DEFAULT_TRANSLATION_FEW_SHOT = '''
 <example-json-output-3>
 sorce language is en.
 detected language is en.
@@ -252,7 +193,70 @@ translation result:
 {
     "ko": "하나 이상의 통계 오류가 있는 게 71퍼센트였다고 합니다."
 }</example-json-output-4>
+<example-json-output-5>
+sorce language is ko.
+detected language is ko.
+target languages are ['en'].
+source history:
+    그렇지만 어~ 제가 저희 임상 경우로서는 특히 브라이트 임플란트 또는덴티움의 임플란트를 쓸 때 충분히 가능하지 않을까 단 이 본 레벨인 경우에서는 슈퍼라인인 경우에서는 사실 4.0보다는 4.5가 더 선호되고요.
+    만약에 브라이팅 임플란트라면 본 레벨이라 할지라도 4밀리가 충분히 가능할 것 같습니다.
+source context: 만약에 브라이팅 임플란트라면 본 레벨이라 할지라도 4밀리가 충분히 가능할 것 같습니다. 그거는 저희가 강도 테스트의 결과에 의해서 그렇습니다.이 경우에 잔존골이 한 4에서 5밀리 정도 바이코티컬 픽세이션을 할 수도 있고또는 크레스탈로 약간 아그멘테이션을 할 수도 있을 것 같습니다.
+target text:  그거는 저희가 강도 테스트의 결과에 의해서 그렇습니다.이 경우에 잔존골이 한 4에서 5밀리 정도 바이코티컬 픽세이션을 할 수도 있고또는 크레스탈로 약간 아그멘테이션을 할 수도 있을 것 같습니다.
+translation result:
+{
+    "en": "This is based on the results of our strength tests. In this case, the residual bone can be about 4 to 5 millimeters for bicortical fixation, or there may be slight augmentation at the crest."
+}</example-json-output-5>
 '''
+
+DEFAULT_TRANSLATION_SYSTEM_PROMPT = '''
+You are the native level multi lingual translator.
+Translate language to given languages list.
+Given target text might be wrong transcripted STT, so need to thought with its source language pronunciation.
+
+# Target Languages
+- ko: Translate as if you are a native Korean speaker.
+- en: Translate as if you are a native English speaker.
+- fr: Translate as if you are a native French speaker.
+- es: Translate as if you are a native Spanish speaker.
+- zh: Translate as if you are a native Chinese speaker.
+
+# Task Processing Point
+- Translating the target text, focus on nuance, shade of meaning and tone from source context.
+- No infomation should not be dropped or distorted.
+- If the target text is wrong, need to translate from pronunciation as fixed target text.
+- If the target language is not in the target list, do not generate.
+
+# Caution!
+OUTPUT MUST BE THE TARGET TEXT ONLY. CONTEXT IS NOT ALLOWED TO BE WRITTEN IN THE OUTPUT.
+
+# Output Json Format Examples
+<example-json-output-1>
+sorce language is ko.(given source is ko, if given source is es then you need to translate from es)
+detected language is ko.(detected language is ko, so need to think the meaning of source language ko)
+target languages are ['zh', 'en'].(target language is zh, en, so need to translate to zh, en)
+source history:
+(if no history before, context would be empty)
+source context: 사랑니는 대부분 사랑니 뿌리의 끝으로 이렇게 신경이 가깝게 진행가고 있거든요.(example case of correct STT result)
+target text: 사랑니는 대부분 사랑니 뿌리의 끝으로 이렇게 신경이 가깝게 진행가고 있거든요.(translation must be target language only!)
+translation result:
+{
+    "en": "Most wisdom teeth grow downward close to the nerve, reaching the tip of the root like this.",
+    "zh": "大多数智齿都是这样，往根尖方向生长，靠近神经的。"
+}</example-json-output-1>
+<example-json-output-2>
+sorce language is ko.(give source is ko, if given source is en then you need to translate from en)
+detected language is ja.(detected language is ja, so need to think the meaning of source language ko)
+target languages are ['zh'].(target language is zh, so need to translate to zh)
+source history:(think about the situations and nuance from history and do translation.)
+    안녕하세요, 오늘 어떻게 도와드릴까요?
+    문의하신 내용을 확인해 드리겠습니다.
+    테스트입니다. 테스트.
+source context: 테스트입니다. 테스트. ジクン シジャカルケヨ(base on context, translate the target text)
+target text: ジクン シジャカルケヨ(example case of wrong STT result, in this case you need to think the pronunciation of source language. "지금 시작할게요." would be a fixed target text in this case.)
+translation result:
+{
+    "zh": "现在开始吧."
+}</example-json-output-2>'''
 
 TRANSLATION_LANGUAGE_PROMPT = '''
 sorce language is {source}.
