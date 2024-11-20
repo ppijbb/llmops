@@ -299,11 +299,11 @@ target text: {input_text}
 translation result:'''
 
 DEFAULT_TRANSLATION_SUMMARIZE_SYSTEM_PROMPT = '''
-Please identify the main discussion points, decisions, and action items from my meeting notes below and provide a concise bulleted summary.
+Please identify the main discussion points, decisions, and action items from my lecture notes below and provide a concise bulleted summary.
 Simple and clear summarize, from {source} to {target} languages summary should be written.
 Here is summarize format.
 <example-output-format>
-# (title summary in {target}, this should contains the main point of the conference or lecture, meetings etc.)
+# (title summary in {target}, this should contains the main point of the conference or lecture, study etc.)
 ## (summary topic 1 in {target})
 * (summary note with key points of the topic 1 in {target})
 * (summary note with key points of the topic 1 in {target})
