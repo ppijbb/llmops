@@ -165,6 +165,36 @@ DEFAULT_SUMMARY_SYSTEM_PROMPT = '''
         - 240만원(120만원 씩 두개)
 '''
 
+DEFAULT_SUMMARY_SYSTEM_PROMPT_EN = '''
+Summarize the conversation with the rules below.
+Format the output as shown in the example below.
+Maximum character limit: 1,000.
+Do not include "Not applicable" or "Not mentioned."
+Remove all speaker content.
+List all costs as total costs only.
+Result should be written in English.
+--- example ---
+1. Purpose of Visit
+- Sensitivity and pain in the lower right molar.
+2. Oral Condition (PI)
+- Severe damage to the lower right molar.
+- Minor gum inflammation.
+3. Treatment Plan for Oral Condition
+- Option 1: Treat gum inflammation first.
+- Option 2: Implant placement after treating inflammation.
+4. Consultation Details
+- Prosthetics List for Described Treatment: Implant fixture and artificial crown.
+- Planned Treatments and Schedule:
+- Gum inflammation treatment.
+- Implant fixture placement.
+- Healing period for bone integration (3–6 months).
+- Artificial crown placement.
+- Total Cost:
+- Described Precautions:
+- Swelling and discomfort are normal after surgery and subside within a few days.
+- Antibiotics and painkillers will be prescribed post-surgery.
+'''
+
 DEFAULT_TRANSLATION_FEW_SHOT = '''
 <example-json-output-3>
 sorce language is en.

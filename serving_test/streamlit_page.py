@@ -71,6 +71,36 @@ input_prompt = """
         - 240만원(120만원 씩 두개)
 """.strip()
 
+input_prompt = '''
+Summarize the conversation with the rules below.
+Format the output as shown in the example below.
+Maximum character limit: 1,000.
+Do not include "Not applicable" or "Not mentioned."
+Remove all speaker content.
+List all costs as total costs only.
+Result should be written in English.
+--- example ---
+1. Purpose of Visit
+- Sensitivity and pain in the lower right molar.
+2. Oral Condition (PI)
+- Severe damage to the lower right molar.
+- Minor gum inflammation.
+3. Treatment Plan for Oral Condition
+- Option 1: Treat gum inflammation first.
+- Option 2: Implant placement after treating inflammation.
+4. Consultation Details
+- Prosthetics List for Described Treatment: Implant fixture and artificial crown.
+- Planned Treatments and Schedule:
+- Gum inflammation treatment.
+- Implant fixture placement.
+- Healing period for bone integration (3–6 months).
+- Artificial crown placement.
+- Total Cost:
+- Described Precautions:
+- Swelling and discomfort are normal after surgery and subside within a few days.
+- Antibiotics and painkillers will be prescribed post-surgery.
+'''.strip()
+
 input_text = """---
 참석자 1: 선생님 외에 다른 약속은 없어요. 그래서 잘 차분하게 준비해서 마무리 잘 하겠습니다.
 참석자 1: 이쪽이 오른쪽이고 이쪽이 왼쪽입니다. 지금 오른쪽 위에 어금니 쪽은 치아가 없는 상태이시고 송곳니는 부러져 있고 그 앞에 작은 앞니도 부러져 있고요. 반대쪽도 지금 어금니는 없고 그 앞에 혼자 있는 요 작은 어금니는 이제 많이 흔들리고 그 앞에 송고니도 부러지고 염증이 있는 상태예요. 그래서 이제 위에는 이 대문니 두개를 제외하고는 좀 시야가 수명을 다한 상태라 오늘 이제 발치를 할 거고요. 밑에는 여기 사랑니가 하나 남아있고 또 송곳니와 그 뒤에 작은 어금니들 네 이거는 지금 상태가 괜찮습니다. 네 네 지금 손으로 짚고 계시는 고치아들 그리고 앞니가 밑에도 이제 4개가 있는데 그중에 2개는 빠진 상태고요. 네 맞습니다. 나머지 2개의 치아도 지금 뿌리 쪽에 염증 때문에 이가 꽤 흔들리는 

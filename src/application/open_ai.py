@@ -40,7 +40,7 @@ class OpenAIService:
         input_prompt:str=None
     ) -> str:
         result = self.generate(
-            input_prompt=input_prompt if input_prompt else prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT, 
+            input_prompt=input_prompt if input_prompt else prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT_EN, 
             input_text=input_text)
         return result.choices[0].message.content
 
