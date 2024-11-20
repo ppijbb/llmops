@@ -221,11 +221,13 @@ class APIIngress:
 
         # WebSocket 연결에 사용할 HTTP 헤더 (쿠키 및 Upgrade 헤더 포함)
         headers = {
-            'Cookie': cookies,  # 클라이언트에서 받은 쿠키를 Streamlit으로 전달
-            'Connection': 'Upgrade',  # WebSocket 연결을 위한 Upgrade 헤더
-            'Upgrade': 'websocket',  # WebSocket 프로토콜 업그레이드 요청
+            "X-Forwarded-For": websocket.client.host,
+            "X-Real-IP": websocket.client.host,
+            "Origin": websocket.headers.get("Origin", ""),
+            "Upgrade": "websocket",
+            "Connection": "Upgrade",
+            "Host": websocket.headers.get("Host", ""),
         }
-
         # Streamlit WebSocket 서버 연결 (쿠키 및 Upgrade 헤더 포함)
         try:
             async with websockets.connect(f"ws://{self.demo_address}/{path}", extra_headers=headers) as streamlit_ws:
@@ -241,45 +243,48 @@ class APIIngress:
                 # 양방향 데이터 전송 처리
                 await asyncio.gather(to_streamlit(), to_client())
         except Exception as e:
-            logger.error(f"Error while proxying websocket: {e}")
+            logger.error(f"Error while proxying websocket[demo]: {e}")
             await websocket.close()
     
-    @app.websocket(
-        "/_stcore/{path:path}")
-    async def proxy_websocket(self, path: str, websocket: WebSocket):
-        """
-        FastAPI에서 WebSocket 요청을 Streamlit 서버로 중계하며, 쿠키를 전달하고,
-        WebSocket 연결을 적절히 업그레이드합니다.
-        """
-        await websocket.accept()  # 클라이언트 WebSocket 연결 수락
+    # @app.websocket(
+    #     "/_stcore/{path:path}")
+    # async def proxy_websocket(self, path: str, websocket: WebSocket):
+    #     """
+    #     FastAPI에서 WebSocket 요청을 Streamlit 서버로 중계하며, 쿠키를 전달하고,
+    #     WebSocket 연결을 적절히 업그레이드합니다.
+    #     """
+    #     await websocket.accept()  # 클라이언트 WebSocket 연결 수락
 
-        # 클라이언트의 요청 헤더에서 쿠키 추출
-        cookies = websocket.headers.get('cookie', '')  # 클라이언트에서 받은 쿠키를 추출
+    #     # 클라이언트의 요청 헤더에서 쿠키 추출
+    #     cookies = websocket.headers.get('cookie', '')  # 클라이언트에서 받은 쿠키를 추출
 
-        # WebSocket 연결에 사용할 HTTP 헤더 (쿠키 및 Upgrade 헤더 포함)
-        headers = {
-            'Cookie': cookies,  # 클라이언트에서 받은 쿠키를 Streamlit으로 전달
-            'Connection': 'Upgrade',  # WebSocket 연결을 위한 Upgrade 헤더
-            'Upgrade': 'websocket',  # WebSocket 프로토콜 업그레이드 요청
-        }
+    #     # WebSocket 연결에 사용할 HTTP 헤더 (쿠키 및 Upgrade 헤더 포함)
+    #     headers = {
+    #         "X-Forwarded-For": websocket.client.host,
+    #         "X-Real-IP": websocket.client.host,
+    #         "Origin": websocket.headers.get("Origin", ""),
+    #         "Upgrade": "websocket",
+    #         "Connection": "Upgrade",
+    #         "Host": websocket.headers.get("Host", ""),
+    #     }
 
-        # Streamlit WebSocket 서버 연결 (쿠키 및 Upgrade 헤더 포함)
-        try:
-            async with websockets.connect(f"ws://{self.demo_address}/_stcore/{path}", extra_headers=headers) as streamlit_ws:
-                # 클라이언트와 Streamlit 간 메시지 중계
-                async def to_streamlit():
-                    async for message in websocket.iter_text():
-                        await streamlit_ws.send(message)
+    #     # Streamlit WebSocket 서버 연결 (쿠키 및 Upgrade 헤더 포함)
+    #     try:
+    #         async with websockets.connect(f"ws://{self.demo_address}/_stcore/{path}", extra_headers=headers) as streamlit_ws:
+    #             # 클라이언트와 Streamlit 간 메시지 중계
+    #             async def to_streamlit():
+    #                 async for message in websocket.iter_text():
+    #                     await streamlit_ws.send(message)
 
-                async def to_client():
-                    async for message in streamlit_ws:
-                        await websocket.send_text(message)
+    #             async def to_client():
+    #                 async for message in streamlit_ws:
+    #                     await websocket.send_text(message)
 
-                # 양방향 데이터 전송 처리
-                await asyncio.gather(to_streamlit(), to_client())
-        except Exception as e:
-            logger.error(f"Error while proxying websocket: {e}")
-            await websocket.close()
+    #             # 양방향 데이터 전송 처리
+    #             await asyncio.gather(to_streamlit(), to_client())
+    #     except Exception as e:
+    #         logger.error(f"Error while proxying websocket: {e}")
+    #         await websocket.close()
 
     @app.post(
         "/summarize_gemma", 
