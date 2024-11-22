@@ -91,6 +91,18 @@ class APIIngress:
             input_text=request_text,
             batch=True)
     
+    @app.get("/health")
+    async def healthcheck(
+        self,
+    ):
+        try:
+            return {"message": "ok"}
+        except httpx.RequestError as e:
+                return Response(
+                    content=f"Summary Server Dead: {e}",
+                    status_code=500
+                )
+    
     @app.api_route(
         "/demo/{path:path}", 
         response_class=Response, 
