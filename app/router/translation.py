@@ -11,15 +11,15 @@ from fastapi.responses import Response
 from ray import serve
 from ray.serve.handle import DeploymentHandle
 
-from src.application.engine import OpenAIService, get_gpt_service
-from src.dto import SummaryResponse
-from src.dto import TranslateRequest, TranslateResponse
-from src.utils.text_process import text_preprocess, text_postprocess
-from src.utils.lang_detect import detect_language
-from src.logger import get_logger
+from app.src.engine import OpenAIService, get_gpt_service
+from app.dto import SummaryResponse
+from app.dto import TranslateRequest, TranslateResponse
+from app.utils.text_process import text_preprocess, text_postprocess
+from app.utils.lang_detect import detect_language
+from app.logger import get_logger
 
 
-router = APIRouter(prefix="/translation")
+router = APIRouter(prefix="/translation", tags=["Translation"])
 router_logger = get_logger()
 
 
@@ -33,20 +33,6 @@ class TranslationRouterIngress:
         if llm_handle is not None:
             self.service = llm_handle
         self.demo_address = "192.168.1.55:8504"
- 
-    @serve.batch(
-        max_batch_size=4, 
-        batch_wait_timeout_s=0.1)
-    async def batched_summary(
-        self, 
-        request_prompt: List[Any],
-        request_text: List[Any]
-    ) -> List[str]:
-        router_logger.info(f"Batched request: {len(request_text)}")
-        return await self.service.summarize.remote(
-            input_prompt=request_prompt,
-            input_text=request_text,
-            batch=True)
     
     @router.get("/health")
     async def healthcheck(
@@ -95,14 +81,16 @@ class TranslationRouterIngress:
                 batch=True)
 
     @router.post(
-        "/translate_gemma", 
+        "/gemma", 
         description='''
 language code
-    - Korean: ko
-    - English: en
-    - Chinese: zh
-    - French: fr
-    - Spanish: es
+
+    - ko : Korean
+    - en : English
+    - zh : Chinese
+    - fr : French
+    - es : Spanish
+    
         ''',
         response_model=TranslateResponse)
     async def translate(
@@ -145,7 +133,7 @@ language code
                 target_language=[lang.value for lang in request.target_language])
 
     @router.post(
-        "/translate",
+        "/",
         description='''
  language code
     - Korean: ko
@@ -193,7 +181,7 @@ language code
                 target_language=[lang.value for lang in request.target_language])
 
     @router.post(
-        "/translate_legacy",
+        "/legacy",
         description='''
  language code
     - Korean: ko
@@ -242,7 +230,7 @@ language code
                 target_language=[lang.value for lang in request.target_language])
 
     @router.post(
-        "/translate_gemma/summarize", 
+        "/gemma/summarize", 
         response_model=SummaryResponse)
     async def transcript(
         self,
@@ -280,7 +268,7 @@ language code
             return SummaryResponse(text=result)
 
     @router.post(
-        "/translate/summarize", 
+        "/summarize", 
         response_model=SummaryResponse)
     async def transcript_gpt(
         self,

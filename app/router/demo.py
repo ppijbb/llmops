@@ -16,13 +16,13 @@ from fastapi.responses import StreamingResponse, Response
 from ray import serve
 from ray.serve.handle import DeploymentHandle
 
-from src.application.engine import OpenAIService, get_gpt_service
-from src.dto import SummaryRequest, SummaryResponse
-from src.utils.text_process import text_preprocess, text_postprocess
-from src.logger import get_logger
+from app.src.engine import OpenAIService, get_gpt_service
+from app.dto import SummaryRequest, SummaryResponse
+from app.utils.text_process import text_preprocess, text_postprocess
+from app.logger import get_logger
 
 
-router = APIRouter(prefix="/demo")
+router = APIRouter(prefix="/demo", tags=["demo"])
 router_logger = get_logger()
 
 

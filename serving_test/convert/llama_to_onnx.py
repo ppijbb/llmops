@@ -13,7 +13,7 @@ import openvino as ov
 
 from transformers import GenerationConfig, TextStreamer,  AutoTokenizer
 from transformers import pipeline
-from src.depend import get_model
+from app.depend import get_model
 
 
 os.environ['TRANSFORMERS_CACHE'] = './nas/conan/hf/'

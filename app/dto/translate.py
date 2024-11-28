@@ -3,7 +3,7 @@ import re
 import traceback
 from typing import Optional, List
 from pydantic import BaseModel, Field, computed_field
-from src.enum.transcript import TargetLanguages
+from app.enum.transcript import TargetLanguages
 
 
 class TranslateRequest(BaseModel):
