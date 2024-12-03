@@ -37,9 +37,7 @@ class DemoRouterIngress(BaseIngress):
         self.router = router
         
         @router.get("/health")
-        async def healthcheck(
-            self,
-        ):
+        async def healthcheck():
             try:
                 return Response(
                     content=json.dumps({"message": "ok"}),
