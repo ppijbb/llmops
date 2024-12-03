@@ -6,8 +6,9 @@ import time
 import traceback
 import requests
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import StreamingResponse, Response
+
 from ray import serve
 from ray.serve.handle import DeploymentHandle
 
@@ -17,12 +18,11 @@ from app.utils.text_process import text_preprocess, text_postprocess
 from app.logger import get_logger
 
 
-router = APIRouter(prefix="/summary", tags=["summary"])
-router_logger = get_logger()
+router = APIRouter()
 
 
-@serve.deployment()
-@serve.ingress(app=router)
+# @serve.deployment
+# @serve.ingress(app=router)
 class SummaryRouterIngress:
     def __init__(
         self, 
@@ -31,7 +31,8 @@ class SummaryRouterIngress:
         if llm_handle is not None:
             self.service = llm_handle
         self.demo_address = "192.168.1.55:8504"
- 
+        self.server_logger = get_logger()
+        
     @serve.batch(
         max_batch_size=4, 
         batch_wait_timeout_s=0.1)
@@ -40,7 +41,7 @@ class SummaryRouterIngress:
         request_prompt: List[Any],
         request_text: List[Any]
     ) -> List[str]:
-        router_logger.info(f"Batched request: {len(request_text)}")
+        self.server_logger.info(f"Batched request: {len(request_text)}")
         return await self.service.summarize.remote(
             input_prompt=request_prompt,
             input_text=request_text,
@@ -53,7 +54,7 @@ class SummaryRouterIngress:
         try:
             return {"message": "ok"}
         except Exception as e:
-            router_logger.error("error" + e)
+            self.server_logger.error("error" + e)
             return Response(
                     content=f"Summary Service Can not Reply",
                     status_code=500
@@ -87,7 +88,7 @@ class SummaryRouterIngress:
             result += e
         except Exception as e:
             print(traceback.format_exc())
-            router_logger.error("error" + e)
+            self.server_logger.error("error" + e)
             result += "Generation failed"
         finally:
             return SummaryResponse(text=result)
@@ -120,7 +121,7 @@ class SummaryRouterIngress:
             result += e
         except Exception as e:
             print(traceback.format_exc())
-            router_logger.error("error" + e)
+            self.server_logger.error("error" + e)
             result += "Error in summarize"
 
 
@@ -148,10 +149,10 @@ class SummaryRouterIngress:
             # ----------------------------------- #
             # print(f"Time: {end - st}")
         except AssertionError as e:
-            router_logger.warn("error" + e)
+            self.server_logger.warn("error" + e)
             result += e
         except Exception as e:
-            router_logger.warn("error" + e)
+            self.server_logger.warn("error" + e)
             result += "Error in summarize"
         finally:
             return SummaryResponse(text=result)
@@ -169,7 +170,7 @@ class SummaryRouterIngress:
         history: List[str],
         is_summary:bool = False
     ) -> List[str]:
-        router_logger.info(f"Batched request: {len(request_text)}")
+        self.server_logger.info(f"Batched request: {len(request_text)}")
         if is_summary:
             return await self.service.translate_summarize.remote(
                 input_prompt=request_prompt,

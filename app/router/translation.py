@@ -6,8 +6,9 @@ import time
 import traceback
 import requests
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import Response
+
 from ray import serve
 from ray.serve.handle import DeploymentHandle
 
@@ -19,12 +20,11 @@ from app.utils.lang_detect import detect_language
 from app.logger import get_logger
 
 
-router = APIRouter(prefix="/translation", tags=["Translation"])
-router_logger = get_logger()
+router = APIRouter()
 
 
-@serve.deployment()
-@serve.ingress(app=router)
+# @serve.deployment
+# @serve.ingress(app=router)
 class TranslationRouterIngress:
     def __init__(
         self, 
@@ -33,7 +33,8 @@ class TranslationRouterIngress:
         if llm_handle is not None:
             self.service = llm_handle
         self.demo_address = "192.168.1.55:8504"
-    
+        self.server_logger = get_logger()
+
     @router.get("/health")
     async def healthcheck(
         self,
@@ -41,7 +42,7 @@ class TranslationRouterIngress:
         try:
             return {"message": "ok"}
         except Exception as e:
-            router_logger.error("error" + e)
+            self.server_logger.error("error" + e)
             return Response(
                     content=f"Translation Service Can not Reply",
                     status_code=500
@@ -60,7 +61,7 @@ class TranslationRouterIngress:
         history: List[str],
         is_summary:bool = False
     ) -> List[str]:
-        router_logger.info(f"Batched request: {len(request_text)}")
+        self.server_logger.info(f"Batched request: {len(request_text)}")
         if is_summary:
             return await self.service.translate_summarize.remote(
                 input_prompt=request_prompt,
@@ -123,7 +124,7 @@ language code
             result += e
         except Exception as e:
             print(traceback.format_exc())
-            router_logger.error("error" + e)
+            self.server_logger.error("error" + e)
             result += "Generation failed"
         finally:
             return TranslateResponse(
@@ -136,6 +137,7 @@ language code
         "/",
         description='''
  language code
+ 
     - Korean: ko
     - English: en
     - Chinese: zh
@@ -168,10 +170,10 @@ language code
             # ----------------------------------- #
             print(f"Time: {end - st}")
         except AssertionError as e:
-            router_logger.warn("error" + e)
+            self.server_logger.warn("error" + e)
             result += e
         except Exception as e:
-            router_logger.warn("error" + e)
+            self.server_logger.warn("error" + e)
             result += "Error in summarize"
         finally:
             return TranslateResponse(
@@ -184,6 +186,7 @@ language code
         "/legacy",
         description='''
  language code
+ 
     - Korean: ko
     - English: en
     - Chinese: zh
@@ -217,10 +220,10 @@ language code
             # ----------------------------------- #
             print(f"Time: {end - st}")
         except AssertionError as e:
-            router_logger.warn("error" + e)
+            self.server_logger.warn("error" + e)
             result += e
         except Exception as e:
-            router_logger.warn("error" + e)
+            self.server_logger.warn("error" + e)
             result += "Error in summarize"
         finally:
             return TranslateResponse(
@@ -262,7 +265,7 @@ language code
             result += e
         except Exception as e:
             print(traceback.format_exc())
-            router_logger.error("error" + e)
+            self.server_logger.error("error" + e)
             result += "Generation failed"
         finally:
             return SummaryResponse(text=result)
@@ -293,10 +296,10 @@ language code
             # ----------------------------------- #
             # print(f"Time: {end - st}")
         except AssertionError as e:
-            router_logger.error("error" + e)
+            self.server_logger.error("error" + e)
             result += e
         except Exception as e:
-            router_logger.error("error" + e)
+            self.server_logger.error("error" + e)
             result += "Error in summarize"
         finally:
             return SummaryResponse(text=result)

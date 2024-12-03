@@ -10,7 +10,6 @@ import websockets
 import asyncio
 
 from fastapi import FastAPI, Depends, Request, WebSocket, WebSocketDisconnect
-
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse, Response
 from ray import serve
@@ -22,12 +21,10 @@ from app.utils.text_process import text_preprocess, text_postprocess
 from app.logger import get_logger
 
 
-router = APIRouter(prefix="/demo", tags=["demo"])
-router_logger = get_logger()
+router = APIRouter()
 
-
-@serve.deployment()
-@serve.ingress(app=router)
+# @serve.deployment
+# @serve.ingress(app=router)
 class DemoRouterIngress:
     def __init__(
         self, 
@@ -36,7 +33,7 @@ class DemoRouterIngress:
         if llm_handle is not None:
             self.service = llm_handle
         self.demo_address = "192.168.1.55:8504"
- 
+        self.server_logger = get_logger()
     
     @router.get("/health")
     async def healthcheck(
@@ -45,7 +42,7 @@ class DemoRouterIngress:
         try:
             return {"message": "ok"}
         except Exception as e:
-            router_logger.error("error" + e)
+            self.server_logger.error("error" + e)
             return Response(
                     content=f"Summary Service Can not Reply",
                     status_code=500
@@ -203,7 +200,7 @@ class DemoRouterIngress:
                 # 양방향 데이터 전송 처리
                 await asyncio.gather(to_streamlit(), to_client())
         except Exception as e:
-            router_logger.error(f"Error while proxying websocket[demo]: {e}")
+            self.server_logger.error(f"Error while proxying websocket[demo]: {e}")
             await websocket.close()
     
     # @app.websocket(
