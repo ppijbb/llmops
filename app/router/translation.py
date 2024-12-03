@@ -19,11 +19,14 @@ from app.utils.lang_detect import detect_language
 from app.logger import get_logger
 
 
-router = APIRouter(prefix="/translation", tags=["Translation"])
+router = APIRouter( 
+    # prefix="/translation",
+    tags=["Translation"],
+    include_in_schema=True)
 router_logger = get_logger()
 
 
-@serve.deployment()
+@serve.deployment
 @serve.ingress(app=router)
 class TranslationRouterIngress:
     def __init__(

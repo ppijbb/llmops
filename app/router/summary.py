@@ -17,11 +17,14 @@ from app.utils.text_process import text_preprocess, text_postprocess
 from app.logger import get_logger
 
 
-router = APIRouter(prefix="/summary", tags=["summary"])
+router = APIRouter(
+    # prefix="/summary",
+    tags=["Summary"],
+    include_in_schema=True)
 router_logger = get_logger()
 
 
-@serve.deployment()
+@serve.deployment
 @serve.ingress(app=router)
 class SummaryRouterIngress:
     def __init__(

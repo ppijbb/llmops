@@ -22,12 +22,20 @@ import requests
 import httpx
 import websockets
 import asyncio
+from contextlib import asynccontextmanager
+
 
 from fastapi import FastAPI, APIRouter
+from fastapi.routing import APIRoute
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, Response
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+from starlette.routing import Match, Route
 import torch
 from ray import serve
+from ray.serve.schema import LoggingConfig
+from ray.dag.class_node import ClassNode
 from ray.serve.handle import DeploymentHandle
 
 from app.router import (
@@ -43,48 +51,55 @@ from app.utils.lang_detect import detect_language
 from app.logger import get_logger
 
 
+@asynccontextmanager
+async def startup_event(app: FastAPI):
+    app.logger.info("""
+    ####################
+    #  Server Started  #
+    ####################""")
+    yield
+    app.logger.info("""
+    ####################
+    #    Terminated    #
+    ####################""")
+
 app = FastAPI(
     title="Dencomm LLM Service",
-    lifespan=llm_ready)
-app.include_router(
-    demo_router, 
-    include_in_schema=False)
-app.include_router(
-    summary_router, 
-    include_in_schema=True)
-app.include_router(
-    translation_router, 
-    include_in_schema=True)
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=["*", "/demo/*"],
-    allow_methods=["*"],
-    allow_headers=["*"])
+    root_path="/api/v1",
+    lifespan=llm_ready,
+    routes=[demo_router, summary_router, translation_router],)
+
+def initialize_app():
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    app.include_router(
+        router=demo_router,
+        prefix="/api/v1/demo",
+        tags=["Demo"],
+        include_in_schema=False)
+    app.include_router(
+        router=summary_router,
+        prefix="/api/v1/summary",
+        tags=["Summary"], 
+        include_in_schema=True)
+    app.include_router(
+        router=translation_router,
+        prefix="/api/v1/translation",
+        tags=["Translation"],
+        include_in_schema=True)
 
 
-server_logger = get_logger()
-server_logger.info("""
-####################
-#  Server Started  #
-####################
-""")
-server_logger.info(app.routes)
-
-@serve.deployment(num_replicas=1, route_prefix="/api/v1")
+@serve.deployment
 @serve.ingress(app=app)
 class APIIngress:
-    def __init__(
-        self, 
-        routers: List[DeploymentHandle],
-        # llm_handle: DeploymentHandle = None
-        ) -> None:
-        # if llm_handle is not None:
-        #     self.service = llm_handle
-        self.demo_address = "192.168.1.55:8504"
-
-
-
+    def __init__(self) -> None:
+        self.logger = get_logger()
+    
     @app.get("/health")
     async def healthcheck(
         self,
@@ -92,30 +107,96 @@ class APIIngress:
         try:
             return {"message": "ok"}
         except Exception as e:
-            server_logger.error("error" + e)
+            self.logger.error("error" + e)
             return Response(
                     content=f"Server Status Unhealthy",
                     status_code=500
                 )
 
 
+@serve.deployment
+class IngressDeployment:
+    def __init__(self, deployment_tuples: List[tuple[FastAPI, ClassNode]]) -> None:
+        self.logger = get_logger()
+        self.routers_handles = []
+        for app, handle in deployment_tuples:
+            for route in app.routes:
+                if isinstance(route, (APIRoute, Route)):  # user defined routes are APIRoutes
+                    self.routers_handles.append((route, handle))
+        self.logger.info(self.routers_handles)
+   
+    async def __call__(self, request: Request) -> Any:
+        """Find an APIRoute that routes the request. Send the request the accompanying handler."""
+        self.logger.info(self.routers_handles)
+        self.logger.info(request.scope)
+        for api_route, handle in self.routers_handles:
+            (match, _,) = api_route.matches(request.scope)
+            # Example of route matching:
+            # https://github.com/tiangolo/fastapi/blob/0.85.2/fastapi/routing.py#L309-L313
+            if match == Match.FULL:
+                self.logger.info(match)
+                self.logger.info(handle)
+                request.scope["app"] = api_route
+                self.logger.info(f"request type : {type(request)}")
+                ref = handle(request)
+                self.logger.info(f"ref type : {type(ref)}")
+                return ref
+            elif match == Match.PARTIAL:
+                self.logger.info(match)
+                self.logger.info(handle)
+                return Response(
+                    content=f"Method Not Allowed",
+                    status_code=405
+                )        
+        # Unmatched case, return 404
+        return Response(
+                content=f"Page Not Found",
+                status_code=404
+            )
+
 def build_app(
     cli_args: Dict[str, str]
 ) -> serve.Application:
     llm_service = LLMService.bind()
-    
-    return APIIngress.options(
+    initialize_app()
+    # Main Application
+    main_application = IngressDeployment.options(
+        name="dencomm_llm_service",
         placement_group_bundles=[{
-            "CPU":1.0, 
+            "CPU": 1.0, 
             "GPU": float(torch.cuda.is_available())/2
             }], 
         placement_group_strategy="STRICT_PACK",
+        route_prefix="/api/v1"
         ).bind(
-            [
-                DemoRouterIngress.bind(llm_service),
-                SummaryRouterIngress.bind(llm_service),
-                TranslationRouterIngress.bind(llm_service)
+            deployment_tuples=[
+                (app, APIIngress.options(
+                    name="dencomm_llm_main",
+                    route_prefix="/api/v1",
+                    _internal=True).bind()),
+                (demo_router,
+                 DemoRouterIngress.options(
+                    name="dencomm_llm_demo",
+                    route_prefix="/api/v1/demo",
+                    _internal=True).bind(llm_service)),
+                (summary_router,
+                 SummaryRouterIngress.options(
+                    name="dencomm_llm_summary",
+                    route_prefix="/api/v1/summary",
+                    _internal=True).bind(llm_service)),
+                (translation_router, 
+                 TranslationRouterIngress.options(
+                    name="dencomm_llm_translation",
+                    route_prefix="/api/v1/translation",
+                    _internal=True).bind(llm_service))
             ]
+        )    
+    serve.start(
+        proxy_location="EveryNode", 
+        http_options={"host": "0.0.0.0", "port": 8504},
+        logging_config=LoggingConfig(
+            log_level="INFO",
+            logs_dir="./logs",)
         )
-
-serve.start(http_options={"host": "0.0.0.0", "port": 8501})
+    
+    return main_application

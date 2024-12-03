@@ -22,11 +22,14 @@ from app.utils.text_process import text_preprocess, text_postprocess
 from app.logger import get_logger
 
 
-router = APIRouter(prefix="/demo", tags=["demo"])
+router = APIRouter(
+    # prefix="/demo",
+    tags=["Demo"],
+    include_in_schema=False)
 router_logger = get_logger()
 
 
-@serve.deployment()
+@serve.deployment
 @serve.ingress(app=router)
 class DemoRouterIngress:
     def __init__(
@@ -51,40 +54,40 @@ class DemoRouterIngress:
                     status_code=500
                 )
     
-    @router.api_route(
-        "/{path:path}", 
-        response_class=Response, 
-        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-        include_in_schema=False)
-    async def serve_streamlit(self,path: str, request: Request):
-        """
-        FastAPI에서 들어온 요청을 Streamlit 서버로 전달하고 응답을 반환합니다.
-        """
-        async with httpx.AsyncClient() as client:
-            # 요청 메타데이터 추출
-            url = f"http://{self.demo_address}/{path}"  # 요청 경로 재구성
-            # 요청을 Streamlit 서버로 전달
-            try:
-                streamlit_response = await client.request(
-                    method=request.method,
-                    url=url,
-                    headers=request.headers,
-                    content=await request.body(),
-                    # cookies=request.cookies,
-                    timeout=3.0
-                )
-            except httpx.RequestError as e:
-                return Response(
-                    content=f"Error connecting to Streamlit server: {e}",
-                    status_code=502
-                )
+    # @router.api_route(
+    #     "/{path:path}", 
+    #     response_class=Response, 
+    #     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    #     include_in_schema=False)
+    # async def serve_streamlit(self,path: str, request: Request):
+    #     """
+    #     FastAPI에서 들어온 요청을 Streamlit 서버로 전달하고 응답을 반환합니다.
+    #     """
+    #     async with httpx.AsyncClient() as client:
+    #         # 요청 메타데이터 추출
+    #         url = f"http://{self.demo_address}/{path}"  # 요청 경로 재구성
+    #         # 요청을 Streamlit 서버로 전달
+    #         try:
+    #             streamlit_response = await client.request(
+    #                 method=request.method,
+    #                 url=url,
+    #                 headers=request.headers,
+    #                 content=await request.body(),
+    #                 # cookies=request.cookies,
+    #                 timeout=3.0
+    #             )
+    #         except httpx.RequestError as e:
+    #             return Response(
+    #                 content=f"Error connecting to Streamlit server: {e}",
+    #                 status_code=502
+    #             )
 
-            # 응답 변환 후 반환 (비-스트리밍 방식)
-            return Response(
-                content=streamlit_response.content,
-                status_code=streamlit_response.status_code,
-                headers={key: value for key, value in streamlit_response.headers.items() if key.lower() != "content-encoding"}
-            )
+    #         # 응답 변환 후 반환 (비-스트리밍 방식)
+    #         return Response(
+    #             content=streamlit_response.content,
+    #             status_code=streamlit_response.status_code,
+    #             headers={key: value for key, value in streamlit_response.headers.items() if key.lower() != "content-encoding"}
+    #         )
 
     @router.api_route(
         "/static/{path:path}", 
