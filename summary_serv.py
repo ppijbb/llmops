@@ -77,21 +77,33 @@ def initialize_app():
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    app.include_router(
-        router=demo_router,
-        prefix="/api/v1/demo",
-        tags=["Demo"],
-        include_in_schema=False)
-    app.include_router(
-        router=summary_router,
-        prefix="/api/v1/summary",
-        tags=["Summary"], 
-        include_in_schema=True)
-    app.include_router(
-        router=translation_router,
-        prefix="/api/v1/translation",
-        tags=["Translation"],
-        include_in_schema=True)
+    app.mount(
+        path="/api/v1/demo", 
+        app=demo_router, 
+        name="demo")
+    app.mount(
+        path="/api/v1/summary", 
+        app=summary_router, 
+        name="sumamry")
+    app.mount(
+        path="/api/v1/translation", 
+        app=translation_router, 
+        name="translation")
+    # app.include_router(
+    #     router=demo_router,
+    #     prefix="/api/v1/demo",
+    #     tags=["Demo"],
+    #     include_in_schema=False)
+    # app.include_router(
+    #     router=summary_router,
+    #     prefix="/api/v1/summary",
+    #     tags=["Summary"], 
+    #     include_in_schema=True)
+    # app.include_router(
+    #     router=translation_router,
+    #     prefix="/api/v1/translation",
+    #     tags=["Translation"],
+    #     include_in_schema=True)
 
 
 @serve.deployment
@@ -103,9 +115,11 @@ class APIIngress:
     @app.get("/health")
     async def healthcheck(
         self,
-    ):
+    ) -> Response:
         try:
-            return {"message": "ok"}
+            return Response(
+                content={"message": "ok"},
+                status_code=200)
         except Exception as e:
             self.logger.error("error" + e)
             return Response(
@@ -137,8 +151,11 @@ class IngressDeployment:
                 self.logger.info(match)
                 self.logger.info(handle)
                 request.scope["app"] = api_route
+                request.scope["auth"] = "" # TODO : auth management
+                request.scope["session"] = "" # TODO : session management
+                request.scope["user"] = "" # TODO : user management
                 self.logger.info(f"request type : {type(request)}")
-                ref = handle(request)
+                ref = await handle.remote(request)
                 self.logger.info(f"ref type : {type(ref)}")
                 return ref
             elif match == Match.PARTIAL:
