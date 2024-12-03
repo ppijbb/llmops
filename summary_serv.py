@@ -15,6 +15,7 @@ os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = "0"
 # os.environ["DNNL_PRIMITIVE_CACHE_CAPACITY"] = "1024"
 
 from typing import Any, List, Dict
+import json
 import time
 import requests
 
@@ -36,21 +37,6 @@ from app.logger import get_logger
 app = FastAPI(
     title="Dencomm LLM Service",
     lifespan=llm_ready)
-app.include_router(
-    demo_router, 
-    prefix="/demo",
-    tags=["Demo Proxy"],
-    include_in_schema=False)
-app.include_router(
-    summary_router, 
-    prefix="/summary", 
-    tags=["Counseling Summary"],
-    include_in_schema=True)
-app.include_router(
-    translation_router,
-    prefix="/translation",
-    tags=["Lecture Translation"],
-    include_in_schema=True)
 
 app.add_middleware(
     CORSMiddleware,
@@ -59,29 +45,44 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"])
 
-@serve.deployment(num_replicas=1, route_prefix="/api/v1")
+
+@serve.deployment(num_replicas=1)
 @serve.ingress(app=app)
 class APIIngress(DemoRouterIngress, SummaryRouterIngress, TranslationRouterIngress):
+    routing = False
+    
     def __init__(
         self, 
         llm_handle: DeploymentHandle = None,
         ) -> None:
-        super().__init__(llm_handle)
-        self.demo_address = "192.168.1.55:8504"
-        self.server_logger = get_logger()
+        super().__init__(llm_handle=llm_handle)
+
         self.server_logger.info("""
-        ####################
-        #  Server Started  #
-        ####################
+            ####################
+            #  Server Started  #
+            ####################
         """)
         self.server_logger.info(app.routes)
 
+        # 추가 라우터가 있으면 계속 등록
+        for cls in self.__class__.mro():
+            print(cls)
+            if hasattr(cls, "routing"):
+                cls.register_routes(self=cls)
+                app.include_router(
+                    cls.router,
+                    prefix=cls.prefix,
+                    tags=cls.tags,
+                    include_in_schema=cls.include_in_schema)
+                self.server_logger.info(f"Routing to {cls.__name__}")
+        
     @app.get("/health")
-    async def healthcheck(
-        self,
-    ):
+    async def healthcheck(self,):
         try:
-            return {"message": "ok"}
+            return Response(
+                content=json.dumps({"message": "ok"}),
+                media_type="application/json",
+                status_code=200)
         except Exception as e:
             self.server_logger.error("error" + e)
             return Response(
@@ -107,6 +108,7 @@ def build_app(
             "GPU": float(torch.cuda.is_available())/2
             }], 
         placement_group_strategy="STRICT_PACK",
+        route_prefix="/api/v1"
         ).bind(
-            llm_handle = LLMService.bind()
+            llm_handle=LLMService.bind()
         )

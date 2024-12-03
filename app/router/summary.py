@@ -1,4 +1,4 @@
-import os
+import json
 
 import logging
 from typing import Any, List, Dict
@@ -16,30 +16,26 @@ from app.src.engine import OpenAIService, get_gpt_service
 from app.dto import SummaryRequest, SummaryResponse
 from app.utils.text_process import text_preprocess, text_postprocess
 from app.logger import get_logger
-
+from app.router import BaseIngress
 
 router = APIRouter()
 
 
 # @serve.deployment
 # @serve.ingress(app=router)
-class SummaryRouterIngress:
-    def __init__(
-        self, 
-        llm_handle: DeploymentHandle = None
-        ) -> None:
-        if llm_handle is not None:
-            self.service = llm_handle
-        self.demo_address = "192.168.1.55:8504"
-        self.server_logger = get_logger()
-        
+class SummaryRouterIngress(BaseIngress):
+    routing = True
+    prefix = "/summary"
+    tags = ["Counseling Summary"]
+    include_in_schema = True
+    
     @serve.batch(
-        max_batch_size=4, 
-        batch_wait_timeout_s=0.1)
+            max_batch_size=4, 
+            batch_wait_timeout_s=0.1)
     async def batched_summary(
-        self, 
-        request_prompt: List[Any],
-        request_text: List[Any]
+       self,
+       request_prompt: List[Any],
+       request_text: List[Any]
     ) -> List[str]:
         self.server_logger.info(f"Batched request: {len(request_text)}")
         return await self.service.summarize.remote(
@@ -47,145 +43,143 @@ class SummaryRouterIngress:
             input_text=request_text,
             batch=True)
     
-    @router.get("/health")
-    async def healthcheck(
-        self,
-    ):
-        try:
-            return {"message": "ok"}
-        except Exception as e:
-            self.server_logger.error("error" + e)
-            return Response(
-                    content=f"Summary Service Can not Reply",
-                    status_code=500
-                )
+    def register_routes(self, router:APIRouter=router):
+        self.router = router
+        
+        @router.get("/health")
+        async def healthcheck():
+            try:
+                return Response(
+                    content=json.dumps({"message": "ok"}),
+                    media_type="application/json",
+                    status_code=200)
+            except Exception as e:
+                self.server_logger.error("error" + e)
+                return Response(
+                        content=f"Summary Service Can not Reply",
+                        status_code=500
+                    )
 
-    @router.post(
-        "/gemma", 
-        response_model=SummaryResponse)
-    async def summarize(
-        self,
-        request: SummaryRequest,
-        # service: LLMService = Depends(get_llm_service)
-    ) -> SummaryResponse:
-        result = ""
-        # Generate predicted tokens
-        try:
-            # ----------------------------------- #
-            st = time.time()
-            # result += ray.get(service.summarize.remote(ray.put(request.text)))
-            # assert len(request.text ) > 200, "Text is too short"
-            result += await self.batched_summary(
-                request_prompt=request.prompt,
-                request_text=text_preprocess(request.text))
-            # result = text_postprocess(result)
-            # print(result)
-            end = time.time()
-            # ----------------------------------- #
-            assert len(result) > 0, "Generation failed"
-            print(f"Time: {end - st}")
-        except AssertionError as e:
-            result += e
-        except Exception as e:
-            print(traceback.format_exc())
-            self.server_logger.error("error" + e)
-            result += "Generation failed"
-        finally:
-            return SummaryResponse(text=result)
+        @router.post(
+            "/gemma", 
+            response_model=SummaryResponse)
+        async def summarize(
+            request: SummaryRequest,
+        ) -> SummaryResponse:
+            result = ""
+            # Generate predicted tokens
+            try:
+                # ----------------------------------- #
+                st = time.time()
+                # result += ray.get(service.summarize.remote(ray.put(request.text)))
+                # assert len(request.text ) > 200, "Text is too short"
+                result += await self.batched_summary(
+                    request_prompt=request.prompt,
+                    request_text=text_preprocess(request.text))
+                # result = text_postprocess(result)
+                # print(result)
+                end = time.time()
+                # ----------------------------------- #
+                assert len(result) > 0, "Generation failed"
+                print(f"Time: {end - st}")
+            except AssertionError as e:
+                result += e
+            except Exception as e:
+                print(traceback.format_exc())
+                self.server_logger.error("error" + e)
+                result += "Generation failed"
+            finally:
+                return SummaryResponse(text=result)
 
-    @router.post(
-        "/stream",
-    )
-    async def summarize_stream(
-        self,
-        request: SummaryRequest,
-        # service: LLMService = Depends(get_llm_service)
-    ):
-        result = ""
-        # Generate predicted tokens
-        try:
-            # ----------------------------------- #
-            st = time.time()
-            # result += ray.get(service.summarize.remote(ray.put(request.text)))
-            # assert len(request.text ) > 200, "Text is too short"
-            return StreamingResponse(
-                content=self.service.summarize.remote(
+        @router.post(
+            "/stream",
+        )
+        async def summarize_stream(
+            request: SummaryRequest,
+        ):
+            result = ""
+            # Generate predicted tokens
+            try:
+                # ----------------------------------- #
+                st = time.time()
+                # result += ray.get(service.summarize.remote(ray.put(request.text)))
+                # assert len(request.text ) > 200, "Text is too short"
+                return StreamingResponse(
+                    content=self.service.summarize.remote(
+                        input_prompt=request.prompt,
+                        input_text=request.text, 
+                        stream=True),
+                    media_type="text/event-stream")
+                end = time.time()
+                # ----------------------------------- #
+                print(f"Time: {end - st}")
+            except AssertionError as e:
+                result += e
+            except Exception as e:
+                print(traceback.format_exc())
+                self.server_logger.error("error" + e)
+                result += "Error in summarize"
+
+
+        @router.post(
+            "/", 
+            response_model=SummaryResponse)
+        async def summarize_gpt(
+            request: SummaryRequest,
+            service: OpenAIService = Depends(get_gpt_service)
+        ) -> SummaryResponse:
+            result = ""
+            try:
+                # ----------------------------------- #
+                st = time.time()
+                # result += ray.get(service.summarize.remote(ray.put(request.text)))
+                # assert len(request.text ) > 200, "Text is too short"
+                input_text = text_preprocess(request.text)
+                result += await service.summarize(
                     input_prompt=request.prompt,
-                    input_text=request.text, 
-                    stream=True),
-                media_type="text/event-stream")
-            end = time.time()
-            # ----------------------------------- #
-            print(f"Time: {end - st}")
-        except AssertionError as e:
-            result += e
-        except Exception as e:
-            print(traceback.format_exc())
-            self.server_logger.error("error" + e)
-            result += "Error in summarize"
+                    input_text=input_text)
+                # result = text_postprocess(result)
+                # print(result)
+                end = time.time()
+                # ----------------------------------- #
+                # print(f"Time: {end - st}")
+            except AssertionError as e:
+                self.server_logger.warn("error" + e)
+                result += e
+            except Exception as e:
+                self.server_logger.warn("error" + e)
+                result += "Error in summarize"
+            finally:
+                return SummaryResponse(text=result)
 
-
-    @router.post(
-        "/", 
-        response_model=SummaryResponse)
-    async def summarize_gpt(
-        self,
-        request: SummaryRequest,
-        service: OpenAIService = Depends(get_gpt_service)
-    ) -> SummaryResponse:
-        result = ""
-        try:
-            # ----------------------------------- #
-            st = time.time()
-            # result += ray.get(service.summarize.remote(ray.put(request.text)))
-            # assert len(request.text ) > 200, "Text is too short"
-            input_text = text_preprocess(request.text)
-            result += await service.summarize(
-                input_prompt=request.prompt,
-                input_text=input_text)
-            # result = text_postprocess(result)
-            # print(result)
-            end = time.time()
-            # ----------------------------------- #
-            # print(f"Time: {end - st}")
-        except AssertionError as e:
-            self.server_logger.warn("error" + e)
-            result += e
-        except Exception as e:
-            self.server_logger.warn("error" + e)
-            result += "Error in summarize"
-        finally:
-            return SummaryResponse(text=result)
-
-    @serve.batch(
-        max_batch_size=4, 
-        batch_wait_timeout_s=0.1)
-    async def batched_generation(
-        self, 
-        request_prompt: List[Any],
-        request_text: List[Any],
-        source_language: str,
-        detect_language: str,
-        target_language: str,
-        history: List[str],
-        is_summary:bool = False
-    ) -> List[str]:
-        self.server_logger.info(f"Batched request: {len(request_text)}")
-        if is_summary:
-            return await self.service.translate_summarize.remote(
-                input_prompt=request_prompt,
-                input_text=request_text,
-                history=history,
-                source_language=source_language,
-                detect_language=detect_language,
-                target_language=target_language,
-                batch=True)
-        else:
-            return await self.service.translate.remote(
-                input_prompt=request_prompt,
-                input_text=request_text,
-                history=history,
-                source_language=source_language,
-                detect_language=detect_language,
-                target_language=target_language,
-                batch=True)
+        @serve.batch(
+            max_batch_size=4, 
+            batch_wait_timeout_s=0.1)
+        async def batched_generation(
+            request_prompt: List[Any],
+            request_text: List[Any],
+            source_language: str,
+            detect_language: str,
+            target_language: str,
+            history: List[str],
+            is_summary:bool = False
+        ) -> List[str]:
+            self.server_logger.info(f"Batched request: {len(request_text)}")
+            if is_summary:
+                return await self.service.translate_summarize.remote(
+                    input_prompt=request_prompt,
+                    input_text=request_text,
+                    history=history,
+                    source_language=source_language,
+                    detect_language=detect_language,
+                    target_language=target_language,
+                    batch=True)
+            else:
+                return await self.service.translate.remote(
+                    input_prompt=request_prompt,
+                    input_text=request_text,
+                    history=history,
+                    source_language=source_language,
+                    detect_language=detect_language,
+                    target_language=target_language,
+                    batch=True)
