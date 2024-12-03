@@ -14,12 +14,10 @@ os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = "0"
 # os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 # os.environ["DNNL_PRIMITIVE_CACHE_CAPACITY"] = "1024"
 
-from typing import Any, List, Dict
+from typing import Dict
 import json
-import time
-import requests
 
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 import torch
@@ -28,10 +26,8 @@ from ray.serve.handle import DeploymentHandle
 from ray.serve.schema import LoggingConfig
 
 from app.router import (
-    demo_router, summary_router, translation_router,
     DemoRouterIngress, SummaryRouterIngress, TranslationRouterIngress)
 from app.src.engine import (LLMService, llm_ready)
-from app.logger import get_logger
 
 
 app = FastAPI(
@@ -48,14 +44,18 @@ app.add_middleware(
 
 @serve.deployment(num_replicas=1)
 @serve.ingress(app=app)
-class APIIngress(DemoRouterIngress, SummaryRouterIngress, TranslationRouterIngress):
+class APIIngress(
+    DemoRouterIngress, 
+    SummaryRouterIngress, 
+    TranslationRouterIngress):
     routing = False
-    
+
     def __init__(
         self, 
         llm_handle: DeploymentHandle = None,
         ) -> None:
         super().__init__(llm_handle=llm_handle)
+        self.service = llm_handle
 
         self.server_logger.info("""
             ####################
@@ -66,16 +66,16 @@ class APIIngress(DemoRouterIngress, SummaryRouterIngress, TranslationRouterIngre
 
         # 추가 라우터가 있으면 계속 등록
         for cls in self.__class__.mro():
-            print(cls)
             if hasattr(cls, "routing"):
+                cls.service = self.service
                 cls.register_routes(self=cls)
                 app.include_router(
                     cls.router,
                     prefix=cls.prefix,
                     tags=cls.tags,
                     include_in_schema=cls.include_in_schema)
-                self.server_logger.info(f"Routing to {cls.__name__}")
-        
+                self.server_logger.info(f"Routing {cls.__name__} to Application Updated")
+
     @app.get("/health")
     async def healthcheck(self,):
         try:

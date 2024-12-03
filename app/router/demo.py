@@ -2,23 +2,15 @@ import os
 
 import json
 from typing import Any, List, Dict
-import time
-import traceback
-import requests
 import httpx
 import websockets
 import asyncio
 
-from fastapi import FastAPI, Depends, Request, WebSocket, WebSocketDisconnect
-from fastapi import APIRouter, Depends
-from fastapi.responses import StreamingResponse, Response
+from fastapi import Request, WebSocket
+from fastapi import APIRouter
+from fastapi.responses import Response
 from ray import serve
-from ray.serve.handle import DeploymentHandle
 
-from app.src.engine import OpenAIService, get_gpt_service
-from app.dto import SummaryRequest, SummaryResponse
-from app.utils.text_process import text_preprocess, text_postprocess
-from app.logger import get_logger
 from app.router import BaseIngress
 
 router = APIRouter()
@@ -31,7 +23,7 @@ class DemoRouterIngress(BaseIngress):
     tags = ["Demo Proxy"]
     include_in_schema = False
     
-    demo_address:str = "192.168.1.55:8504"
+    demo_address:str = "192.168.1.55:8504"        
 
     def register_routes(self, router:APIRouter=router):
         self.router = router
@@ -207,7 +199,7 @@ class DemoRouterIngress(BaseIngress):
         
         # @app.websocket(
         #     "/_stcore/{path:path}")
-        # async def proxy_websocket(self, path: str, websocket: WebSocket):
+        # async def proxy_websocket(path: str, websocket: WebSocket):
         #     """
         #     FastAPI에서 WebSocket 요청을 Streamlit 서버로 중계하며, 쿠키를 전달하고,
         #     WebSocket 연결을 적절히 업그레이드합니다.

@@ -1,15 +1,12 @@
 import os
 
 import json
-from typing import Any, List, Dict
+from typing import Any, List, Self
 import time
 import traceback
-import requests
 
-from fastapi import APIRouter, Depends, FastAPI
+from fastapi import APIRouter, Depends
 from fastapi.responses import Response
-from fastapi_utils.cbv import cbv
-from fastapi_utils.inferring_router import InferringRouter
 
 from ray import serve
 from ray.serve.handle import DeploymentHandle
@@ -19,7 +16,6 @@ from app.dto import SummaryResponse
 from app.dto import TranslateRequest, TranslateResponse
 from app.utils.text_process import text_preprocess, text_postprocess
 from app.utils.lang_detect import detect_language
-from app.logger import get_logger
 from app.router import BaseIngress
 
 router = APIRouter()
@@ -32,11 +28,18 @@ class TranslationRouterIngress(BaseIngress):
     tags = ["Lecture Translation"]
     include_in_schema = True
     
+    def __init__(
+        self, 
+        llm_handle: DeploymentHandle = None
+        ) -> None:
+        super().__init__(llm_handle=llm_handle)
+        self.service = llm_handle
+
     @serve.batch(
         max_batch_size=4, 
         batch_wait_timeout_s=0.1)
     async def batched_generation(
-        self, 
+        self: Self, 
         request_prompt: List[Any],
         request_text: List[Any],
         source_language: str,
@@ -45,9 +48,9 @@ class TranslationRouterIngress(BaseIngress):
         history: List[str],
         is_summary:bool = False
     ) -> List[str]:
-        self.server_logger.info(f"Batched request: {len(request_text)}")
+        self_class = self[0]._get_class() # ray batch wrapper 에서 self가 list로 들어옴
         if is_summary:
-            return await self.service.translate_summarize.remote(
+            return await self_class.service.translate_summarize.remote(
                 input_prompt=request_prompt,
                 input_text=request_text,
                 history=history,
@@ -56,7 +59,7 @@ class TranslationRouterIngress(BaseIngress):
                 target_language=target_language,
                 batch=True)
         else:
-            return await self.service.translate.remote(
+            return await self_class.service.translate.remote(
                 input_prompt=request_prompt,
                 input_text=request_text,
                 history=history,
@@ -109,6 +112,7 @@ class TranslationRouterIngress(BaseIngress):
                 # result += ray.get(service.summarize.remote(ray.put(request.text)))
                 # assert len(request.text ) > 200, "Text is too short"
                 result += await self.batched_generation(
+                    self=self._get_class(),
                     request_prompt=None,
                     history=request.history,
                     source_language=request.source_language.value,
@@ -170,10 +174,10 @@ class TranslationRouterIngress(BaseIngress):
                 # ----------------------------------- #
                 print(f"Time: {end - st}")
             except AssertionError as e:
-                self.server_logger.warn("error" + e)
+                self.server_logger.error("error" + e)
                 result += e
             except Exception as e:
-                self.server_logger.warn("error" + e)
+                self.server_logger.error("error" + e)
                 result += "Error in summarize"
             finally:
                 return TranslateResponse(
@@ -219,10 +223,10 @@ class TranslationRouterIngress(BaseIngress):
                 # ----------------------------------- #
                 print(f"Time: {end - st}")
             except AssertionError as e:
-                self.server_logger.warn("error" + e)
+                self.server_logger.error("error" + e)
                 result += e
             except Exception as e:
-                self.server_logger.warn("error" + e)
+                self.server_logger.error("error" + e)
                 result += "Error in summarize"
             finally:
                 return TranslateResponse(
@@ -246,6 +250,7 @@ class TranslationRouterIngress(BaseIngress):
                 # result += ray.get(service.summarize.remote(ray.put(request.text)))
                 # assert len(request.text ) > 200, "Text is too short"
                 result += await self.batched_generation(
+                    self=self._get_class(),
                     request_prompt=None,
                     history=request.history,
                     detect_language=detect_language(request.text),

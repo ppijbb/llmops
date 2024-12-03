@@ -1,12 +1,10 @@
 import json
 
-import logging
-from typing import Any, List, Dict
+from typing import Any, List
 import time
 import traceback
-import requests
 
-from fastapi import APIRouter, Depends, FastAPI
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse, Response
 
 from ray import serve
@@ -14,8 +12,7 @@ from ray.serve.handle import DeploymentHandle
 
 from app.src.engine import OpenAIService, get_gpt_service
 from app.dto import SummaryRequest, SummaryResponse
-from app.utils.text_process import text_preprocess, text_postprocess
-from app.logger import get_logger
+from app.utils.text_process import text_preprocess
 from app.router import BaseIngress
 
 router = APIRouter()
@@ -29,6 +26,13 @@ class SummaryRouterIngress(BaseIngress):
     tags = ["Counseling Summary"]
     include_in_schema = True
     
+    def __init__(
+        self, 
+        llm_handle: DeploymentHandle = None
+        ) -> None:
+        super().__init__(llm_handle=llm_handle)
+        self.service = llm_handle
+        
     @serve.batch(
             max_batch_size=4, 
             batch_wait_timeout_s=0.1)
@@ -37,8 +41,9 @@ class SummaryRouterIngress(BaseIngress):
        request_prompt: List[Any],
        request_text: List[Any]
     ) -> List[str]:
-        self.server_logger.info(f"Batched request: {len(request_text)}")
-        return await self.service.summarize.remote(
+        self_class = self[0]._get_class() # ray batch wrapper 에서 self가 list로 들어옴
+        self_class.server_logger.info(f"Batched request: {len(request_text)}")
+        return await self_class.service.summarize.remote(
             input_prompt=request_prompt,
             input_text=request_text,
             batch=True)
@@ -74,6 +79,7 @@ class SummaryRouterIngress(BaseIngress):
                 # result += ray.get(service.summarize.remote(ray.put(request.text)))
                 # assert len(request.text ) > 200, "Text is too short"
                 result += await self.batched_summary(
+                    self=self._get_class(),
                     request_prompt=request.prompt,
                     request_text=text_preprocess(request.text))
                 # result = text_postprocess(result)
