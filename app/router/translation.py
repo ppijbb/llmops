@@ -14,6 +14,7 @@ from ray.serve.handle import DeploymentHandle
 from app.src.engine import OpenAIService, get_gpt_service
 from app.dto import SummaryResponse
 from app.dto import TranslateRequest, TranslateResponse
+from app.enum.transcript import TargetLanguages
 from app.utils.text_process import text_preprocess, text_postprocess
 from app.utils.lang_detect import detect_language
 from app.router import BaseIngress
@@ -255,7 +256,8 @@ class TranslationRouterIngress(BaseIngress):
                     history=request.history,
                     detect_language=detect_language(request.text),
                     source_language=request.source_language.value,
-                    target_language=[lang.value for lang in request.target_language],
+                    # target_language=[lang.value for lang in request.target_language],
+                    target_language=[TargetLanguages.get_language_name(lang.value) for lang in request.target_language],
                     request_text=text_preprocess(request.text),
                     is_summary=True)
                 # result = text_postprocess(result)
@@ -291,7 +293,8 @@ class TranslationRouterIngress(BaseIngress):
                     history=[],
                     input_text=input_text,
                     source_language=request.source_language.value,
-                    target_language=[lang.value for lang in request.target_language])
+                    # target_language=[lang.value for lang in request.target_language],
+                    target_language=[TargetLanguages.get_language_name(lang.value) for lang in request.target_language])
                 # result = text_postprocess(result)
                 # print(result)
                 end = time.time()

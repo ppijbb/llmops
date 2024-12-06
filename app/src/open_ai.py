@@ -94,7 +94,7 @@ class OpenAIService:
     ) -> str:
         result = self.generate(
             input_prompt=input_prompt if input_prompt else prompt.DEFAULT_TRANSLATION_SUMMARIZE_SYSTEM_PROMPT.format(
-                source=source_language,
+                # source=source_language,
                 target=target_language[0]), 
             input_text=f'<speech>{input_text}</speech>')
         return result.choices[0].message.content

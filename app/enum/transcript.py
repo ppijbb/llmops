@@ -38,3 +38,46 @@ class TargetLanguages(Enum):
     INDONESIAN = "id"
     MALAY = "ms"
     FILIPINO = "fil"
+
+    @classmethod
+    def get_language_name(cls, code):
+        language_names = {
+            "en": "English",
+            "fr": "French",
+            "de": "German",
+            "es": "Spanish",
+            "it": "Italian",
+            "nl": "Dutch",
+            "pt": "Portuguese",
+            "ru": "Russian",
+            "ja": "Japanese",
+            "zh": "Chinese",
+            "ko": "Korean",
+            "ar": "Arabic",
+            "hi": "Hindi",
+            "tr": "Turkish",
+            "pl": "Polish",
+            "sv": "Swedish",
+            "da": "Danish",
+            "no": "Norwegian",
+            "fi": "Finnish",
+            "cs": "Czech",
+            "sk": "Slovak",
+            "el": "Greek",
+            "hu": "Hungarian",
+            "ro": "Romanian",
+            "uk": "Ukrainian",
+            "bg": "Bulgarian",
+            "hr": "Croatian",
+            "sr": "Serbian",
+            "sl": "Slovenian",
+            "et": "Estonian",
+            "lv": "Latvian",
+            "lt": "Lithuanian",
+            "vi": "Vietnamese",
+            "th": "Thai",
+            "id": "Indonesian",
+            "ms": "Malay",
+            "fil": "Filipino"
+        }
+        return language_names.get(code, "Unknown")
