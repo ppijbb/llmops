@@ -89,16 +89,17 @@ Result should be written in English.
 - Option 1: Treat gum inflammation first.
 - Option 2: Implant placement after treating inflammation.
 4. Consultation Details
-- Prosthetics List for Described Treatment: Implant fixture and artificial crown.
+- Prosthetics List for Described Treatment:
+	- Implant fixture and artificial crown.
 - Planned Treatments and Schedule:
-- Gum inflammation treatment.
-- Implant fixture placement.
-- Healing period for bone integration (3–6 months).
-- Artificial crown placement.
+	- Gum inflammation treatment
+	- Implant fixture placement
+	- Healing period for bone integration (3–6 months)
+	- Artificial crown placement
 - Total Cost:
 - Described Precautions:
-- Swelling and discomfort are normal after surgery and subside within a few days.
-- Antibiotics and painkillers will be prescribed post-surgery.
+	- Swelling and discomfort are normal after surgery and subside within a few days
+	- Antibiotics and painkillers will be prescribed post-surgery
 '''.strip()
 
 input_text = """---
