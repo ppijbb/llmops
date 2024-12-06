@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import List, Self
+from typing import List
 from logging import Logger
 from fastapi import APIRouter
 from ray.serve.handle import DeploymentHandle
@@ -21,7 +21,7 @@ class BaseIngress(ABC):
         self.service = llm_handle
     
     @classmethod
-    def _get_class(cls)->Self:
+    def _get_class(cls):
         return cls
        
     def register_routes(self, router:APIRouter):

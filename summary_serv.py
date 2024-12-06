@@ -96,7 +96,7 @@ def build_app(
 
     serve.start(
         proxy_location="EveryNode", 
-        http_options={"host": "0.0.0.0", "port": 8504},
+        http_options={"host": "0.0.0.0", "port": 8501},
         logging_config=LoggingConfig(
             log_level="INFO",
             logs_dir="./logs",)
@@ -108,7 +108,7 @@ def build_app(
             "GPU": float(torch.cuda.is_available())/2
             }], 
         placement_group_strategy="STRICT_PACK",
-        route_prefix="/api/v1"
+        route_prefix="/"
         ).bind(
             llm_handle=LLMService.bind()
         )

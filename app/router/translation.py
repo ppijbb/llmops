@@ -1,7 +1,7 @@
 import os
 
 import json
-from typing import Any, List, Self
+from typing import Any, List
 import time
 import traceback
 
@@ -25,7 +25,7 @@ router = APIRouter()
 # @serve.ingress(app=router)
 class TranslationRouterIngress(BaseIngress):
     routing = True
-    prefix = "/translation"
+    prefix = "/translate"
     tags = ["Lecture Translation"]
     include_in_schema = True
     
@@ -40,7 +40,7 @@ class TranslationRouterIngress(BaseIngress):
         max_batch_size=4, 
         batch_wait_timeout_s=0.1)
     async def batched_generation(
-        self: Self, 
+        self, 
         request_prompt: List[Any],
         request_text: List[Any],
         source_language: str,
