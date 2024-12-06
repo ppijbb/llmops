@@ -22,7 +22,7 @@ router = APIRouter()
 # @serve.ingress(app=router)
 class SummaryRouterIngress(BaseIngress):
     routing = True
-    prefix = "/summary"
+    prefix = "/summarize"
     tags = ["Counseling Summary"]
     include_in_schema = True
     
