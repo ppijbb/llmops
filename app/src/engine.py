@@ -13,11 +13,11 @@ from transformers.generation.streamers import TextIteratorStreamer
 from threading import Thread
 from ray import serve
 
-from src.depend import get_model, get_claude, get_gpt
-from src.application.const import prompt
+from app.depend import get_model, get_claude, get_gpt
+from app.src.const import prompt
 
-from src.application.anthropic import ClaudeService
-from src.application.open_ai import OpenAIService
+from app.src.anthropic import ClaudeService
+from app.src.open_ai import OpenAIService
 
 
 @asynccontextmanager

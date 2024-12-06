@@ -3,8 +3,8 @@ import torch
 import subprocess
 from transformers import AutoTokenizer
 
-from .application.open_ai import OpenAIService
-from .application.anthropic import ClaudeService
+from .src.open_ai import OpenAIService
+from .src.anthropic import ClaudeService
 
 os.environ["VLLM_CPU_OMP_THREADS_BIND"] = "0-29"
 

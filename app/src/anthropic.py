@@ -1,6 +1,6 @@
 import anthropic
 
-from src.application.const import prompt
+from app.src.const import prompt
 
 
 class ClaudeService:
