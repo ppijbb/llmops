@@ -140,7 +140,7 @@ class TranslationRouterIngress(BaseIngress):
                     target_language=[lang.value for lang in request.target_language])
 
         @router.post(
-            "/",
+            "",
             description='''
     language code
     

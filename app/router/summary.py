@@ -128,7 +128,7 @@ class SummaryRouterIngress(BaseIngress):
 
 
         @router.post(
-            "/", 
+            "", 
             response_model=SummaryResponse)
         async def summarize_gpt(
             request: SummaryRequest,
