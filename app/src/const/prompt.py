@@ -286,7 +286,7 @@ source context: 테스트입니다. 테스트. ジクン シジャカルケヨ(b
 target text: ジクン シジャカルケヨ(example case of wrong STT result, in this case you need to think the pronunciation of source language. "지금 시작할게요." would be a fixed target text in this case.)
 translation result:
 {
-    "zh": "现在开始吧."
+    "zh": "现在开始吧。"
 }</example-json-output-2>'''
 
 TRANSLATION_LANGUAGE_PROMPT = '''
@@ -305,7 +305,22 @@ The summary should capture the main points and key details of the text while con
 Please ensure that the summary is well-organized and easy to read, with clear headings to guide the reader through each section. It has a structure that repeats in paragraph units consisting of one header and multiple bullet points. There are no subheaders under the header.
 The length of the summary should be appropriate to capture the main points and details of the text, without including trivial information or becoming overly long. However, please don't omit the parts that the lecturer explained in detail, and organize them so that they can be understood well enough.
 Place three sentences of the key summary at the very beginning. Please use "Summary by Transera" as the heading text for the key summary section. The key summary concisely summarizes the key points and most important conclusions of the presentation and extracts and presents the most essential insights. Write the key summary with three bullet points.
-Language={target}'''
+Language={target}
+The summary format should be:
+<example-output-format>
+**Summary by Transera**
+- (the most important conclusions of the presentation and extracts and presents the most essential insights in {target})
+- (the most important conclusions of the presentation and extracts and presents the most essential insights in {target})
+- (the most important conclusions of the presentation and extracts and presents the most essential insights in {target})
+
+**Summary Title about a section**
+- (summarized key points about the section in {target})
+- (summarized key points about the section in {target})
+- (summarized key points about the section in {target})
+
+**Summary Title about a section**
+...
+</example-output-format>'''
 
 LEGACY_TRANSLATION_SUMMARIZE_SYSTEM_PROMPT = '''
 Please identify the main discussion points, decisions, and action items from my lecture notes below and provide a concise bulleted summary.
