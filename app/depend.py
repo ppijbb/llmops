@@ -7,6 +7,7 @@ from .src.open_ai import OpenAIService
 from .src.anthropic import ClaudeService
 
 os.environ["VLLM_CPU_OMP_THREADS_BIND"] = "0-29"
+os.environ["VLLM_ALLOW_LONG_MAX_MODEL_LEN"] = "1"
 
 
 def get_model(
@@ -37,7 +38,12 @@ def get_model(
                 tensor_parallel_size=1,
                 pipeline_parallel_size=1,
                 enforce_eager=True,
-                block_size=8, 
+                block_size=8,
+                rope_scaling={
+                    "type": "dynamic",
+                    "factor": 2.0,
+                },
+                rope_theta=1.0,
             )
 
         elif subprocess.run(["neuron-ls"], shell=True).returncode == 0: # if device on neuron
