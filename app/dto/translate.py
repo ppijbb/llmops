@@ -113,3 +113,21 @@ class TranslateResponse(BaseModel):
             
         finally:
             return result
+
+class TranslateTargetLanguage(BaseModel):
+    ko: Optional[str] = Field(None)
+    en: Optional[str] = Field(None)
+    zh: Optional[str] = Field(None)
+    fr: Optional[str] = Field(None)
+    es: Optional[str] = Field(None)
+
+
+class TranslateJsonFormat(BaseModel):
+    text: str = Field(..., exclude=True)
+    source_language: str = Field(..., exclude=True)
+    target_language: List[str] = Field([], exclude=True)
+    
+    original_text: str = Field(...)
+    result: str = Field(...)
+    translations: TranslateTargetLanguage = Field(...)    
+    
