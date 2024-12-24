@@ -93,10 +93,9 @@ class APIIngress(
 def build_app(
     cli_args: Dict[str, str]
 ) -> serve.Application:
-
     serve.start(
         proxy_location="EveryNode", 
-        http_options={"host": "0.0.0.0", "port": 8501},
+        http_options={"host": "0.0.0.0", "port": cli_args.get("port", 8501)},
         logging_config=LoggingConfig(
             log_level="INFO",
             logs_dir="./logs",)
