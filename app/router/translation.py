@@ -149,6 +149,8 @@ class TranslationRouterIngress(BaseIngress):
         - Chinese: zh
         - French: fr
         - Spanish: es
+        - Italian: it
+        - German: de
             ''',
             response_model=TranslateResponse)
         async def translate_gpt(
