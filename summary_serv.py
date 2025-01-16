@@ -55,7 +55,7 @@ class APIIngress(
         llm_handle: DeploymentHandle = None,
         ) -> None:
         super().__init__(llm_handle=llm_handle)
-        self.service = llm_handle
+        self.service = llm_handle.options(stream=True)
 
         self.server_logger.info("""
             ####################
