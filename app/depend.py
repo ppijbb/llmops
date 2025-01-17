@@ -25,8 +25,8 @@ def get_model(
             from vllm import LLM
             model = LLM(
                 model=model_path,
-                # quantization="AWQ",
-                # dtype="float16",
+                quantization="AWQ",
+                dtype="float16",
                 # quantization="bitsandbytes",
                 # load_format="bitsandbytes",
                 # load_format="safetensors",

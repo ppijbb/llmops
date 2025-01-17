@@ -80,7 +80,7 @@ class LLMService:
             # model_path="KISTI-KONI/KONI-Llama3-8B-Instruct-20240729", # GPU (vllm) Model
             # model_path="google/gemma-2-2b-it",  # GPU (vllm) Model
             # model_path="hugging-quants/gemma-2-9b-it-AWQ-INT4",
-            model_path="Gunulhona/Gemma-System-9B-MoRA-SimPO-no-adapter",
+            model_path="Gunulhona/Gemma-System-9B-MoRA-SimPO-AWQ",
             # model_path="unsloth/gemma-2-2b-it-bnb-4bit",
             # model_path="AIFunOver/gemma-2-2b-it-openvino-8bit", # CPU Model
             # model_path="Gunulhona/Llama-Merge-Small",  # GPU (vllm) Model
