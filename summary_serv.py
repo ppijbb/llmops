@@ -100,7 +100,7 @@ def build_app(
             log_level="INFO",
             logs_dir="./logs",)
         )
-    
+
     return APIIngress.options(
         placement_group_bundles=[{
             "CPU":1.0, 
