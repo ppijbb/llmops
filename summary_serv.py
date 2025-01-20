@@ -53,9 +53,9 @@ class APIIngress(
     def __init__(
         self, 
         llm_handle: DeploymentHandle = None,
-        ) -> None:
+    ) -> None:
         super().__init__(llm_handle=llm_handle)
-        self.service = llm_handle.options(stream=True)
+        self.service = llm_handle.options()
 
         self.server_logger.info("""
             ####################
@@ -95,7 +95,7 @@ def build_app(
 ) -> serve.Application:
     serve.start(
         proxy_location="EveryNode", 
-        http_options={"host": "0.0.0.0", "port": cli_args.get("port", 8501)},
+        http_options={"host": "0.0.0.0", "port": cli_args.get("port", 8504)},
         logging_config=LoggingConfig(
             log_level="INFO",
             logs_dir="./logs",)
