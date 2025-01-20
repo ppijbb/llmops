@@ -16,7 +16,7 @@ class TranslateRequest(BaseModel):
         json_schema_extra = {
             "example" : {
                 "source_language" : "ko",
-                "target_language" : ["en", "zh", "fr", "es"],
+                "target_language" : ["en", "zh", "fr", "es", "it", "de"],
                 "history": ["안녕하세요."],
                 "text" : "오늘 어떻게 도와드릴까요?"
             }
@@ -91,8 +91,10 @@ class TranslateResponse(BaseModel):
             self._verified_response(TargetLanguages.KOREAN.value, result)
             self._verified_response(TargetLanguages.ENGLISH.value, result)
             self._verified_response(TargetLanguages.CHINESE.value, result)
-            self._verified_response(TargetLanguages.FRENCH.value, result)            
+            self._verified_response(TargetLanguages.FRENCH.value, result)
             self._verified_response(TargetLanguages.SPANISH.value, result)
+            self._verified_response(TargetLanguages.ITALIAN.value, result)            
+            self._verified_response(TargetLanguages.GERMAN.value, result)
             result.update({
                 "status": "success",
                 "detail": "ok"
@@ -110,6 +112,8 @@ class TranslateResponse(BaseModel):
             result.update(self._parse_to_json(TargetLanguages.FRENCH.value))
             result.update(self._parse_to_json(TargetLanguages.KOREAN.value))
             result.update(self._parse_to_json(TargetLanguages.SPANISH.value))
+            result.update(self._parse_to_json(TargetLanguages.ITALIAN.value))
+            result.update(self._parse_to_json(TargetLanguages.GERMAN.value))
             
         finally:
             return result
@@ -120,7 +124,8 @@ class TranslateTargetLanguage(BaseModel):
     zh: Optional[str] = Field(None)
     fr: Optional[str] = Field(None)
     es: Optional[str] = Field(None)
-
+    it: Optional[str] = Field(None)
+    de: Optional[str] = Field(None)
 
 class TranslateJsonFormat(BaseModel):
     text: str = Field(..., exclude=True)

@@ -29,9 +29,8 @@ class SummaryRouterIngress(BaseIngress):
     def __init__(
         self, 
         llm_handle: DeploymentHandle = None
-        ) -> None:
+    ) -> None:
         super().__init__(llm_handle=llm_handle)
-        self.service = llm_handle
         
     @serve.batch(
             max_batch_size=4, 
@@ -111,7 +110,7 @@ class SummaryRouterIngress(BaseIngress):
                 # result += ray.get(service.summarize.remote(ray.put(request.text)))
                 # assert len(request.text ) > 200, "Text is too short"
                 return StreamingResponse(
-                    content=self.service.summarize.remote(
+                    content=self.service_as_stream.summarize.remote(
                         input_prompt=request.prompt,
                         input_text=request.text, 
                         stream=True),

@@ -16,12 +16,15 @@ services:
     # devices:
     #   - /dev/neuron0:/dev/neuron0
     ports:
-      - target: 8501       ## 컨테이너 내부 포트
-        published: 8501    ## 호스트OS에서 공개할 포트
+      - target: 8504       ## 컨테이너 내부 포트
+        published: 8504    ## 호스트OS에서 공개할 포트
         protocol: tcp      ## 포트 프로토콜
     environment:
       - FLASK_ENV=development
       - MAX_JOBS=4
+      - HF_TOKEN=$HF_TOKEN
+      - LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+    runtime: nvidia
     deploy:
       resources:
         limits:
@@ -40,6 +43,6 @@ services:
         max_attempts: 3
         window: 120s
     command: 
-      - serve 
+      - serve
       - run
       - summary_serv:build_app

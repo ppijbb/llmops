@@ -53,9 +53,8 @@ class APIIngress(
     def __init__(
         self, 
         llm_handle: DeploymentHandle = None,
-        ) -> None:
+    ) -> None:
         super().__init__(llm_handle=llm_handle)
-        self.service = llm_handle
 
         self.server_logger.info("""
             ####################
@@ -68,6 +67,7 @@ class APIIngress(
         for cls in self.__class__.mro():
             if hasattr(cls, "routing"):
                 cls.service = self.service
+                cls.service_as_stream = self.service_as_stream
                 cls.register_routes(self=cls)
                 app.include_router(
                     cls.router,
@@ -95,19 +95,19 @@ def build_app(
 ) -> serve.Application:
     serve.start(
         proxy_location="EveryNode", 
-        http_options={"host": "0.0.0.0", "port": cli_args.get("port", 8501)},
+        http_options={"host": "0.0.0.0", "port": cli_args.get("port", 8504)},
         logging_config=LoggingConfig(
             log_level="INFO",
             logs_dir="./logs",)
         )
-    
+
     return APIIngress.options(
         placement_group_bundles=[{
             "CPU":1.0, 
             "GPU": float(torch.cuda.is_available())/2
             }], 
         placement_group_strategy="STRICT_PACK",
-        route_prefix="/"
+        # route_prefix="/"
         ).bind(
             llm_handle=LLMService.bind()
         )

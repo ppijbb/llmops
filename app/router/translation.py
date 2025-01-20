@@ -32,9 +32,8 @@ class TranslationRouterIngress(BaseIngress):
     def __init__(
         self, 
         llm_handle: DeploymentHandle = None
-        ) -> None:
+    ) -> None:
         super().__init__(llm_handle=llm_handle)
-        self.service = llm_handle
 
     @serve.batch(
         max_batch_size=4, 
@@ -149,6 +148,8 @@ class TranslationRouterIngress(BaseIngress):
         - Chinese: zh
         - French: fr
         - Spanish: es
+        - Italian: it
+        - German: de
             ''',
             response_model=TranslateResponse)
         async def translate_gpt(
