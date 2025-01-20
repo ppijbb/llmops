@@ -55,7 +55,6 @@ class APIIngress(
         llm_handle: DeploymentHandle = None,
     ) -> None:
         super().__init__(llm_handle=llm_handle)
-        self.service = llm_handle.options()
 
         self.server_logger.info("""
             ####################
@@ -68,6 +67,7 @@ class APIIngress(
         for cls in self.__class__.mro():
             if hasattr(cls, "routing"):
                 cls.service = self.service
+                cls.service_as_stream = self.service_as_stream
                 cls.register_routes(self=cls)
                 app.include_router(
                     cls.router,

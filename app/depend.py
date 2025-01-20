@@ -33,7 +33,7 @@ def get_model(
                 max_model_len=4096,
                 max_num_seqs=16,
                 trust_remote_code=True,
-                gpu_memory_utilization=0.95,
+                gpu_memory_utilization=0.55,
                 swap_space=4, # default 4
                 cpu_offload_gb=4,  # GiB
                 # distributed_executor_backend="ray",
@@ -41,15 +41,15 @@ def get_model(
                 pipeline_parallel_size=1,
                 enforce_eager=True,
                 block_size=8,
-                disable_sliding_window=False,
-                rope_scaling=None,
-                rope_theta=None
-                # rope_scaling={
-                #     "rope_type": "dynamic",
-                #     "factor": 2.0,
-                #     "original_max_position_embeddings": 8192,
-                # },
-                # rope_theta=1.0
+                # disable_sliding_window=False,
+                # rope_scaling=None,
+                # rope_theta=None
+                rope_scaling={
+                    "rope_type": "dynamic",
+                    "factor": 2.0,
+                    "original_max_position_embeddings": 8192,
+                },
+                rope_theta=10000.0
             )
 
         elif subprocess.run(["neuron-ls"], shell=True).returncode == 0: # if device on neuron

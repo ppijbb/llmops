@@ -17,8 +17,9 @@ class BaseIngress(ABC):
     def __init__(
         self, 
         llm_handle: DeploymentHandle = None
-        ) -> None:
-        self.service = llm_handle
+    ) -> None:
+        self.service = llm_handle.options() if llm_handle else None
+        self.service_as_stream = llm_handle.options(stream=True) if llm_handle else None
     
     @classmethod
     def _get_class(cls):
