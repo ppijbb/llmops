@@ -39,6 +39,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # 필요한 시스템 패키지만 설치
 RUN apt-get update && \
     apt-get install -y --no-install-recommends git && \
+    apt-get install build-essential -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -50,16 +51,17 @@ WORKDIR /app
 COPY . .
 
 # 비root 사용자 생성 및 권한 설정
-RUN useradd -m -s /bin/bash appuser && \
-    chown -R appuser:appuser /app
-USER appuser
+# RUN useradd -m -s /bin/bash appuser && \
+#     chown -R appuser:appuser /app
+# USER appuser
+
 # Hugging Face 로그인
 RUN huggingface-cli login --token ${HF_TOKEN} --add-to-git-credential
 # 헬스체크 설정
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8501/health || exit 1
+    CMD curl -f http://localhost:8504/health || exit 1
 
 # 포트 설정
-EXPOSE 8501
-
+EXPOSE 8504
+RUN echo $LD_LIBRARY_PATH
 CMD ["serve", "run", "summary_serv:build_app"]

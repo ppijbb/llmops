@@ -23,6 +23,7 @@ services:
       - FLASK_ENV=development
       - MAX_JOBS=4
       - HF_TOKEN=$HF_TOKEN
+      - LD_LIBRARY_PATH=$LD_LIBRARY_PATH
     runtime: nvidia
     deploy:
       resources:
@@ -42,6 +43,6 @@ services:
         max_attempts: 3
         window: 120s
     command: 
-      - serve 
+      - serve
       - run
       - summary_serv:build_app

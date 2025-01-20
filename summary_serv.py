@@ -107,7 +107,7 @@ def build_app(
             "GPU": float(torch.cuda.is_available())/2
             }], 
         placement_group_strategy="STRICT_PACK",
-        route_prefix="/"
+        # route_prefix="/"
         ).bind(
             llm_handle=LLMService.bind()
         )
