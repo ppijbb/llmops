@@ -14,7 +14,7 @@ from ray.serve.handle import DeploymentHandle
 from app.src.engine import OpenAIService, get_gpt_service
 from app.dto import SummaryResponse
 from app.dto import TranslateRequest, TranslateResponse
-from app.enum.transcript import TargetLanguages
+from app.enum_custom.transcript import TargetLanguages
 from app.utils.text_process import text_preprocess, text_postprocess
 from app.utils.lang_detect import detect_language
 from app.router import BaseIngress
