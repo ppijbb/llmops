@@ -7,7 +7,7 @@ import sys
 import openai
 import asyncio
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from app.src.const import prompt
 from app.enum_custom.transcript import TargetLanguages
 
@@ -16,13 +16,11 @@ class TranslationOutput(BaseModel):
 
 class OpenAIService:
     def __init__(self):
-        self.client = openai.OpenAI(
-            api_key=os.environ["OPENAI_API_KEY"])
+        self.client = openai.OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+        
         self.logger = logging.getLogger("ray.serve")
-
-         # 로깅 설정 추가
-        logging.basicConfig(level=logging.INFO)
-        self.logger = logging.getLogger("ray.serve")
+        if not self.logger.hasHandlers():
+            logging.basicConfig(level=logging.INFO)
 
 
     def _short_message_for_language(self, target_language: str) -> str:
@@ -34,48 +32,6 @@ class OpenAIService:
             return "발화가 너무 짧습니다."
         else:
             return "Speech is too short."
-
-    # def generate(
-    #     self, 
-    #     input_text: str, 
-    #     input_prompt: str,
-    #     response_model: type[BaseModel] = None
-    # ):
-    #       completion_params = {
-    #         "model": "gpt-4o-mini",
-    #         "max_tokens": 2048,
-    #         "temperature": 0.6,
-    #         "response_format":{"type": "json_object"},
-    #         "messages": [
-    #             {
-    #                 "role": "system",
-    #                 "content": input_prompt,
-    #             },
-    #             {
-    #                 "role": "user", 
-    #                 "content": input_text
-    #             }
-    #         ]
-    #     }
-
-    #     result = self.client.chat.completions.create(**completion_params)
-    #     if response_model:
-    #         try:
-    #             json_response = json.loads(result.choices[0].message.content)  # ✅ JSON 문자열 → Python 객체 변환
-    #             return response_model.model_validate(json_response)  # ✅ Pydantic으로 검증
-    #         except json.JSONDecodeError as e:
-    #             self.logger.error(f"JSON Parsing Error: {e}")
-    #             return None
-    #     return json.loads(result.choices[0].message.content)  # ✅ JSON 객체로 반환
-
-    #     if response_model:
-    #         completion_params["response_format"] = {"type": "json_object"}
-
-    #         completion_params["messages"][0]["content"] = (
-    #             "You must respond with a JSON object. " + input_prompt
-    #         )
-            
-    #     return self.client.chat.completions.create(**completion_params)
 
 
     def generate(
@@ -205,14 +161,14 @@ class OpenAIService:
         # except json.JSONDecodeError:
         #     print("JSON 변환 실패! OpenAI가 제대로 JSON을 반환하지 않음.")
         #     print("원본 응답:", response_content)
-        #     return None  # JSON 변환 실패 시 `None` 반환 (또는 예외 처리 가능)
+        #     return None  # JSON 변환 실패 시 None 반환 (또는 예외 처리 가능)
 
 
-        translation_output = TranslationOutput.model_validate_json(
-        result.choices[0].message.content
-        )    
-        #print(translation_output)
-        return translation_output
+        # translation_output = TranslationOutput.model_validate_json(
+        # result.choices[0].message.content
+        # )    
+        # print(translation_output)
+        # return translation_output
 
 async def main():
     service = OpenAIService()
@@ -220,7 +176,7 @@ async def main():
         input_text="어디가 아프신가요? 불편한 곳 있으시면 말씀해주세요",
         source_language="ko",
         detect_language="ko",
-        target_language=["zh","en","it"],
+        target_language=["zh","en"],
         history=[""]
     )
     print("Translation completed:", result)
@@ -289,4 +245,3 @@ if __name__ == "__main__":
                     target=target_language[0]), 
                 input_text=f'Target Language={target_language[0]}\n<speech>{input_text}</speech>\n')
             return result.choices[0].message.content
-      
