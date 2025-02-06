@@ -170,19 +170,19 @@ class OpenAIService:
         # print(translation_output)
         # return translation_output
 
-async def main():
-    service = OpenAIService()
-    result = await service.translate(
-        input_text="어디가 아프신가요? 불편한 곳 있으시면 말씀해주세요",
-        source_language="ko",
-        detect_language="ko",
-        target_language=["zh","en"],
-        history=[""]
-    )
-    print("Translation completed:", result)
+# async def main():
+#     service = OpenAIService()
+#     result = await service.translate(
+#         input_text="어디가 아프신가요? 불편한 곳 있으시면 말씀해주세요",
+#         source_language="ko",
+#         detect_language="ko",
+#         target_language=["zh","en"],
+#         history=[""]
+#     )
+#     print("Translation completed:", result)
 
-if __name__ == "__main__":
-    asyncio.run(main())
+# if __name__ == "__main__":
+#     asyncio.run(main())
 
 
     # async def translate(
