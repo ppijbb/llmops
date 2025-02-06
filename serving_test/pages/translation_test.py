@@ -51,12 +51,12 @@ with input_col:
     
     source_languages = st.selectbox(
          "입력 언어",
-        ("ko", "en", "zh", "fr", "es"),
+        ("ko", "en", "zh", "fr", "es", "de", "it"),
         placeholder="ko",
     )
     target_languages = st.multiselect(
          "입력 언어",
-        ("ko", "en", "zh", "fr", "es"),
+        ("ko", "en", "zh", "fr", "es", "de", "it" ),
         ("en", "zh"),
     )
 
@@ -92,17 +92,22 @@ with output_col:
             with st.spinner('Wait for it...'):
                 start = datetime.now()
                 response = requests.post(
-                    url="http://localhost:8501/translate_gemma",
+                    url="http://localhost:8507/translate/",
                     json={
                         "source_language": source_languages,
                         "target_language": target_languages,
                         "text": st.session_state.target_text
                         },
-                    stream=True)
+                    stream=True
+                    )
+
                 with st.chat_message("assistant"):
                     message_placeholder = st.empty()
-                    full_msg = ""
+                    full_msg = "" 
+                    print(f"Response status code: {response.status_code}")
+                    print(f"Response content: {response.text}")
                     output = response.json()["result"]
+
                     for o in output:
                         for word in o:
                             full_msg += word
@@ -118,7 +123,7 @@ with output_col:
             with st.spinner('Wait for it...'):
                 start = datetime.now()
                 response = requests.post(
-                    url="http://localhost:8501/translate_gemma/summarize",
+                    url="http://localhost:8507/translate/gemma/summarize",
                     json={
                         "source_language": source_languages,
                         "target_language": target_languages,

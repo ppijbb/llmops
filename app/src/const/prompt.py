@@ -197,8 +197,7 @@ Result should be written in English.
 '''
 
 DEFAULT_TRANSLATION_FEW_SHOT = '''
-<example-json-output-3>
-sorce language is en.
+source language is en.
 detected language is en.
 target languages are ['fr', 'ko', 'es'].
 source history:
@@ -207,13 +206,13 @@ source history:
 source context:  Number 2 is Min value, and PSA is in Median and Interquatil range. Will you raise your hand if you report like number one?
 target text: Will you raise your hand if you report like number one?
 translation result:
-{
+    {
     "fr": "Qui aimerait faire un compte rendu comme le numéro 1 ? Levez la main, s’il vous plaît.",
     "es": "¿Quién quiere presentar como el número 1? Por favor, levante la mano.",
     "ko": "1번처럼 리포팅 한다, 손 들어보시겠습니까?"
-}</example-json-output-3>
-<example-json-output-4>
-sorce language is en.
+    }
+
+source language is en.
 detected language is en.
 target languages are ['ko'].
 source history:
@@ -223,22 +222,24 @@ target text: 71% of cases had at least one statistical error.
 translation result:
 {
     "ko": "하나 이상의 통계 오류가 있는 게 71퍼센트였다고 합니다."
-}</example-json-output-4>
-<example-json-output-5>
-sorce language is ko.
+}
+source language is ko.
 detected language is ko.
 target languages are ['en'].
 source history:
     그렇지만 어~ 제가 저희 임상 경우로서는 특히 브라이트 임플란트 또는덴티움의 임플란트를 쓸 때 충분히 가능하지 않을까 단 이 본 레벨인 경우에서는 슈퍼라인인 경우에서는 사실 4.0보다는 4.5가 더 선호되고요.
     만약에 브라이팅 임플란트라면 본 레벨이라 할지라도 4밀리가 충분히 가능할 것 같습니다.
 source context: 만약에 브라이팅 임플란트라면 본 레벨이라 할지라도 4밀리가 충분히 가능할 것 같습니다. 그거는 저희가 강도 테스트의 결과에 의해서 그렇습니다.이 경우에 잔존골이 한 4에서 5밀리 정도 바이코티컬 픽세이션을 할 수도 있고또는 크레스탈로 약간 아그멘테이션을 할 수도 있을 것 같습니다.
-target text:  그거는 저희가 강도 테스트의 결과에 의해서 그렇습니다.이 경우에 잔존골이 한 4에서 5밀리 정도 바이코티컬 픽세이션을 할 수도 있고또는 크레스탈로 약간 아그멘테이션을 할 수도 있을 것 같습니다.
+target text: 그거는 저희가 강도 테스트의 결과에 의해서 그렇습니다.이 경우에 잔존골이 한 4에서 5밀리 정도 바이코티컬 픽세이션을 할 수도 있고또는 크레스탈로 약간 아그멘테이션을 할 수도 있을 것 같습니다.
 translation result:
 {
     "en": "This is based on the results of our strength tests. In this case, the residual bone can be about 4 to 5 millimeters for bicortical fixation, or there may be slight augmentation at the crest."
-}</example-json-output-5>
+}
 '''
 
+
+"""
+legacy prompt로 유지지
 DEFAULT_TRANSLATION_SYSTEM_PROMPT = '''
 You are the native level multi lingual translator.
 Translate language to given languages list.
@@ -264,7 +265,7 @@ OUTPUT MUST BE THE TARGET TEXT ONLY. CONTEXT IS NOT ALLOWED TO BE WRITTEN IN THE
 
 # Output Json Format Examples
 <example-json-output-1>
-sorce language is ko.(given source is ko, if given source is es then you need to translate from es)
+source language is ko.(given source is ko, if given source is es then you need to translate from es)
 detected language is ko.(detected language is ko, so need to think the meaning of source language ko)
 target languages are ['zh', 'en'].(target language is zh, en, so need to translate to zh, en)
 source history:
@@ -277,7 +278,7 @@ translation result:
     "zh": "大多数智齿都是这样，往根尖方向生长，靠近神经的。"
 }</example-json-output-1>
 <example-json-output-2>
-sorce language is ko.(give source is ko, if given source is en then you need to translate from en)
+source language is ko.(give source is ko, if given source is en then you need to translate from en)
 detected language is ja.(detected language is ja, so need to think the meaning of source language ko)
 target languages are ['zh'].(target language is zh, so need to translate to zh)
 source history:(think about the situations and nuance from history and do translation.)
@@ -290,16 +291,62 @@ translation result:
 {
     "zh": "现在开始吧。"
 }</example-json-output-2>'''
+"""
+
+
+DEFAULT_TRANSLATION_SYSTEM_PROMPT = '''
+You are the native level multi lingual translator.
+Translate language to given languages list.
+Given target text might be wrong transcripted STT, so need to thought with its source language pronunciation.
+
+# Target Languages
+- ko: Translate as if you are a native Korean speaker.
+- en: Translate as if you are a native English speaker.
+- fr: Translate as if you are a native French speaker.
+- es: Translate as if you are a native Spanish speaker.
+- zh: Translate as if you are a native Chinese speaker.
+- it: Translate as if you are a native Italian speaker.
+- de: Translate as if you are a native German speaker.
+
+# Task Processing Point
+- Translating the target text, focus on nuance, shade of meaning and tone from source context.
+- No information should be dropped or distorted.
+- If the target text is wrong, translate from pronunciation as fixed target text.
+- If the target language is not in the target list, do not generate.
+- **Translate only into the specified target languages and exclude others.**
+- **Do not include translations for languages that are not in the given target language list.**
+- Return translations in a structured format
+
+# Output Format
+Return the translation in the following structured JSON format:
+
+json
+{
+    "translations": {{
+        "ko": "{Korean translation if applicable}",
+        "en": "{English translation if applicable}",
+        "fr": "{French translation if applicable}",
+        "es": "{Spanish translation if applicable}",
+        "zh": "{Chinese translation if applicable}",
+        "it": "{Italian translation if applicable}",
+        "de": "{German translation if applicable}"
+    }}
+}
+
+# Caution!
+OUTPUT MUST BE THE TARGET TEXT ONLY. CONTEXT IS NOT ALLOWED TO BE WRITTEN IN THE OUTPUT.
+'''
 
 TRANSLATION_LANGUAGE_PROMPT = '''
-sorce language is {source}.
+source language is {source}.
 detected language is {detect}.
 target languages are {target}.
 source history:
 {history}
 source context: {context}
 target text: {input_text}
-translation result:'''
+translation result:
+'''
 
 DEFAULT_TRANSLATION_SUMMARIZE_SYSTEM_PROMPT = '''
 Could you please provide a comprehensive summary of the given text? The summary should capture the main points and key details of the text while conveying the speaker's intended meaning accurately.
