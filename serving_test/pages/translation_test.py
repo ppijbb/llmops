@@ -3,6 +3,8 @@ import requests
 from datetime import datetime
 import logging
 
+#from project.test import OpenAIService
+
 
 st.set_page_config(
     page_title="Dencomm sLLM", 
@@ -88,6 +90,7 @@ with output_col:
     st.title("번역 결과")
     with st.container(border=True):
         st.markdown("llm 번역 결과가 여기에 표시됩니다.")
+  
         if translation_button:
             with st.spinner('Wait for it...'):
                 start = datetime.now()
@@ -107,6 +110,7 @@ with output_col:
                     print(f"Response status code: {response.status_code}")
                     print(f"Response content: {response.text}")
                     output = response.json()["result"]
+                    
 
                     for o in output:
                         for word in o:

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import os
 import logging
 from typing import List, Dict,Optional
@@ -7,12 +7,12 @@ import sys
 import openai
 import asyncio
 
-#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from app.src.const import prompt
 from app.enum_custom.transcript import TargetLanguages
 
 class TranslationOutput(BaseModel):
-    translations: Dict[str, Optional[str]]
+    translations: Dict[str, Optional[str]] = Field(default_factory=dict)
 
 class OpenAIService:
     def __init__(self):
@@ -78,16 +78,37 @@ class OpenAIService:
             }
         }
 
-        result = self.client.chat.completions.create(**completion_params)
+        try:
+            result = self.client.chat.completions.create(**completion_params)
+            response_content = result.choices[0].message.content
+            self.logger.info(f"OpenAI Response: {response_content}")  # 응답 로깅
+            json_response = json.loads(response_content)
+            return response_model.model_validate(json_response) if response_model else json_response
+        except json.JSONDecodeError as e:
+            self.logger.error(f"JSON Parsing Error: {e}")
+            return {"translations": {}}               
 
-        if response_model:
-            try:
-                json_response = json.loads(result.choices[0].message.content)
-                return response_model.model_validate(json_response)
-            except json.JSONDecodeError as e:
-                self.logger.error(f"JSON Parsing Error: {e}")
-                return None
-        return json.loads(result.choices[0].message.content)
+        #result = self.client.chat.completions.create(**completion_params)
+
+        # if response_model:
+        #     try:
+        #         json_response = json.loads(result.choices[0].message.content)
+        #         return response_model.model_validate(json_response)
+        #     except json.JSONDecodeError as e:
+        #         self.logger.error(f"JSON Parsing Error: {e}")
+        #         return None
+        # return json.loads(result.choices[0].message.content)
+
+        # if response_model:
+        #     try:
+        #         response_content = result.choices[0].message.content
+        #         self.logger.info(f"OpenAI Response: {response_content}")  # 응답 로깅
+        #         json_response = json.loads(response_content)
+        #         return response_model.model_validate(json_response)
+        #     except json.JSONDecodeError as e:
+        #         self.logger.error(f"JSON Parsing Error: {e}")
+        #         self.logger.error(f"Invalid JSON Response: {response_content}")
+        #         return None
 
 
 
@@ -150,7 +171,7 @@ class OpenAIService:
             response_model=TranslationOutput
         )
 
-        return result
+        return result.translations
 
         # #JSON 검증 코드 추가
         # response_content = result.choices[0].message.content
@@ -169,20 +190,6 @@ class OpenAIService:
         # )    
         # print(translation_output)
         # return translation_output
-
-# async def main():
-#     service = OpenAIService()
-#     result = await service.translate(
-#         input_text="어디가 아프신가요? 불편한 곳 있으시면 말씀해주세요",
-#         source_language="ko",
-#         detect_language="ko",
-#         target_language=["zh","en"],
-#         history=[""]
-#     )
-#     print("Translation completed:", result)
-
-# if __name__ == "__main__":
-#     asyncio.run(main())
 
 
     # async def translate(

@@ -46,3 +46,4 @@ services:
       - serve
       - run
       - summary_serv:build_app
+      - port=8507

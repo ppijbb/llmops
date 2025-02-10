@@ -1,4 +1,5 @@
 import os
+import sys
 
 import json
 from typing import Any, List
@@ -11,6 +12,7 @@ from fastapi.responses import Response
 from ray import serve
 from ray.serve.handle import DeploymentHandle
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from app.src.engine import OpenAIService, get_gpt_service
 from app.dto import SummaryResponse
 from app.dto import TranslateRequest, TranslateResponse
@@ -18,6 +20,7 @@ from app.enum_custom.transcript import TargetLanguages
 from app.utils.text_process import text_preprocess, text_postprocess
 from app.utils.lang_detect import detect_language
 from app.router import BaseIngress
+
 
 router = APIRouter()
 
@@ -44,7 +47,7 @@ class TranslationRouterIngress(BaseIngress):
         request_text: List[Any],
         source_language: str,
         detect_language: str,
-        target_language: str,
+        target_language: str,   # 수정: List[str]로 변경
         history: List[str],
         is_summary:bool = False
     ) -> List[str]:
@@ -103,7 +106,7 @@ class TranslationRouterIngress(BaseIngress):
             request: TranslateRequest,
             # service: LLMService = Depends(get_llm_service)
         ) -> TranslateResponse:
-            result = ""
+            #result = ""
             # Generate predicted tokens
 
             try:
@@ -111,7 +114,7 @@ class TranslationRouterIngress(BaseIngress):
                 st = time.time()
                 # result += ray.get(service.summarize.remote(ray.put(request.text)))
                 # assert len(request.text ) > 200, "Text is too short"
-                result += await self.batched_generation(
+                generated_results  += await self.batched_generation(
                     self=self._get_class(),
                     request_prompt=None,
                     history=request.history,
@@ -120,9 +123,9 @@ class TranslationRouterIngress(BaseIngress):
                     target_language=[lang.value for lang in request.target_language],
                     request_text=f'{text_preprocess(request.text)}')
                 result = text_postprocess(result)
-                # print(result)
                 end = time.time()
-                # ----------------------------------- #
+                # ----------------------------------- 
+                print("text_postprocess",result)
                 assert len(result) > 0, "Generation failed"
                 print(f"Time: {end - st}")
             except AssertionError as e:
@@ -156,37 +159,49 @@ class TranslationRouterIngress(BaseIngress):
             request: TranslateRequest,
             service: OpenAIService = Depends(get_gpt_service)
         ) -> TranslateResponse:
-            result = ""
+            text = ""
             try:
                 # ----------------------------------- #
                 st = time.time()
                 # result += ray.get(service.summarize.remote(ray.put(request.text)))
                 # assert len(request.text ) > 200, "Text is too short"
+                #print("router text")
+                #print(request.text)
                 input_text = text_preprocess(request.text)
-                result += await service.translate(
+                #print("request.history")
+                #print(request.history)
+                #print("detect_language")
+                #print(detect_language(input_text))
+                #print("source_language")
+                #print(request.source_language)
+                #print("target_language")
+                #print([lang.value for lang in request.target_language])
+                result = await service.translate(
                     input_prompt=None,
                     history=request.history,
                     detect_language=detect_language(input_text),
                     source_language=request.source_language.value,
                     target_language=[lang.value for lang in request.target_language],
                     input_text=input_text)
-                # result = text_postprocess(result)
-                # print(result)
+                #result = text_postprocess(result)
                 end = time.time()
+                #print("result")
+                #print(result)
                 # ----------------------------------- #
                 print(f"Time: {end - st}")
             except AssertionError as e:
                 self.server_logger.error("error" + e)
-                result += e
+                text += e
             except Exception as e:
                 self.server_logger.error("error" + e)
-                result += "Error in summarize"
+                text += "Error in summarize"
             finally:
                 return TranslateResponse(
-                    text=result,
+                    text=text,
                     original_text=request.text,
                     source_language=request.source_language.value,
-                    target_language=[lang.value for lang in request.target_language])
+                    target_language=[lang.value for lang in request.target_language],
+                    translations=result)
 
         @router.post(
             "/legacy",
@@ -219,6 +234,7 @@ class TranslationRouterIngress(BaseIngress):
                     source_language=request.source_language.value,
                     target_language=[lang.value for lang in request.target_language],
                     input_text=input_text)
+                
                 # result = text_postprocess(result)
                 # print(result)
                 end = time.time()
@@ -309,3 +325,4 @@ class TranslationRouterIngress(BaseIngress):
                 result += "Error in summarize"
             finally:
                 return SummaryResponse(text=result)
+            

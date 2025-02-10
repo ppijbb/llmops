@@ -48,7 +48,7 @@ pyyaml>=6.0.1
 setuptools-rust>=1.9.0
 protobuf>=4.25.3
 nncf>=2.11.0
-vllm>=0.6.6
+vllm==0.6.6
 bitsandbytes>=0.43.1
 --extra-index-url https://pypi.nvidia.com
 # optimum-nvidia>=0.1.0b7
