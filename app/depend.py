@@ -61,12 +61,8 @@ def get_model(
                 **input_shapes)
         
         else: # if device on CPU
-            from ipex_llm.transformers import AutoModelForCausalLM
-            from optimum.intel import OVModelForCausalLM
-            import openvino as ov
-
-
             if inference_tool == "ipex":
+                from ipex_llm.transformers import AutoModelForCausalLM
                 model = AutoModelForCausalLM.from_pretrained(
                     model_path,
                     load_in_4bit=True,
@@ -75,6 +71,8 @@ def get_model(
                     use_cache=True)
                 model.eval()
             else:
+                from optimum.intel import OVModelForCausalLM
+                import openvino as ov
                 model = OVModelForCausalLM.from_pretrained(
                     model_path,
                     load_in_4bit=True,

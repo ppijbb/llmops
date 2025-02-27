@@ -85,16 +85,16 @@ class SummaryRouterIngress(BaseIngress):
         ) -> SummaryResponse:
             result = ""
             # Generate predicted tokens
-            await self.batched_summary(
-                    self=self._get_class(),
-                    request_prompt=request.prompt,
-                    request_text=text_preprocess(request.text),
-                    language=request.language)
             try:
                 # ----------------------------------- #
                 st = time.time()
                 # result += ray.get(service.summarize.remote(ray.put(request.text)))
                 # assert len(request.text ) > 200, "Text is too short"
+                result += await self.batched_summary(
+                    self=self._get_class(),
+                    request_prompt=request.prompt,
+                    request_text=text_preprocess(request.text),
+                    language=request.language)
                 # result = text_postprocess(result)
                 # print(result)
                 end = time.time()
