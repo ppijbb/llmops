@@ -39,11 +39,11 @@ def get_model(
                 pipeline_parallel_size=1,
                 enforce_eager=True,
                 block_size=8,
-                rope_scaling={
-                    "type": "dynamic",
-                    "factor": 2.0,
-                },
-                rope_theta=1.0,
+                # rope_scaling={
+                #     "type": "dynamic",
+                #     "factor": 2.0,
+                # },
+                # rope_theta=1.0,
             )
 
         elif subprocess.run(["neuron-ls"], shell=True).returncode == 0: # if device on neuron
