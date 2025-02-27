@@ -48,10 +48,19 @@ class OpenAIService:
     async def summarize(
         self, 
         input_text:str , 
-        input_prompt:str=None
+        input_prompt:str=None,
+        language: str = "en"
     ) -> str:
+        match language:
+            case TargetLanguages.KOREAN:
+                default_prompt = prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT
+            case TargetLanguages.ENGLISH:
+                default_prompt = prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT_EN
+            case _:
+                default_prompt = prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT_EN
+        
         result = self.generate(
-            input_prompt=input_prompt if input_prompt else prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT_EN, 
+            input_prompt=input_prompt if input_prompt else default_prompt, 
             input_text=input_text)
         return result.choices[0].message.content
 
@@ -75,7 +84,7 @@ class OpenAIService:
         result = self.generate(
             input_prompt=input_prompt if input_prompt else default_system_prompt, 
             input_text=generation_prompt)
-        return result.choices[0].message.content
+        return result.choices[0].message.content.replace("oral scanner", "intraoral scanner")
   
     async def translate_legacy(
         self, 
