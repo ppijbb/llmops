@@ -250,6 +250,8 @@ Given target text might be wrong transcripted STT, so need to thought with its s
 - fr: Translate as if you are a native French speaker.
 - es: Translate as if you are a native Spanish speaker.
 - zh: Translate as if you are a native Chinese speaker.
+- it: Translate as if you are a native Italian speaker.
+- de: Translate as if you are a native German speaker.
 
 # Task Processing Point
 - Translating the target text, focus on nuance, shade of meaning and tone from source context.

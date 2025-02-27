@@ -29,11 +29,13 @@ def get_model(
                 dtype="float16",
                 # quantization="bitsandbytes",
                 # load_format="bitsandbytes",
+                # load_format="safetensors",
                 max_model_len=4096,
                 max_num_seqs=16,
                 trust_remote_code=True,
                 gpu_memory_utilization=0.55,
                 swap_space=4, # default 4
+                cpu_offload_gb=4,  # GiB
                 # distributed_executor_backend="ray",
                 tensor_parallel_size=1,
                 pipeline_parallel_size=1,
