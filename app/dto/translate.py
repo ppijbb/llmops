@@ -76,7 +76,6 @@ class TranslateResponse(BaseModel):
     def _as_json(self, text: str) -> dict: #수정
         return json.loads(text)
 
-
 class TranslateTargetLanguage(BaseModel):
     ko: Optional[str] = Field(None)
     en: Optional[str] = Field(None)

@@ -35,35 +35,3 @@ class BaseNLPService:
                 stanza_models = stanza_model[lang_id]
                 docs = stanza_models(text)
                 return [sentence.text for sentence in doc.sentences]
-
-
-        
-        
-        
-        
-        
-        #match case로 변경하기, finally 영어
-        # if lang_id == "ko":
-        #     return kss.split_sentences(text)
-        # elif lang_id == "en": #영어
-        #     return stanza.split_sentences(text)
-        # elif lang_id == "fr": #프랑스어
-        #     return stanza.split_sentences(text)
-        # elif lang_id == "es": #스페인어
-        #     return stanza.split_sentences(text)
-        # elif lang_id == "de": #독일어
-        #     return stanza.split_sentences(text)
-        # elif lang_id == "it": #이태리어
-        #     return stanza.split_sentences(text)
-      
-
-    # def clean_json_string(json_bytes):
-    #     json_string = json_bytes.decode("utf-8")
-    #     return re.sub(r'[\x00-\x1F\x7F]', '', json_string)
-
-# class BaseNLPService:
-#     def split_sentences(self, text: str):
-#         return kss.split_sentences(text)
-
-
-

@@ -81,7 +81,7 @@ class OpenAIService(BaseNLPService):
         try:
             result = self.client.chat.completions.create(**completion_params)
             response_content = result.choices[0].message.content
-            self.logger.info(f"OprmenAI Response: {response_content}")  # 응답 로깅
+            self.logger.info(f"OpenAI Response: {response_content}")  # 응답 로깅
             json_response = json.loads(response_content)
             return response_model.model_validate(json_response) if response_model else json_response
         except json.JSONDecodeError as e:

@@ -93,33 +93,6 @@ class TranslationRouterIngress(BaseIngress):
                         status_code=500
                     )
             
-        # @router.post(
-        #     "/split_sentences",
-        #     description="텍스트를 문장 단위로 분리하는 API",
-        #     response_model=SentenceSplitResponse
-        # )
-        # async def split_sentences(request: SentenceSplitRequest):
-        #     try:
-        #         if self.service is None:
-        #             raise HTTPException(status_code=500, detail="self.service가 None입니다")
-                
-        #         # Directly use the text from the validated request model
-        #         # No need to parse JSON manually as FastAPI handles this
-        #         text = request.text
-                
-        #         # Call Ray Serve using remote()
-        #         sentences_future = self.service.split_sentences.remote(text)
-        #         sentences = await sentences_future
-                
-        #         return SentenceSplitResponse(sentences=sentences)
-                
-        #     except Exception as e:
-        #         self.server_logger.error(f"Sentence split error: {str(e)}\n{traceback.format_exc()}")
-        #         raise HTTPException(
-        #             status_code=500,
-        #             detail={"error": str(e)}
-        # )
-
         @router.post(
             "/split_sentences",
             description="텍스트를 문장 단위로 분리하는 API",
