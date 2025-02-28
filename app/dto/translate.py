@@ -4,9 +4,34 @@ import traceback
 import sys
 import os
 from typing import Optional, List, Dict
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field, computed_field, field_validator
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from app.enum_custom.transcript import TargetLanguages
+
+
+class SentenceSplitRequest(BaseModel):
+    #text: str = Field(...)
+    text: str
+   
+    @field_validator("text", mode="before")
+    def clean_text(cls, value: str) -> str:
+        """ 
+        - 개행 문자를 공백으로 변환
+        - 유효하지 않은 제어 문자 제거 (ASCII 코드 0~31 제외, 개행(\n)은 유지)
+        """
+        if not isinstance(value, str):
+            raise ValueError("text 필드는 문자열이어야 합니다.")
+
+        # JSON에서 사용할 수 없는 제어 문자 제거 (개행(\n)은 유지)
+        value = re.sub(r"[\x00-\x08\x0B\x0C\x0E-\x1F]", "", value)
+
+        # 개행(\n, \r\n) → 공백(" ")으로 변환
+        value = value.replace("\r", "").replace("\n", " ").strip()        
+        return value
+
+
+class SentenceSplitResponse(BaseModel):
+    sentences: List[str] = Field(...)
 
 
 class TranslateRequest(BaseModel):

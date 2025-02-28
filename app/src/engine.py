@@ -15,6 +15,7 @@ from ray import serve
 
 from app.depend import get_model, get_claude, get_gpt
 from app.src.const import prompt
+from app.src._base import BaseNLPService
 
 from app.src.anthropic import ClaudeService
 from app.src.open_ai import OpenAIService
@@ -61,7 +62,7 @@ def get_accelerator():
     },
     ray_actor_options=get_accelerator(),
     max_ongoing_requests=10)
-class LLMService:
+class LLMService(BaseNLPService):
     default_bos: str = "<|begin_of_text|>"
     default_eot: str = "<|end_of_text|>"
     llama_start_header: str = "<|start_header_id|>"

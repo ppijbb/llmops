@@ -1,12 +1,12 @@
 import os
 import sys
-
+import re
 import json
 from typing import Any, List
 import time
 import traceback
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
 
 from ray import serve
@@ -20,12 +20,17 @@ from app.enum_custom.transcript import TargetLanguages
 from app.utils.text_process import text_preprocess, text_postprocess
 from app.utils.lang_detect import detect_language
 from app.router import BaseIngress
+from app.dto import SentenceSplitRequest, SentenceSplitResponse
+from app.src._base import BaseNLPService 
+
 
 
 router = APIRouter()
 
 # @serve.deployment
 # @serve.ingress(app=router)
+
+
 class TranslationRouterIngress(BaseIngress):
     routing = True
     prefix = "/translate"
@@ -87,7 +92,48 @@ class TranslationRouterIngress(BaseIngress):
                         content=f"Translation Service Can not Reply",
                         status_code=500
                     )
+            
+        # @router.post(
+        #     "/split_sentences",
+        #     description="텍스트를 문장 단위로 분리하는 API",
+        #     response_model=SentenceSplitResponse
+        # )
+        # async def split_sentences(request: SentenceSplitRequest):
+        #     try:
+        #         if self.service is None:
+        #             raise HTTPException(status_code=500, detail="self.service가 None입니다")
+                
+        #         # Directly use the text from the validated request model
+        #         # No need to parse JSON manually as FastAPI handles this
+        #         text = request.text
+                
+        #         # Call Ray Serve using remote()
+        #         sentences_future = self.service.split_sentences.remote(text)
+        #         sentences = await sentences_future
+                
+        #         return SentenceSplitResponse(sentences=sentences)
+                
+        #     except Exception as e:
+        #         self.server_logger.error(f"Sentence split error: {str(e)}\n{traceback.format_exc()}")
+        #         raise HTTPException(
+        #             status_code=500,
+        #             detail={"error": str(e)}
+        # )
 
+        @router.post(
+            "/split_sentences",
+            description="텍스트를 문장 단위로 분리하는 API",
+            response_model=SentenceSplitResponse
+        )
+        async def split_sentences(request: SentenceSplitRequest):
+            try:
+                
+                # 개행 및 제어 문자 정리
+                return SentenceSplitResponse(
+                    sentences=await self.service.split_sentences.remote(request.text))
+
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"서버 내부 오류: {str(e)}")
         
         @router.post(
             "/gemma", 
@@ -140,6 +186,7 @@ class TranslationRouterIngress(BaseIngress):
                     original_text=request.text,
                     source_language=request.source_language.value,
                     target_language=[lang.value for lang in request.target_language])
+
 
         @router.post(
             "",

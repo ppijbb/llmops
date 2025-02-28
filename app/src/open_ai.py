@@ -9,19 +9,19 @@ import asyncio
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from app.src.const import prompt
+from app.src._base import BaseNLPService
 from app.enum_custom.transcript import TargetLanguages
 
 class TranslationOutput(BaseModel):
     translations: Dict[str, Optional[str]] = Field(default_factory=dict)
 
-class OpenAIService:
+class OpenAIService(BaseNLPService):
     def __init__(self):
         self.client = openai.OpenAI(api_key=os.environ["OPENAI_API_KEY"])
         
         self.logger = logging.getLogger("ray.serve")
         if not self.logger.hasHandlers():
             logging.basicConfig(level=logging.INFO)
-
 
     def _short_message_for_language(self, target_language: str) -> str:
         if target_language == TargetLanguages.get_language_name(TargetLanguages.CHINESE):
@@ -81,7 +81,7 @@ class OpenAIService:
         try:
             result = self.client.chat.completions.create(**completion_params)
             response_content = result.choices[0].message.content
-            self.logger.info(f"OpenAI Response: {response_content}")  # 응답 로깅
+            self.logger.info(f"OprmenAI Response: {response_content}")  # 응답 로깅
             json_response = json.loads(response_content)
             return response_model.model_validate(json_response) if response_model else json_response
         except json.JSONDecodeError as e:
@@ -143,8 +143,6 @@ class OpenAIService:
             input_prompt=input_prompt if input_prompt else prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT_EN, 
             input_text=input_text)
         return result.choices[0].message.content
-
-
 
     async def translate(
         self, 
