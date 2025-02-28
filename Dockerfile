@@ -25,6 +25,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir autoawq && \
     pip install --no-cache-dir -U https://github.com/Dao-AILab/flash-attention/releases/download/v2.6.3/flash_attn-2.6.3+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
 
 # 런타임 스테이지
@@ -59,7 +60,7 @@ COPY . .
 RUN huggingface-cli login --token ${HF_TOKEN} --add-to-git-credential
 # 헬스체크 설정
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8501/health || exit 1
+    CMD curl -f http://localhost:8507/health || exit 1
 
 # 포트 설정
 EXPOSE 8501

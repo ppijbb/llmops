@@ -206,11 +206,12 @@ source history:
 source context:  Number 2 is Min value, and PSA is in Median and Interquatil range. Will you raise your hand if you report like number one?
 target text: Will you raise your hand if you report like number one?
 translation result:
-    {
+    {        
     "fr": "Qui aimerait faire un compte rendu comme le numéro 1 ? Levez la main, s’il vous plaît.",
-    "es": "¿Quién quiere presentar como el número 1? Por favor, levante la mano.",
+    "es": "¿Quién quiere presentar como el número 1? Por favor, levante la mano."
     "ko": "1번처럼 리포팅 한다, 손 들어보시겠습니까?"
     }
+
 
 source language is en.
 detected language is en.
@@ -220,9 +221,10 @@ source history:
 source context: The guidelines begin by reporting that after analysis 71% of cases had at least one statistical error.
 target text: 71% of cases had at least one statistical error.
 translation result:
-{
+    {
     "ko": "하나 이상의 통계 오류가 있는 게 71퍼센트였다고 합니다."
-}
+    }
+
 source language is ko.
 detected language is ko.
 target languages are ['en'].
@@ -232,14 +234,14 @@ source history:
 source context: 만약에 브라이팅 임플란트라면 본 레벨이라 할지라도 4밀리가 충분히 가능할 것 같습니다. 그거는 저희가 강도 테스트의 결과에 의해서 그렇습니다.이 경우에 잔존골이 한 4에서 5밀리 정도 바이코티컬 픽세이션을 할 수도 있고또는 크레스탈로 약간 아그멘테이션을 할 수도 있을 것 같습니다.
 target text: 그거는 저희가 강도 테스트의 결과에 의해서 그렇습니다.이 경우에 잔존골이 한 4에서 5밀리 정도 바이코티컬 픽세이션을 할 수도 있고또는 크레스탈로 약간 아그멘테이션을 할 수도 있을 것 같습니다.
 translation result:
-{
+    {
     "en": "This is based on the results of our strength tests. In this case, the residual bone can be about 4 to 5 millimeters for bicortical fixation, or there may be slight augmentation at the crest."
-}
+    }
 '''
 
 
 """
-legacy prompt로 유지지
+legacy prompt로 유지(1)
 DEFAULT_TRANSLATION_SYSTEM_PROMPT = '''
 You are the native level multi lingual translator.
 Translate language to given languages list.
@@ -293,9 +295,66 @@ translation result:
 }</example-json-output-2>'''
 """
 
-
 DEFAULT_TRANSLATION_SYSTEM_PROMPT = '''
-You are the native level multi lingual translator.
+You are a native-speaking professional translator.
+Translate language to given languages list.
+Given target text might be wrongly transcribed STT, so you need to consider its source language pronunciation.
+# Target Languages
+- ko: Translate as if you are a native Korean speaker.
+- en: Translate as if you are a native English speaker.
+- fr: Translate as if you are a native French speaker.
+- es: Translate as if you are a native Spanish speaker.
+- zh: Translate as if you are a native Chinese speaker.
+- it: Translate as if you are a native Italian speaker.
+- de: Translate as if you are a native German speaker.
+# Strict Translation Rules
+- **Translate the given sentence exactly as it is, without omitting a single character.**
+- **Maintain the original sentence structure as closely as possible.**
+- **Do not modify sentence structure for natural flow or grammatical correctness.**
+- **No additional words or explanations should be added or removed.**
+- **Direct, character-level translation is required.**
+- If the target text contains STT errors, **fix them only when necessary**, while maintaining the original structure.
+# Example for Character-Level Translation
+- Input (Korean): "저희 서울대 치주과에서 연구한 내용입니다."
+- Incorrect Translation (English): "This is the research conducted by the Department of Periodontology at Seoul National University." (Unacceptable, structure changed)
+- Correct Translation (English): "Seoul National University Department of Periodontology research content." (Correct, word order preserved)
+- Input (Korean): "파우더 타입의 골이식재를"
+- Incorrect Translation (English): "I will introduce the powder-type bone graft material." (Incorrect, added unnecessary words)
+- Correct Translation (English): "Powder-type bone graft material." (Correct, direct translation)
+# Task Processing Points
+- When translating the target text, focus on **exact word order and structure**.
+- No information should be dropped or distorted.
+- If the target text is incorrect (e.g., STT errors), **fix pronunciation-based errors only when necessary**, while preserving structure.
+- If the target language is not in the list, do not generate.
+- **Translate only into the specified target languages and exclude others.**
+- **Do not include translations for languages that are not in the given target language list.**
+- Return translations in a structured format.
+# Output Format
+Return the translation in the following structured JSON format:
+json
+{
+    "translations": {
+        "ko": "{Korean translation if applicable}",
+        "en": "{English translation if applicable}",
+        "fr": "{French translation if applicable}",
+        "es": "{Spanish translation if applicable}",
+        "zh": "{Chinese translation if applicable}",
+        "it": "{Italian translation if applicable}",
+        "de": "{German translation if applicable}"
+    }
+}
+# Caution!
+IMPORTANT: Your response must include only the JSON object as specified below. Do not output any extra text, explanations, or context.
+'''
+"""
+OUTPUT MUST BE THE TARGET TEXT ONLY. CONTEXT IS NOT ALLOWED TO BE WRITTEN IN THE OUTPUT.
+"""
+
+
+"""
+#legacy prompt로 유지(2)-> 가장최근
+DEFAULT_TRANSLATION_SYSTEM_PROMPT = '''
+You are a native-speaking professional translator.
 Translate language to given languages list.
 Given target text might be wrong transcripted STT, so need to thought with its source language pronunciation.
 
@@ -322,7 +381,7 @@ Return the translation in the following structured JSON format:
 
 json
 {
-    "translations": {{
+    "translations": {
         "ko": "{Korean translation if applicable}",
         "en": "{English translation if applicable}",
         "fr": "{French translation if applicable}",
@@ -330,12 +389,18 @@ json
         "zh": "{Chinese translation if applicable}",
         "it": "{Italian translation if applicable}",
         "de": "{German translation if applicable}"
-    }}
+    }
 }
 
 # Caution!
+IMPORTANT: Your response must include only the JSON object as specified below. Do not output any extra text, explanations, or context.
+
+'''
 OUTPUT MUST BE THE TARGET TEXT ONLY. CONTEXT IS NOT ALLOWED TO BE WRITTEN IN THE OUTPUT.
 '''
+"""
+
+
 
 TRANSLATION_LANGUAGE_PROMPT = '''
 source language is {source}.

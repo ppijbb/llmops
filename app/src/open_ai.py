@@ -1,27 +1,25 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import os
 import logging
 from typing import List, Dict,Optional
 import json
-import sys
 import openai
 import asyncio
 
-#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from app.src.const import prompt
-from app.enum_custom.transcript import TargetLanguages
+from app.src._base import BaseNLPService
+from app.enum.transcript import TargetLanguages
 
 class TranslationOutput(BaseModel):
-    translations: Dict[str, Optional[str]]
+    translations: Dict[str, Optional[str]] = Field(default_factory=dict)
 
-class OpenAIService:
+class OpenAIService(BaseNLPService):
     def __init__(self):
         self.client = openai.OpenAI(api_key=os.environ["OPENAI_API_KEY"])
         
         self.logger = logging.getLogger("ray.serve")
         if not self.logger.hasHandlers():
             logging.basicConfig(level=logging.INFO)
-
 
     def _short_message_for_language(self, target_language: str) -> str:
         if target_language == TargetLanguages.get_language_name(TargetLanguages.CHINESE):
@@ -78,16 +76,37 @@ class OpenAIService:
             }
         }
 
-        result = self.client.chat.completions.create(**completion_params)
+        try:
+            result = self.client.chat.completions.create(**completion_params)
+            response_content = result.choices[0].message.content
+            self.logger.info(f"OpenAI Response: {response_content}")  # 응답 로깅
+            json_response = json.loads(response_content)
+            return response_model.model_validate(json_response) if response_model else json_response
+        except json.JSONDecodeError as e:
+            self.logger.error(f"JSON Parsing Error: {e}")
+            return {"translations": {}}               
 
-        if response_model:
-            try:
-                json_response = json.loads(result.choices[0].message.content)
-                return response_model.model_validate(json_response)
-            except json.JSONDecodeError as e:
-                self.logger.error(f"JSON Parsing Error: {e}")
-                return None
-        return json.loads(result.choices[0].message.content)
+        #result = self.client.chat.completions.create(**completion_params)
+
+        # if response_model:
+        #     try:
+        #         json_response = json.loads(result.choices[0].message.content)
+        #         return response_model.model_validate(json_response)
+        #     except json.JSONDecodeError as e:
+        #         self.logger.error(f"JSON Parsing Error: {e}")
+        #         return None
+        # return json.loads(result.choices[0].message.content)
+
+        # if response_model:
+        #     try:
+        #         response_content = result.choices[0].message.content
+        #         self.logger.info(f"OpenAI Response: {response_content}")  # 응답 로깅
+        #         json_response = json.loads(response_content)
+        #         return response_model.model_validate(json_response)
+        #     except json.JSONDecodeError as e:
+        #         self.logger.error(f"JSON Parsing Error: {e}")
+        #         self.logger.error(f"Invalid JSON Response: {response_content}")
+        #         return None
 
 
 
@@ -116,14 +135,21 @@ class OpenAIService:
     async def summarize(
         self, 
         input_text:str , 
-        input_prompt:str=None
-    ) -> str: 
+        input_prompt:str=None,
+        language: str = "en"
+    ) -> str:
+        match language:
+            case TargetLanguages.KOREAN:
+                default_prompt = prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT
+            case TargetLanguages.ENGLISH:
+                default_prompt = prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT_EN
+            case _:
+                default_prompt = prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT_EN
+        
         result = self.generate(
-            input_prompt=input_prompt if input_prompt else prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT_EN, 
+            input_prompt=input_prompt if input_prompt else default_prompt, 
             input_text=input_text)
         return result.choices[0].message.content
-
-
 
     async def translate(
         self, 
@@ -134,7 +160,7 @@ class OpenAIService:
         input_prompt: str = None,
         history: List[str] = [""]
     ) -> Optional[TranslationOutput]:
-
+        default_system_prompt: str = prompt.DEFAULT_TRANSLATION_SYSTEM_PROMPT
         generation_prompt = prompt.TRANSLATION_LANGUAGE_PROMPT.format(
             history="\n".join([f"    {h}" for h in history]),
             source=source_language,
@@ -145,70 +171,10 @@ class OpenAIService:
         )
 
         result = self.generate(
-            input_prompt=input_prompt if input_prompt else prompt.DEFAULT_TRANSLATION_SYSTEM_PROMPT,
-            input_text=generation_prompt,
-            response_model=TranslationOutput
-        )
+            input_prompt=input_prompt if input_prompt else default_system_prompt, 
+            input_text=generation_prompt)
+        return result.choices[0].message.content.replace("oral scanner", "intraoral scanner")
 
-        return result
-
-        # #JSON 검증 코드 추가
-        # response_content = result.choices[0].message.content
-        # try:
-        #     parsed_json = json.loads(response_content)  # JSON 변환 시도
-        #     print("JSON 변환 성공! Structured Output 정상 작동!")
-        #     print(json.dumps(parsed_json, indent=4, ensure_ascii=False))  # JSON 예쁘게 출력
-        # except json.JSONDecodeError:
-        #     print("JSON 변환 실패! OpenAI가 제대로 JSON을 반환하지 않음.")
-        #     print("원본 응답:", response_content)
-        #     return None  # JSON 변환 실패 시 None 반환 (또는 예외 처리 가능)
-
-
-        # translation_output = TranslationOutput.model_validate_json(
-        # result.choices[0].message.content
-        # )    
-        # print(translation_output)
-        # return translation_output
-
-# async def main():
-#     service = OpenAIService()
-#     result = await service.translate(
-#         input_text="어디가 아프신가요? 불편한 곳 있으시면 말씀해주세요",
-#         source_language="ko",
-#         detect_language="ko",
-#         target_language=["zh","en"],
-#         history=[""]
-#     )
-#     print("Translation completed:", result)
-
-# if __name__ == "__main__":
-#     asyncio.run(main())
-
-
-    # async def translate(
-    #     self, 
-    #     input_text:str , 
-    #     source_language:str,
-    #     detect_language:str,
-    #     target_language:List[str], 
-    #     input_prompt:str=None,
-    #     history:List[str]=[""]
-    # ) -> str:
-    #     default_system_prompt: str = prompt.DEFAULT_TRANSLATION_SYSTEM_PROMPT
-    #     generation_prompt = prompt.TRANSLATION_LANGUAGE_PROMPT.format(
-    #         history="\n".join([f"    {h}" for h in history]),
-    #         source=source_language,
-    #         detect=detect_language, 
-    #         target=target_language,
-    #         context=" ".join([history[-1] if len(history) > 0 else "", input_text]),
-    #         input_text=input_text)
-            
-    #     result = self.generate(
-    #         input_prompt=input_prompt if input_prompt else default_system_prompt, 
-    #         input_text=generation_prompt)
-    #     return result.choices[0].message.content
-
-        
   
     async def translate_legacy(
         self, 
@@ -245,3 +211,4 @@ class OpenAIService:
                     target=target_language[0]), 
                 input_text=f'Target Language={target_language[0]}\n<speech>{input_text}</speech>\n')
             return result.choices[0].message.content
+    

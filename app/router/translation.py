@@ -1,28 +1,36 @@
 import os
-
+import sys
+import re
 import json
 from typing import Any, List
 import time
 import traceback
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
 
 from ray import serve
 from ray.serve.handle import DeploymentHandle
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from app.src.engine import OpenAIService, get_gpt_service
 from app.dto import SummaryResponse
 from app.dto import TranslateRequest, TranslateResponse
-from app.enum_custom.transcript import TargetLanguages
+from app.enum.transcript import TargetLanguages
 from app.utils.text_process import text_preprocess, text_postprocess
 from app.utils.lang_detect import detect_language
 from app.router import BaseIngress
+from app.dto import SentenceSplitRequest, SentenceSplitResponse
+from app.src._base import BaseNLPService 
+
+
 
 router = APIRouter()
 
 # @serve.deployment
 # @serve.ingress(app=router)
+
+
 class TranslationRouterIngress(BaseIngress):
     routing = True
     prefix = "/translate"
@@ -44,7 +52,7 @@ class TranslationRouterIngress(BaseIngress):
         request_text: List[Any],
         source_language: str,
         detect_language: str,
-        target_language: str,
+        target_language: str,   # 수정: List[str]로 변경
         history: List[str],
         is_summary:bool = False
     ) -> List[str]:
@@ -84,8 +92,29 @@ class TranslationRouterIngress(BaseIngress):
                         content=f"Translation Service Can not Reply",
                         status_code=500
                     )
+            
+        @router.post(
+            "/split_sentences",
+            description="텍스트를 문장 단위로 분리하는 API.\n\n"
+                        "**SentenceSplitRequest**\n"
+                        "   - text: 분리할 텍스트.\n\n"
+                        "**SentenceSplitResponse**\n"
+                        "   - splited_sentences(List[str]): 분리된 문장들의 리스트.\n"
+                        "   - completed_sentences(str): 완성된 문장 .\n"
+                        "   - uncompleted_sentences(str): 미완성된 문장.\n"
+                        "   - translation_flag(bool): 번역 요청 플래그.\n",
+            response_model=SentenceSplitResponse
+        )
+        async def split_sentences(request: SentenceSplitRequest):
+            try:
+                
+                # 개행 및 제어 문자 정리
+                return SentenceSplitResponse(
+                    splited_sentences=await self.service.split_sentences.remote(request.text))
 
-        
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"서버 내부 오류: {str(e)}")
+
         @router.post(
             "/gemma", 
             description='''
@@ -103,7 +132,7 @@ class TranslationRouterIngress(BaseIngress):
             request: TranslateRequest,
             # service: LLMService = Depends(get_llm_service)
         ) -> TranslateResponse:
-            result = ""
+            #result = ""
             # Generate predicted tokens
 
             try:
@@ -111,7 +140,7 @@ class TranslationRouterIngress(BaseIngress):
                 st = time.time()
                 # result += ray.get(service.summarize.remote(ray.put(request.text)))
                 # assert len(request.text ) > 200, "Text is too short"
-                result += await self.batched_generation(
+                generated_results  += await self.batched_generation(
                     self=self._get_class(),
                     request_prompt=None,
                     history=request.history,
@@ -120,9 +149,9 @@ class TranslationRouterIngress(BaseIngress):
                     target_language=[lang.value for lang in request.target_language],
                     request_text=f'{text_preprocess(request.text)}')
                 result = text_postprocess(result)
-                # print(result)
                 end = time.time()
-                # ----------------------------------- #
+                # ----------------------------------- 
+                print("text_postprocess",result)
                 assert len(result) > 0, "Generation failed"
                 print(f"Time: {end - st}")
             except AssertionError as e:
@@ -137,6 +166,7 @@ class TranslationRouterIngress(BaseIngress):
                     original_text=request.text,
                     source_language=request.source_language.value,
                     target_language=[lang.value for lang in request.target_language])
+
 
         @router.post(
             "",
@@ -156,37 +186,49 @@ class TranslationRouterIngress(BaseIngress):
             request: TranslateRequest,
             service: OpenAIService = Depends(get_gpt_service)
         ) -> TranslateResponse:
-            result = ""
+            text = ""
             try:
                 # ----------------------------------- #
                 st = time.time()
                 # result += ray.get(service.summarize.remote(ray.put(request.text)))
                 # assert len(request.text ) > 200, "Text is too short"
+                #print("router text")
+                #print(request.text)
                 input_text = text_preprocess(request.text)
-                result += await service.translate(
+                #print("request.history")
+                #print(request.history)
+                #print("detect_language")
+                #print(detect_language(input_text))
+                #print("source_language")
+                #print(request.source_language)
+                #print("target_language")
+                #print([lang.value for lang in request.target_language])
+                result = await service.translate(
                     input_prompt=None,
                     history=request.history,
                     detect_language=detect_language(input_text),
                     source_language=request.source_language.value,
                     target_language=[lang.value for lang in request.target_language],
                     input_text=input_text)
-                # result = text_postprocess(result)
-                # print(result)
+                #result = text_postprocess(result)
                 end = time.time()
+                #print("result")
+                #print(result)
                 # ----------------------------------- #
                 print(f"Time: {end - st}")
             except AssertionError as e:
                 self.server_logger.error("error" + e)
-                result += e
+                text += e
             except Exception as e:
                 self.server_logger.error("error" + e)
-                result += "Error in summarize"
+                text += "Error in summarize"
             finally:
                 return TranslateResponse(
-                    text=result,
+                    text=text,
                     original_text=request.text,
                     source_language=request.source_language.value,
-                    target_language=[lang.value for lang in request.target_language])
+                    target_language=[lang.value for lang in request.target_language],
+                    translations=result)
 
         @router.post(
             "/legacy",
@@ -219,6 +261,7 @@ class TranslationRouterIngress(BaseIngress):
                     source_language=request.source_language.value,
                     target_language=[lang.value for lang in request.target_language],
                     input_text=input_text)
+                
                 # result = text_postprocess(result)
                 # print(result)
                 end = time.time()
@@ -309,3 +352,4 @@ class TranslationRouterIngress(BaseIngress):
                 result += "Error in summarize"
             finally:
                 return SummaryResponse(text=result)
+            

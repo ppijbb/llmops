@@ -41,15 +41,11 @@ def get_model(
                 pipeline_parallel_size=1,
                 enforce_eager=True,
                 block_size=8,
-                # disable_sliding_window=False,
-                # rope_scaling=None,
-                # rope_theta=None
-                rope_scaling={
-                    "rope_type": "dynamic",
-                    "factor": 2.0,
-                    "original_max_position_embeddings": 8192,
-                },
-                rope_theta=10000.0
+                # rope_scaling={
+                #     "type": "dynamic",
+                #     "factor": 2.0,
+                # },
+                # rope_theta=1.0,
             )
 
         elif subprocess.run(["neuron-ls"], shell=True).returncode == 0: # if device on neuron
@@ -65,12 +61,8 @@ def get_model(
                 **input_shapes)
         
         else: # if device on CPU
-            from ipex_llm.transformers import AutoModelForCausalLM
-            from optimum.intel import OVModelForCausalLM
-            import openvino as ov
-
-
             if inference_tool == "ipex":
+                from ipex_llm.transformers import AutoModelForCausalLM
                 model = AutoModelForCausalLM.from_pretrained(
                     model_path,
                     load_in_4bit=True,
@@ -79,6 +71,8 @@ def get_model(
                     use_cache=True)
                 model.eval()
             else:
+                from optimum.intel import OVModelForCausalLM
+                import openvino as ov
                 model = OVModelForCausalLM.from_pretrained(
                     model_path,
                     load_in_4bit=True,
