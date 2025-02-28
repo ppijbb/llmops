@@ -18,20 +18,21 @@ for lang in languages:
     else:
         print(f"{lang} 모델이 이미 다운로드됨.")
 
-# Stanza NLP 파이프라인 로드 (한 번만 실행)
-stanza_models = {lang: stanza.Pipeline(lang=lang, processors="tokenize") for lang in languages}
 
 class BaseNLPService:
+    # Stanza NLP 파이프라인 로드 (한 번만 실행)
+    stanza_models: dict = {lang: stanza.Pipeline(lang=lang, processors="tokenize") for lang in languages}    
+    
     def split_sentences(self, text: str):
         lang_id = detect_language(text)
 
-        if lang_id not in stanza_models and lang_id != "ko":
+        if lang_id not in self.stanza_models and lang_id != "ko":
             raise ValueError(f"지원하지 않는 언어 코드입니다: {lang_id}")
 
         match lang_id:
             case "ko": #한국어
                 return kss.split_sentences(text)
             case "en"| "fr" | "es" | "de" | "it":
-                stanza_models = stanza_model[lang_id]
+                stanza_models = self.stanza_models[lang_id]
                 docs = stanza_models(text)
-                return [sentence.text for sentence in doc.sentences]
+                return [sentence.text for sentence in docs.sentences]

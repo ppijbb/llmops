@@ -5,8 +5,7 @@ import sys
 import os
 from typing import Optional, List, Dict
 from pydantic import BaseModel, Field, computed_field, field_validator
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-from app.enum_custom.transcript import TargetLanguages
+from app.enum.transcript import TargetLanguages
 
 
 class SentenceSplitRequest(BaseModel):
@@ -31,7 +30,19 @@ class SentenceSplitRequest(BaseModel):
 
 
 class SentenceSplitResponse(BaseModel):
-    sentences: List[str] = Field(...)
+    splited_sentences: List[str] = Field(...)
+
+    @computed_field
+    def completed_sentence(self) -> str:
+        return "" if len(self.splited_sentences) > 1 else self.splited_sentences[0]
+    
+    @computed_field
+    def uncompleted_sentence(self) -> str:
+        return " ".join(self.splited_sentences[1:]) if len(self.splited_sentences) > 1 else self.splited_sentences[0]
+
+    @computed_field
+    def translation_flag(self) -> bool:
+        return len(self.splited_sentences) > 1
 
 
 class TranslateRequest(BaseModel):

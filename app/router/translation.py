@@ -16,7 +16,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")
 from app.src.engine import OpenAIService, get_gpt_service
 from app.dto import SummaryResponse
 from app.dto import TranslateRequest, TranslateResponse
-from app.enum_custom.transcript import TargetLanguages
+from app.enum.transcript import TargetLanguages
 from app.utils.text_process import text_preprocess, text_postprocess
 from app.utils.lang_detect import detect_language
 from app.router import BaseIngress
@@ -95,7 +95,14 @@ class TranslationRouterIngress(BaseIngress):
             
         @router.post(
             "/split_sentences",
-            description="텍스트를 문장 단위로 분리하는 API",
+            description="텍스트를 문장 단위로 분리하는 API.\n\n"
+                        "**SentenceSplitRequest**\n"
+                        "   - text: 분리할 텍스트.\n\n"
+                        "**SentenceSplitResponse**\n"
+                        "   - splited_sentences(List[str]): 분리된 문장들의 리스트.\n"
+                        "   - completed_sentences(str): 완성된 문장 .\n"
+                        "   - uncompleted_sentences(str): 미완성된 문장.\n"
+                        "   - translation_flag(bool): 번역 요청 플래그.\n",
             response_model=SentenceSplitResponse
         )
         async def split_sentences(request: SentenceSplitRequest):
@@ -103,11 +110,11 @@ class TranslationRouterIngress(BaseIngress):
                 
                 # 개행 및 제어 문자 정리
                 return SentenceSplitResponse(
-                    sentences=await self.service.split_sentences.remote(request.text))
+                    splited_sentences=await self.service.split_sentences.remote(request.text))
 
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"서버 내부 오류: {str(e)}")
-        
+
         @router.post(
             "/gemma", 
             description='''

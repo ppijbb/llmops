@@ -80,8 +80,8 @@ class LLMService(BaseNLPService):
         self.model, self.tokenizer = get_model(
             # model_path="KISTI-KONI/KONI-Llama3-8B-Instruct-20240729", # GPU (vllm) Model
             # model_path="google/gemma-2-2b-it",  # GPU (vllm) Model
-            # model_path="hugging-quants/gemma-2-9b-it-AWQ-INT4",
             model_path="Gunulhona/Gemma-System-9B-MoRA-SimPO-AWQ",
+            # model_path="hugging-quants/gemma-2-9b-it-AWQ-INT4",
             # model_path="unsloth/gemma-2-2b-it-bnb-4bit",
             # model_path="AIFunOver/gemma-2-2b-it-openvino-8bit", # CPU Model
             # model_path="Gunulhona/Llama-Merge-Small",  # GPU (vllm) Model
@@ -214,6 +214,7 @@ class LLMService(BaseNLPService):
         self,
         input_text:str,
         input_prompt:str = None,
+        language: str = "en",
         input_history:List[str] = [],
         use_fewshot: bool = False,
         default_few_shots: str = prompt.DEFAULT_SUMMARY_FEW_SHOT,
@@ -249,6 +250,7 @@ class LLMService(BaseNLPService):
         self,
         input_text: str,
         input_prompt: str = None,
+        language: str = "en",
         input_history: List[str] = [],
         use_fewshot: bool = False,
         default_few_shots: str = prompt.DEFAULT_SUMMARY_FEW_SHOT,
@@ -269,6 +271,7 @@ class LLMService(BaseNLPService):
         self,
         input_text: List[str],
         input_prompt: List[str] = None,
+        language: List[str] = ["en"],
         input_history: List[List[str]] = [],
         use_fewshot: bool = False,
         default_few_shots: str = prompt.DEFAULT_SUMMARY_FEW_SHOT,
@@ -293,6 +296,7 @@ class LLMService(BaseNLPService):
         self, 
         input_text: str, 
         input_prompt: str = None,
+        language: str = "en",
         **kwargs
     ):
         if input_prompt is not None:
@@ -312,6 +316,7 @@ class LLMService(BaseNLPService):
         self, 
         input_text: str, 
         input_prompt: str = None,
+        language: str = "en",
         **kwargs
     ):
         # inputs = self.formatting(prompt=prompt , return_tensors="pt")
@@ -353,6 +358,7 @@ class LLMService(BaseNLPService):
     def summarize(
         self, 
         input_text: str|List[str], 
+        language: str|List[str],
         input_prompt: str|List[str] = None, 
         stream: bool = False, 
         batch: bool = False
@@ -360,10 +366,12 @@ class LLMService(BaseNLPService):
         default_few_shots: str = prompt.DEFAULT_SUMMARY_FEW_SHOT,
         default_system_prompt: str = prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT
         return self._generation_wrapper(
-            stream=stream, batch=batch,
+            stream=stream, 
+            batch=batch,
             **dict(
                 input_text=input_text, 
-                input_prompt=input_prompt, 
+                input_prompt=input_prompt,
+                language=language,
                 default_few_shots=default_few_shots, 
                 default_system_prompt=default_system_prompt))
 

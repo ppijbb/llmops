@@ -3,14 +3,12 @@ import os
 import logging
 from typing import List, Dict,Optional
 import json
-import sys
 import openai
 import asyncio
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from app.src.const import prompt
 from app.src._base import BaseNLPService
-from app.enum_custom.transcript import TargetLanguages
+from app.enum.transcript import TargetLanguages
 
 class TranslationOutput(BaseModel):
     translations: Dict[str, Optional[str]] = Field(default_factory=dict)
@@ -137,10 +135,19 @@ class OpenAIService(BaseNLPService):
     async def summarize(
         self, 
         input_text:str , 
-        input_prompt:str=None
-    ) -> str: 
+        input_prompt:str=None,
+        language: str = "en"
+    ) -> str:
+        match language:
+            case TargetLanguages.KOREAN:
+                default_prompt = prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT
+            case TargetLanguages.ENGLISH:
+                default_prompt = prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT_EN
+            case _:
+                default_prompt = prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT_EN
+        
         result = self.generate(
-            input_prompt=input_prompt if input_prompt else prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT_EN, 
+            input_prompt=input_prompt if input_prompt else default_prompt, 
             input_text=input_text)
         return result.choices[0].message.content
 
@@ -153,7 +160,7 @@ class OpenAIService(BaseNLPService):
         input_prompt: str = None,
         history: List[str] = [""]
     ) -> Optional[TranslationOutput]:
-
+        default_system_prompt: str = prompt.DEFAULT_TRANSLATION_SYSTEM_PROMPT
         generation_prompt = prompt.TRANSLATION_LANGUAGE_PROMPT.format(
             history="\n".join([f"    {h}" for h in history]),
             source=source_language,
@@ -164,56 +171,10 @@ class OpenAIService(BaseNLPService):
         )
 
         result = self.generate(
-            input_prompt=input_prompt if input_prompt else prompt.DEFAULT_TRANSLATION_SYSTEM_PROMPT,
-            input_text=generation_prompt,
-            response_model=TranslationOutput
-        )
+            input_prompt=input_prompt if input_prompt else default_system_prompt, 
+            input_text=generation_prompt)
+        return result.choices[0].message.content.replace("oral scanner", "intraoral scanner")
 
-        return result.translations
-
-        # #JSON 검증 코드 추가
-        # response_content = result.choices[0].message.content
-        # try:
-        #     parsed_json = json.loads(response_content)  # JSON 변환 시도
-        #     print("JSON 변환 성공! Structured Output 정상 작동!")
-        #     print(json.dumps(parsed_json, indent=4, ensure_ascii=False))  # JSON 예쁘게 출력
-        # except json.JSONDecodeError:
-        #     print("JSON 변환 실패! OpenAI가 제대로 JSON을 반환하지 않음.")
-        #     print("원본 응답:", response_content)
-        #     return None  # JSON 변환 실패 시 None 반환 (또는 예외 처리 가능)
-
-
-        # translation_output = TranslationOutput.model_validate_json(
-        # result.choices[0].message.content
-        # )    
-        # print(translation_output)
-        # return translation_output
-
-
-    # async def translate(
-    #     self, 
-    #     input_text:str , 
-    #     source_language:str,
-    #     detect_language:str,
-    #     target_language:List[str], 
-    #     input_prompt:str=None,
-    #     history:List[str]=[""]
-    # ) -> str:
-    #     default_system_prompt: str = prompt.DEFAULT_TRANSLATION_SYSTEM_PROMPT
-    #     generation_prompt = prompt.TRANSLATION_LANGUAGE_PROMPT.format(
-    #         history="\n".join([f"    {h}" for h in history]),
-    #         source=source_language,
-    #         detect=detect_language, 
-    #         target=target_language,
-    #         context=" ".join([history[-1] if len(history) > 0 else "", input_text]),
-    #         input_text=input_text)
-            
-    #     result = self.generate(
-    #         input_prompt=input_prompt if input_prompt else default_system_prompt, 
-    #         input_text=generation_prompt)
-    #     return result.choices[0].message.content
-
-        
   
     async def translate_legacy(
         self, 
@@ -250,3 +211,4 @@ class OpenAIService(BaseNLPService):
                     target=target_language[0]), 
                 input_text=f'Target Language={target_language[0]}\n<speech>{input_text}</speech>\n')
             return result.choices[0].message.content
+    
