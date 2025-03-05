@@ -7,6 +7,7 @@ import openai
 import asyncio
 
 from app.src.const import prompt
+from app.src.const.select_domain import select_summary_domain
 from app.src._base import BaseNLPService
 from app.enum.transcript import TargetLanguages
 
@@ -85,70 +86,30 @@ class OpenAIService(BaseNLPService):
         except json.JSONDecodeError as e:
             self.logger.error(f"JSON Parsing Error: {e}")
             return {"translations": {}}               
-
-        #result = self.client.chat.completions.create(**completion_params)
-
-        # if response_model:
-        #     try:
-        #         json_response = json.loads(result.choices[0].message.content)
-        #         return response_model.model_validate(json_response)
-        #     except json.JSONDecodeError as e:
-        #         self.logger.error(f"JSON Parsing Error: {e}")
-        #         return None
-        # return json.loads(result.choices[0].message.content)
-
-        # if response_model:
-        #     try:
-        #         response_content = result.choices[0].message.content
-        #         self.logger.info(f"OpenAI Response: {response_content}")  # 응답 로깅
-        #         json_response = json.loads(response_content)
-        #         return response_model.model_validate(json_response)
-        #     except json.JSONDecodeError as e:
-        #         self.logger.error(f"JSON Parsing Error: {e}")
-        #         self.logger.error(f"Invalid JSON Response: {response_content}")
-        #         return None
-
-
-
-    # def generate(
-    #     self, 
-    #     input_text:str, 
-    #     input_prompt:str,
-    #     response_model: type[BaseModel] = None
-    # ):
-    #     return self.client.chat.completions.create(
-    #         model="gpt-4o-mini",
-    #         max_tokens=2048,
-    #         temperature=0.6,
-    #         messages=[
-    #             {
-    #                 "role": "system",
-    #                 "content": input_prompt,
-    #             },
-    #             {
-    #                 "role": "user", 
-    #                 "content": input_text
-    #             }
-    #         ]
-    #     )
     
     async def summarize(
         self, 
-        input_text:str , 
-        input_prompt:str=None,
+        input_text:str,
+        prompt_type: str,
+        input_prompt: str=None,
         language: str = "en"
     ) -> str:
-        match language:
-            case TargetLanguages.KOREAN:
-                default_prompt = prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT
-            case TargetLanguages.ENGLISH:
-                default_prompt = prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT_EN
-            case _:
-                default_prompt = prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT_EN
-        
-        result = self.generate(
-            input_prompt=input_prompt if input_prompt else default_prompt, 
-            input_text=input_text)
+        default_prompt = select_summary_domain(prompt_type, language)
+        result = self.client.chat.completions.create(
+            model="gpt-4o-mini",
+            max_tokens=2048,
+            temperature=0.6,
+            messages=[
+                {
+                    "role": "system",
+                    "content": input_prompt if input_prompt else default_prompt,
+                },
+                {
+                    "role": "user", 
+                    "content": input_text
+                }
+            ]
+        )
         return result.choices[0].message.content
 
     async def translate(

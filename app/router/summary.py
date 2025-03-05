@@ -93,6 +93,7 @@ class SummaryRouterIngress(BaseIngress):
                 result += await self.batched_summary(
                     self=self._get_class(),
                     request_prompt=request.prompt,
+                    prompt_type=request.request_prompt_type,
                     request_text=text_preprocess(request.text),
                     language=request.language)
                 # result = text_postprocess(result)
@@ -137,6 +138,7 @@ class SummaryRouterIngress(BaseIngress):
                 return StreamingResponse(
                     content=self.service_as_stream.summarize.remote(
                         input_prompt=request.prompt,
+                        prompt_type=request.prompt_type,
                         input_text=request.text,
                         language=request.language,
                         stream=True),
@@ -179,6 +181,7 @@ class SummaryRouterIngress(BaseIngress):
                 input_text = text_preprocess(request.text)
                 result += await service.summarize(
                     input_prompt=request.prompt,
+                    prompt_type=request.prompt_type,
                     input_text=input_text,
                     language=request.language)
                 # result = text_postprocess(result)
@@ -200,6 +203,7 @@ class SummaryRouterIngress(BaseIngress):
             batch_wait_timeout_s=0.1)
         async def batched_generation(
             request_prompt: List[Any],
+            request_prompt_type: List[Any],
             request_text: List[Any],
             source_language: str,
             detect_language: str,
@@ -221,6 +225,7 @@ class SummaryRouterIngress(BaseIngress):
                 return await self.service.translate.remote(
                     input_prompt=request_prompt,
                     input_text=request_text,
+                    prompt_type=request_prompt_type,
                     history=history,
                     source_language=source_language,
                     detect_language=detect_language,

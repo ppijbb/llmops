@@ -196,6 +196,81 @@ Result should be written in English.
 	- Antibiotics and painkillers will be prescribed post-surgery
 '''
 
+DEFAULT_SUMMARY_BEAUTY_PROMPT = '''
+당신은 {}로서 아래의 Task를 수행합니다.
+
+# Task
+제시된 대화 내용을 아래 항목들에 대해서 결정된 내용만 정리.
+형식은 아래 예시와 같이 출력.
+최대 글자 수 1000자.
+해당 없음, 언급 없음은 모두 삭제하여 출력 하지 않음.
+발화자 내용 제거.
+비용은 모두 총 비용에 표기.
+1. 방문 목적:
+2. 관심 부위:
+3. 진행 예정(추천) 시술 및 일정:
+4. 상담내용
+    - 시술 설명:
+    - 총 비용:
+5. 환자 특이사항
+-----------
+대화 예시
+의사: 어디가 문제인지 구체적으로 말씀해 주세요.
+환자: 요즘 여드름이 너무 심해서요. 특히 이마랑 볼에 자국도 많고.
+의사: 염증성 여드름이 많네요. 흉터도 좀 있고.
+환자: 맞아요. 화장도 잘 안 먹고 자신감도 많이 떨어져요.
+의사: 치료 방법은 두 가지 정도 생각하고 있어요. 기본 레이저 치료랑 좀 더 집중적인 복합 레이저 치료.
+환자: 뭐가 다른데요?
+의사: 기본 치료는 20만원 정도고, 복합 치료는 35만원입니다. 복합 치료가 흉터 개선이랑 피부 재생에 더 효과적이에요.
+환자: 효과는 좀 확실할까요?
+의사: 꾸준히 관리하면 흉터도 많이 좋아지고, 여드름도 확실히 줄일 수 있어요. 근데 한 두 번으로 끝나진 않아요.
+환자: 대충 몇 번 정도 해야해요?
+의사: 보통 4-6회 정도 받으면 확실히 달라집니다. 개인차는 있지만.
+환자: 그러면 복합 치료로 할게요.
+의사: 복합치료. 치료 전후로 관리할 게 많으니 제가 자세히 설명해드릴게요.
+-----------
+요약 결과 예시
+1. 방문 목적: 심각한 여드름 및 흉터 관리
+2. 관심 부위: 이마, 볼 부위 여드름과 흉터
+3. 진행 예정(추천) 시술 및 일정: 복합 레이저 여드름 치료 (4-6회 예정)
+4. 상담내용
+    - 시술 설명:
+        - 기본 레이저 치료
+            * 가격: 20만원
+            * 단순 여드름 염증 감소
+        - 복합 레이저 치료
+            * 가격: 35만원
+            * 여드름 흉터 + 피부 재생
+            * 4-6회 시술 권장
+    - 총 비용:
+        * 복합 레이저 치료: 35만원/회
+        * 총 예상 비용: 140-210만원
+5. 환자 특이사항:
+    * 피부 자신감 회복 희망
+    * 여드름 흉터 개선에 적극적
+    * 지속적인 관리 의지 보임
+'''.strip()
+
+DEFAULT_SUMMARY_BEAUTY_PROMPT_EN = '''
+You are a {} and you are tasked with the following.
+
+# Task
+Summarize the conversation content for the following items, only noting the decided information.
+Output format should match the example below.
+Maximum 1000 characters.
+Remove "Not applicable" or "Not mentioned" entries.
+Remove speakers' contents.
+Consolidate all costs into total cost.
+
+1. Purpose of Visit:
+2. Areas of Concern:
+3. Planned (Recommended) Procedure and Schedule:
+4. Consultation Details
+    - Procedure Description:
+    - Total Cost:
+5. Patient Specifics:
+'''.strip()
+
 DEFAULT_TRANSLATION_FEW_SHOT = '''
 source language is en.
 detected language is en.
