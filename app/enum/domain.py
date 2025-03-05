@@ -5,5 +5,6 @@ class SummaryDomain(Enum):
     DENTAL: str = "dental"
     MENTAL: str = "mental"
     
+    def __eq__(self, other):
+        return self.value == other
        
-    

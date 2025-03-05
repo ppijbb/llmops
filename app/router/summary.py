@@ -39,6 +39,7 @@ class SummaryRouterIngress(BaseIngress):
        self,
        request_prompt: List[Any],
        request_text: List[Any],
+       request_prompt_type: List[Any],
        language: List[str]
     ) -> List[str]:
         self_class = self[0]._get_class() # ray batch wrapper 에서 self가 list로 들어옴
@@ -46,6 +47,7 @@ class SummaryRouterIngress(BaseIngress):
         return await self_class.service.summarize.remote(
             input_prompt=request_prompt,
             input_text=request_text,
+            prompt_type=request_prompt_type,
             language=language,
             batch=True)
     
@@ -93,7 +95,7 @@ class SummaryRouterIngress(BaseIngress):
                 result += await self.batched_summary(
                     self=self._get_class(),
                     request_prompt=request.prompt,
-                    prompt_type=request.request_prompt_type,
+                    prompt_type=request.prompt_type,
                     request_text=text_preprocess(request.text),
                     language=request.language)
                 # result = text_postprocess(result)
