@@ -95,6 +95,7 @@ class OpenAIService(BaseNLPService):
         language: str = "en"
     ) -> str:
         default_prompt = select_summary_domain(prompt_type, language)
+        self.logger.info(f"Prompt: {prompt_type}")
         result = self.client.chat.completions.create(
             model="gpt-4o-mini",
             max_tokens=2048,

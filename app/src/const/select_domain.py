@@ -1,3 +1,5 @@
+import os
+
 from app.src.const import prompt
 from app.enum.transcript import TargetLanguages
 from app.enum.domain import SummaryDomain
@@ -17,18 +19,18 @@ def select_summary_domain(
     elif prompt_type == SummaryDomain.MENTAL:
         match language:
             case TargetLanguages.KOREAN:
-                return prompt.DEFAULT_SUMMARY_BEAUTY_PROMPT
+                return prompt.DEFAULT_SUMMARY_BEAUTY_PROMPT.format(os.getenv("SYSTEM_NAME"))
             case TargetLanguages.ENGLISH:
-                return prompt.DEFAULT_SUMMARY_BEAUTY_PROMPT_EN
+                return prompt.DEFAULT_SUMMARY_BEAUTY_PROMPT_EN.format(os.getenv("SYSTEM_NAME"))
             case _:
-                return prompt.DEFAULT_SUMMARY_BEAUTY_PROMPT
+                return prompt.DEFAULT_SUMMARY_BEAUTY_PROMPT.format(os.getenv("SYSTEM_NAME"))
     elif prompt_type == SummaryDomain.BEAUTY:
         match language:
             case TargetLanguages.KOREAN:
-                return prompt.DEFAULT_SUMMARY_BEAUTY_PROMPT
+                return prompt.DEFAULT_SUMMARY_BEAUTY_PROMPT.format(os.getenv("SYSTEM_NAME"))
             case TargetLanguages.ENGLISH:
-                return prompt.DEFAULT_SUMMARY_BEAUTY_PROMPT_EN
+                return prompt.DEFAULT_SUMMARY_BEAUTY_PROMPT_EN.format(os.getenv("SYSTEM_NAME"))
             case _:
-                return prompt.DEFAULT_SUMMARY_BEAUTY_PROMPT
+                return prompt.DEFAULT_SUMMARY_BEAUTY_PROMPT.format(os.getenv("SYSTEM_NAME"))
     else:
         return prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT_EN
