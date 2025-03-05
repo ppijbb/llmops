@@ -8,7 +8,7 @@ import asyncio
 
 from app.src.const import prompt
 from app.src.const.select_domain import select_summary_domain
-from app.src._base import BaseNLPService
+from app.src.service._base import BaseNLPService
 from app.enum.transcript import TargetLanguages
 
 class TranslationOutput(BaseModel):

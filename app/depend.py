@@ -3,8 +3,8 @@ import torch
 import subprocess
 from transformers import AutoTokenizer
 
-from .src.open_ai import OpenAIService
-from .src.anthropic import ClaudeService
+from .src.service.open_ai import OpenAIService
+from .src.service.anthropic import ClaudeService
 
 os.environ["VLLM_CPU_OMP_THREADS_BIND"] = "0-29"
 os.environ["VLLM_ALLOW_LONG_MAX_MODEL_LEN"] = "1"

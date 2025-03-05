@@ -27,8 +27,8 @@ from ray.serve.schema import LoggingConfig
 
 from app.router import (
     DemoRouterIngress, SummaryRouterIngress, TranslationRouterIngress)
-from app.src.engine import (LLMService, llm_ready)
-
+from app.src.service.engine import (LLMService, llm_ready)
+from app.src.setting.middelware import OnlineStatusMiddleware
 
 app = FastAPI(
     title="Dencomm LLM Service",
@@ -40,7 +40,10 @@ app.add_middleware(
     allow_origins=["*", "/demo/*"],
     allow_methods=["*"],
     allow_headers=["*"])
-
+app.add_middleware
+app.add_middleware(
+    OnlineStatusMiddleware, 
+    exempt_routes=["/translate", "/summarize"])
 
 @serve.deployment(num_replicas=1)
 @serve.ingress(app=app)

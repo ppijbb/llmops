@@ -12,8 +12,7 @@ from fastapi.responses import Response
 from ray import serve
 from ray.serve.handle import DeploymentHandle
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-from app.src.engine import OpenAIService, get_gpt_service
+from app.src.service.engine import OpenAIService, get_gpt_service
 from app.dto import SummaryResponse
 from app.dto import TranslateRequest, TranslateResponse
 from app.enum.transcript import TargetLanguages
@@ -21,7 +20,6 @@ from app.utils.text_process import text_preprocess, text_postprocess
 from app.utils.lang_detect import detect_language
 from app.router import BaseIngress
 from app.dto import SentenceSplitRequest, SentenceSplitResponse
-from app.src._base import BaseNLPService 
 
 
 

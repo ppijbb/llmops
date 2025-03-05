@@ -10,7 +10,7 @@ from fastapi.responses import StreamingResponse, Response
 from ray import serve
 from ray.serve.handle import DeploymentHandle
 
-from app.src.engine import OpenAIService, get_gpt_service
+from app.src.service.engine import OpenAIService, get_gpt_service
 from app.dto import SummaryRequest, SummaryResponse
 from app.utils.text_process import text_preprocess
 from app.router import BaseIngress
