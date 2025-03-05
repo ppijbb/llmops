@@ -1,7 +1,7 @@
 
 
 def text_preprocess(text: str) -> str:
-    return text
+    return text.strip()
     # return f"[대화]\n{text}\n---\n[요약]\n" if "[대화]" not in text and "[요약]" not in text else text
 
 def text_postprocess(text:str) -> str:

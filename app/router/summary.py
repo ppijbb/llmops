@@ -95,7 +95,7 @@ class SummaryRouterIngress(BaseIngress):
                 result += await self.batched_summary(
                     self=self._get_class(),
                     request_prompt=request.prompt,
-                    prompt_type=request.prompt_type,
+                    request_prompt_type=request.prompt_type,
                     request_text=text_preprocess(request.text),
                     language=request.language)
                 # result = text_postprocess(result)

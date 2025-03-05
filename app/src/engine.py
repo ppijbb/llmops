@@ -15,6 +15,7 @@ from ray import serve
 
 from app.depend import get_model, get_claude, get_gpt
 from app.src.const import prompt
+from app.src.const.select_domain import select_summary_domain
 from app.src._base import BaseNLPService
 
 from app.src.anthropic import ClaudeService
@@ -54,15 +55,7 @@ def get_accelerator():
     return resources
 
 
-@serve.deployment(
-    autoscaling_config={
-        "min_replicas": 1,
-        "max_replicas": 3,
-        "target_ongoing_requests": 5,
-    },
-    ray_actor_options=get_accelerator(),
-    max_ongoing_requests=10)
-class LLMService(BaseNLPService):
+class GenerationService(BaseNLPService):
     default_bos: str = "<|begin_of_text|>"
     default_eot: str = "<|end_of_text|>"
     llama_start_header: str = "<|start_header_id|>"
@@ -214,16 +207,15 @@ class LLMService(BaseNLPService):
         self,
         input_text:str,
         input_prompt:str = None,
-        language: str = "en",
         input_history:List[str] = [],
-        use_fewshot: bool = False,
-        default_few_shots: str = prompt.DEFAULT_SUMMARY_FEW_SHOT,
-        default_system_prompt: str = prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT
+        **kwargs
     ):
+        # TODO: if need to process template, edit this code.
         return self.get_prompt(
             user_input=input_text,
-            chat_history=default_few_shots if len(input_history) == 0 and use_fewshot else input_history,
-            system_prompt=default_system_prompt if input_prompt is None else input_prompt)
+            chat_history=input_history,
+            system_prompt=input_prompt,
+            **kwargs)
     
     @torch.inference_mode()
     def _generate(
@@ -250,20 +242,14 @@ class LLMService(BaseNLPService):
         self,
         input_text: str,
         input_prompt: str = None,
-        language: str = "en",
         input_history: List[str] = [],
-        use_fewshot: bool = False,
-        default_few_shots: str = prompt.DEFAULT_SUMMARY_FEW_SHOT,
-        default_system_prompt: str = prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT,
         **kwargs
     ) -> str:
         prompt = self._set_templat(
             input_text=input_text, 
             input_prompt=input_prompt, 
-            input_history=input_history, 
-            use_fewshot=use_fewshot,
-            default_few_shots=default_few_shots,
-            default_system_prompt=default_system_prompt)
+            input_history=input_history,
+            **kwargs)
         return self._generate(prompt)[0]
  
     @torch.inference_mode()
@@ -271,21 +257,14 @@ class LLMService(BaseNLPService):
         self,
         input_text: List[str],
         input_prompt: List[str] = None,
-        language: List[str] = ["en"],
         input_history: List[List[str]] = [],
-        use_fewshot: bool = False,
-        default_few_shots: str = prompt.DEFAULT_SUMMARY_FEW_SHOT,
-        default_system_prompt: str|List[str] = prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT,
         **kwargs
     ) -> str:
         prompt = [
             self._set_templat(
                 input_text=batch_input_text, 
                 input_prompt=batch_input_prompt, 
-                input_history=batch_input_history, 
-                use_fewshot=use_fewshot,
-                default_few_shots=default_few_shots,
-                default_system_prompt=default_system_prompt) 
+                input_history=batch_input_history) 
             for batch_input_text, batch_input_prompt, batch_input_history in list(
                 zip_longest(input_text, input_prompt, input_history, fillvalue=[]))]
         # print(prompt)
@@ -296,12 +275,14 @@ class LLMService(BaseNLPService):
         self, 
         input_text: str, 
         input_prompt: str = None,
-        language: str = "en",
+        input_history: List = [],
         **kwargs
     ):
-        if input_prompt is not None:
-            input_text = input_prompt + "\n" + input_text
-        # self.logger.warn(input_text)
+        input_text = self._set_templat(
+            input_text=input_text,
+            input_prompt=input_prompt,
+            input_history=input_history,
+            **kwargs)
         inputs = self.formatting(prompt=input_text.strip(), return_tensors="pt")
         inputs.update(dict(streamer=self.text_streamer))
         thread = Thread(
@@ -316,21 +297,31 @@ class LLMService(BaseNLPService):
         self, 
         input_text: str, 
         input_prompt: str = None,
-        language: str = "en",
+        input_history: List = [],
         **kwargs
     ):
         # inputs = self.formatting(prompt=prompt , return_tensors="pt")
-        response = self._make_generate(input_text=input_text, input_prompt=input_prompt)
+        response = self._make_generate(
+            input_text=input_text, 
+            input_prompt=input_prompt,
+            input_history=input_history)
         for new_text in response:
             yield new_text
 
     @torch.inference_mode()
     def _raw_generate(
         self, 
-        prompt: str, 
+        input_text: str, 
+        input_prompt: str = None,
+        input_history: List = [],
         max_length: int = 4096,
         **kwargs
     ):
+        prompt = self._set_templat(
+            input_text=input_text, 
+            input_prompt=input_prompt, 
+            input_history=input_history,
+            **kwargs)
         input_ids = self.formatting(prompt=prompt, return_tensors="pt")["input_ids"]
         for _ in range(max_length):
             outputs = self.model(input_ids=input_ids)[0]
@@ -355,25 +346,44 @@ class LLMService(BaseNLPService):
         else:
             return self._make_generate(**kwargs)
 
+
+@serve.deployment(
+    autoscaling_config={
+        "min_replicas": 1,
+        "max_replicas": 3,
+        "target_ongoing_requests": 5,
+    },
+    ray_actor_options=get_accelerator(),
+    max_ongoing_requests=10)
+class LLMService(GenerationService):
+    '''
+    Local LLM Service
+    '''
     def summarize(
         self, 
         input_text: str|List[str], 
         language: str|List[str],
+        prompt_type: str|List[str],
         input_prompt: str|List[str] = None, 
         stream: bool = False, 
         batch: bool = False
     ):
-        default_few_shots: str = prompt.DEFAULT_SUMMARY_FEW_SHOT,
-        default_system_prompt: str = prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT
+        if batch:
+            default_system_prompt = [select_summary_domain(_t, _l) for _t, _l in zip(prompt_type, language)]
+            input_prompt = [default_system_prompt[i] if p is None else p for i, p in enumerate(input_prompt)]
+            input_history = [prompt.DEFAULT_SUMMARY_FEW_SHOT] * len(input_text)
+        else:
+            default_system_prompt = select_summary_domain(prompt_type, language)
+            input_prompt = default_system_prompt if input_prompt is None else input_prompt
+            input_history = prompt.DEFAULT_SUMMARY_FEW_SHOT
+        
         return self._generation_wrapper(
             stream=stream, 
             batch=batch,
             **dict(
                 input_text=input_text, 
                 input_prompt=input_prompt,
-                language=language,
-                default_few_shots=default_few_shots, 
-                default_system_prompt=default_system_prompt))
+                input_history=input_history))
 
     def translate(
         self, 

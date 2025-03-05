@@ -61,12 +61,13 @@ class OpenAIService(BaseNLPService):
             "messages": [
                 {
                     "role": "system",
-                    "content": f"""
-                    {input_prompt}
-                    You must respond with JSON that matches this schema.
-                    """
+                    "content": (f"{input_prompt}\n"
+                                "You must respond with JSON that matches this schema.")
                 },
-                {"role": "user", "content": input_text}
+                {
+                    "role": "user",
+                    "content": input_text
+                }
             ],
             "response_format": {
                 "type": "json_schema",
@@ -94,9 +95,6 @@ class OpenAIService(BaseNLPService):
         input_prompt: str=None,
         language: str = "en"
     ) -> str:
-        default_prompt = select_summary_domain(prompt_type, language)
-        self.logger.info(f"Prompt: {prompt_type}")
-        self.logger.info(default_prompt)
         result = self.client.chat.completions.create(
             model="gpt-4o-mini",
             max_tokens=2048,
@@ -104,7 +102,7 @@ class OpenAIService(BaseNLPService):
             messages=[
                 {
                     "role": "system",
-                    "content": input_prompt if input_prompt else default_prompt,
+                    "content": input_prompt if input_prompt else select_summary_domain(prompt_type, language),
                 },
                 {
                     "role": "user", 
@@ -138,7 +136,6 @@ class OpenAIService(BaseNLPService):
             input_text=generation_prompt)
         return result.choices[0].message.content.replace("oral scanner", "intraoral scanner")
 
-  
     async def translate_legacy(
         self, 
         input_text:str , 
