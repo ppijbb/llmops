@@ -5,6 +5,7 @@ from transformers import AutoTokenizer
 
 from .src.service.open_ai import OpenAIService
 from .src.service.anthropic import ClaudeService
+from .logger import get_logger
 
 os.environ["VLLM_CPU_OMP_THREADS_BIND"] = "0-29"
 os.environ["VLLM_ALLOW_LONG_MAX_MODEL_LEN"] = "1"
@@ -15,6 +16,7 @@ def get_model(
     adapter_path: str = "/home/conan/workspace/kyi/play-llama/expr/peft_Meta-Llama-3-8B_samsum_dataset",
     inference_tool: str = "ipex",
     ):
+        model_loader_logger = get_logger()
         ## ---------------------------- ##
         # adapter_path = "expr/peft_Meta-Llama-3-8B_alpaca_dataset"
 
@@ -35,18 +37,19 @@ def get_model(
                 trust_remote_code=True,
                 gpu_memory_utilization=0.55,
                 swap_space=4, # default 4
-                cpu_offload_gb=4,  # GiB
+                # cpu_offload_gb=4,  # GiB
                 # distributed_executor_backend="ray",
                 tensor_parallel_size=1,
                 pipeline_parallel_size=1,
-                enforce_eager=True,
+                # enforce_eager=True,
                 block_size=8,
-                # rope_scaling={
-                #     "type": "dynamic",
-                #     "factor": 2.0,
-                # },
-                # rope_theta=1.0,
+                rope_scaling={
+                    "rope_type": "dynamic",
+                    "factor": 2.0,
+                },
+                rope_theta=10000.0,
             )
+            model_loader_logger.info("Model loaded on GPU")
 
         elif subprocess.run(["neuron-ls"], shell=True).returncode == 0: # if device on neuron
             from optimum.neuron import NeuronModelForCausalLM
@@ -101,7 +104,7 @@ def get_model(
                     }
                 )
                 model.eval()
-
+            model_loader_logger.info("Model loaded on CPU")
         # -- adapter --
         if adapter_path is not None:
             model.load_adapter(adapter_path)
