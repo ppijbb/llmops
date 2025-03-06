@@ -32,5 +32,7 @@ def select_summary_domain(
                 return prompt.DEFAULT_SUMMARY_BEAUTY_PROMPT_EN.format(os.getenv("SYSTEM_NAME"))
             case _:
                 return prompt.DEFAULT_SUMMARY_BEAUTY_PROMPT.format(os.getenv("SYSTEM_NAME"))
+    elif prompt_type == SummaryDomain.TEST:
+        return None
     else:
         return prompt.DEFAULT_SUMMARY_SYSTEM_PROMPT_EN

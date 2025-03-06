@@ -10,6 +10,7 @@ from app.src.const import prompt
 from app.src.const.select_domain import select_summary_domain
 from app.src.service._base import BaseNLPService
 from app.enum.transcript import TargetLanguages
+from app.enum.domain import SummaryDomain
 
 class TranslationOutput(BaseModel):
     translations: Dict[str, Optional[str]] = Field(default_factory=dict)
@@ -102,7 +103,8 @@ class OpenAIService(BaseNLPService):
             messages=[
                 {
                     "role": "system",
-                    "content": input_prompt if input_prompt else select_summary_domain(prompt_type, language),
+                    "content": input_prompt if input_prompt and prompt_type == SummaryDomain.TEST else select_summary_domain(prompt_type, language),
+
                 },
                 {
                     "role": "user", 
