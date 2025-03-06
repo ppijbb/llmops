@@ -34,7 +34,7 @@ class SentenceSplitResponse(BaseModel):
 
     @computed_field
     def completed_sentence(self) -> str:
-        return "" if len(self.splited_sentences) > 1 else self.splited_sentences[0]
+        return self.splited_sentences[0] if len(self.splited_sentences) > 1 else ""
     
     @computed_field
     def uncompleted_sentence(self) -> str:

@@ -28,7 +28,7 @@ from ray.serve.schema import LoggingConfig
 from app.router import (
     DemoRouterIngress, SummaryRouterIngress, TranslationRouterIngress)
 from app.src.service.engine import (LLMService, llm_ready)
-from app.src.setting.middelware import OnlineStatusMiddleware
+from app.src.setting.middelware import OnlineStatusMiddleware, RequestResponseLoggingMiddleware
 
 app = FastAPI(
     title="Dencomm LLM Service",
@@ -44,6 +44,9 @@ app.add_middleware
 app.add_middleware(
     OnlineStatusMiddleware, 
     exempt_routes=["/translate", "/summarize"])
+# app.add_middleware(
+#     RequestResponseLoggingMiddleware)
+
 
 @serve.deployment(num_replicas=1)
 @serve.ingress(app=app)
@@ -111,6 +114,9 @@ def build_app(
             "GPU": float(torch.cuda.is_available())/2
             }], 
         placement_group_strategy="STRICT_PACK",
+        logging_config=LoggingConfig(
+            log_level="INFO",
+            logs_dir="./logs",),
         # route_prefix="/"
         ).bind(
             llm_handle=LLMService.bind()

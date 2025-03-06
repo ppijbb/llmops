@@ -14,6 +14,7 @@ from app.src.service.engine import OpenAIService, get_gpt_service
 from app.dto import SummaryRequest, SummaryResponse
 from app.utils.text_process import text_preprocess
 from app.router import BaseIngress
+from app.router.descriptions import summary_description
 
 router = APIRouter()
 
@@ -70,17 +71,7 @@ class SummaryRouterIngress(BaseIngress):
 
         @router.post(
             "/gemma", 
-            description=(
-            "dencomm sLLM 상담 내역 텍스트 요약 API.\n\n"
-            "**SummaryRequest**\n"
-            "   - text: 요약할 텍스트.\n"
-            "   - prompt: (선택 사항) 요약에 사용할 프롬프트. 지정하지 않으면 기본 요약 프롬프트 적용.\n"
-            "   - language: (선택 사항) 요약 결과 언어. 지정하지 않으면 영어(en)로 요약.\n\n"
-            "       language code\n"
-            "           - Korean: ko\n"
-            "           - English: en\n\n"
-            "**SummaryResponse**\n"
-            "   - text: 요약된 텍스트."),
+            description=summary_description.summarize_sllm_description,
             response_model=SummaryResponse)
         async def summarize(
             request: SummaryRequest,
@@ -115,17 +106,7 @@ class SummaryRouterIngress(BaseIngress):
 
         @router.post(
             "/stream",
-            description=(
-            "dencomm sLLM 상담 내역 텍스트 요약 API.\n\n"
-            "**SummaryRequest**\n"
-            "   - text: 요약할 텍스트.\n"
-            "   - prompt: (선택 사항) 요약에 사용할 프롬프트. 지정하지 않으면 기본 요약 프롬프트 적용.\n"
-            "   - language: (선택 사항) 요약 결과 언어. 지정하지 않으면 영어(en)로 요약.\n\n"
-            "       language code\n"
-            "           - Korean: ko\n"
-            "           - English: en\n\n"
-            "**Streaming Response**\n"
-            "   - text: 요약된 텍스트. 모델에서 생성되는 단어마다 Streaming Response로 전달됨."),
+            description=summary_description.summarize_sllm_stream_description,
         )
         async def summarize_stream(
             request: SummaryRequest,
@@ -158,17 +139,7 @@ class SummaryRouterIngress(BaseIngress):
 
         @router.post(
             "",
-            description=(
-            "상담 내역 텍스트 요약 API.\n\n"
-            "**SummaryRequest**\n"
-            "   - text: 요약할 텍스트.\n"
-            "   - prompt: (선택 사항) 요약에 사용할 프롬프트. 지정하지 않으면 기본 요약 프롬프트 적용.\n"
-            "   - language: (선택 사항) 요약 결과 언어. 지정하지 않으면 영어(en)로 요약.\n\n"
-            "       language code\n"
-            "           - Korean: ko\n"
-            "           - English: en\n\n"
-            "**SummaryResponse**\n"
-            "   - text: 요약된 텍스트."),
+            description=summary_description.summarize_description,
             response_model=SummaryResponse)
         async def summarize_gpt(
             request: SummaryRequest,
