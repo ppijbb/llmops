@@ -1,7 +1,7 @@
 import anthropic
 
 from app.src.const import prompt
-from app.src._base import BaseNLPService
+from app.src.service._base import BaseNLPService
 
 class ClaudeService(BaseNLPService):
     def __init__(self):

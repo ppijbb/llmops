@@ -3,9 +3,11 @@ from pydantic import BaseModel, Field
 from app.enum.transcript import TargetLanguages
 
 class SummaryRequest(BaseModel):
-    prompt: Optional[str] = Field(None)
     text: str = Field(...)
+    prompt_type: str = Field("dental")
+    prompt: Optional[str] = Field(None, exclude=True)
     language: Optional[TargetLanguages] = Field(TargetLanguages.ENGLISH)
+    
 
 class SummaryResponse(BaseModel):
     text: str

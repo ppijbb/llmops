@@ -12,8 +12,7 @@ from fastapi.responses import Response
 from ray import serve
 from ray.serve.handle import DeploymentHandle
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-from app.src.engine import OpenAIService, get_gpt_service
+from app.src.service.engine import OpenAIService, get_gpt_service
 from app.dto import SummaryResponse
 from app.dto import TranslateRequest, TranslateResponse
 from app.enum.transcript import TargetLanguages
@@ -21,8 +20,7 @@ from app.utils.text_process import text_preprocess, text_postprocess
 from app.utils.lang_detect import detect_language
 from app.router import BaseIngress
 from app.dto import SentenceSplitRequest, SentenceSplitResponse
-from app.src._base import BaseNLPService 
-
+from app.router.descriptions import translate_description
 
 
 router = APIRouter()
@@ -95,14 +93,7 @@ class TranslationRouterIngress(BaseIngress):
             
         @router.post(
             "/split_sentences",
-            description="텍스트를 문장 단위로 분리하는 API.\n\n"
-                        "**SentenceSplitRequest**\n"
-                        "   - text: 분리할 텍스트.\n\n"
-                        "**SentenceSplitResponse**\n"
-                        "   - splited_sentences(List[str]): 분리된 문장들의 리스트.\n"
-                        "   - completed_sentences(str): 완성된 문장 .\n"
-                        "   - uncompleted_sentences(str): 미완성된 문장.\n"
-                        "   - translation_flag(bool): 번역 요청 플래그.\n",
+            description=translate_description.text_split_description,
             response_model=SentenceSplitResponse
         )
         async def split_sentences(request: SentenceSplitRequest):
@@ -117,16 +108,7 @@ class TranslationRouterIngress(BaseIngress):
 
         @router.post(
             "/gemma", 
-            description='''
-    language code
-
-        - ko : Korean
-        - en : English
-        - zh : Chinese
-        - fr : French
-        - es : Spanish
-        
-            ''',
+            description=translate_description.translate_sllm_description,
             response_model=TranslateResponse)
         async def translate(
             request: TranslateRequest,
@@ -170,17 +152,7 @@ class TranslationRouterIngress(BaseIngress):
 
         @router.post(
             "",
-            description='''
-    language code
-    
-        - Korean: ko
-        - English: en
-        - Chinese: zh
-        - French: fr
-        - Spanish: es
-        - Italian: it
-        - German: de
-            ''',
+            description=translate_description.translate_description,
             response_model=TranslateResponse)
         async def translate_gpt(
             request: TranslateRequest,
@@ -233,6 +205,7 @@ class TranslationRouterIngress(BaseIngress):
         @router.post(
             "/legacy",
             description='''
+    기존 Legacy 번역기능. (사용 중 X. 테스트 용도)
     language code
     
         - Korean: ko
@@ -240,6 +213,8 @@ class TranslationRouterIngress(BaseIngress):
         - Chinese: zh
         - French: fr
         - Spanish: es
+        - Italian: it
+        - German: de
             ''',
             response_model=TranslateResponse)
         async def translate_legacy(
@@ -282,6 +257,7 @@ class TranslationRouterIngress(BaseIngress):
 
         @router.post(
             "/gemma/summarize", 
+            description=translate_description.translate_summary_sllm_description,
             response_model=SummaryResponse)
         async def transcript(
             request: TranslateRequest,
@@ -321,6 +297,7 @@ class TranslationRouterIngress(BaseIngress):
 
         @router.post(
             "/summarize", 
+            description=translate_description.translate_summary_description,
             response_model=SummaryResponse)
         async def transcript_gpt(
             request: TranslateRequest,

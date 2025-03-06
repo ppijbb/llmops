@@ -10,10 +10,11 @@ from fastapi.responses import StreamingResponse, Response
 from ray import serve
 from ray.serve.handle import DeploymentHandle
 
-from app.src.engine import OpenAIService, get_gpt_service
+from app.src.service.engine import OpenAIService, get_gpt_service
 from app.dto import SummaryRequest, SummaryResponse
 from app.utils.text_process import text_preprocess
 from app.router import BaseIngress
+from app.router.descriptions import summary_description
 
 router = APIRouter()
 
@@ -39,6 +40,7 @@ class SummaryRouterIngress(BaseIngress):
        self,
        request_prompt: List[Any],
        request_text: List[Any],
+       request_prompt_type: List[Any],
        language: List[str]
     ) -> List[str]:
         self_class = self[0]._get_class() # ray batch wrapper 에서 self가 list로 들어옴
@@ -46,6 +48,7 @@ class SummaryRouterIngress(BaseIngress):
         return await self_class.service.summarize.remote(
             input_prompt=request_prompt,
             input_text=request_text,
+            prompt_type=request_prompt_type,
             language=language,
             batch=True)
     
@@ -68,17 +71,7 @@ class SummaryRouterIngress(BaseIngress):
 
         @router.post(
             "/gemma", 
-            description=(
-            "dencomm sLLM 상담 내역 텍스트 요약 API.\n\n"
-            "**SummaryRequest**\n"
-            "   - text: 요약할 텍스트.\n"
-            "   - prompt: (선택 사항) 요약에 사용할 프롬프트. 지정하지 않으면 기본 요약 프롬프트 적용.\n"
-            "   - language: (선택 사항) 요약 결과 언어. 지정하지 않으면 영어(en)로 요약.\n\n"
-            "       language code\n"
-            "           - Korean: ko\n"
-            "           - English: en\n\n"
-            "**SummaryResponse**\n"
-            "   - text: 요약된 텍스트."),
+            description=summary_description.summarize_sllm_description,
             response_model=SummaryResponse)
         async def summarize(
             request: SummaryRequest,
@@ -93,6 +86,7 @@ class SummaryRouterIngress(BaseIngress):
                 result += await self.batched_summary(
                     self=self._get_class(),
                     request_prompt=request.prompt,
+                    request_prompt_type=request.prompt_type,
                     request_text=text_preprocess(request.text),
                     language=request.language)
                 # result = text_postprocess(result)
@@ -112,17 +106,7 @@ class SummaryRouterIngress(BaseIngress):
 
         @router.post(
             "/stream",
-            description=(
-            "dencomm sLLM 상담 내역 텍스트 요약 API.\n\n"
-            "**SummaryRequest**\n"
-            "   - text: 요약할 텍스트.\n"
-            "   - prompt: (선택 사항) 요약에 사용할 프롬프트. 지정하지 않으면 기본 요약 프롬프트 적용.\n"
-            "   - language: (선택 사항) 요약 결과 언어. 지정하지 않으면 영어(en)로 요약.\n\n"
-            "       language code\n"
-            "           - Korean: ko\n"
-            "           - English: en\n\n"
-            "**Streaming Response**\n"
-            "   - text: 요약된 텍스트. 모델에서 생성되는 단어마다 Streaming Response로 전달됨."),
+            description=summary_description.summarize_sllm_stream_description,
         )
         async def summarize_stream(
             request: SummaryRequest,
@@ -137,6 +121,7 @@ class SummaryRouterIngress(BaseIngress):
                 return StreamingResponse(
                     content=self.service_as_stream.summarize.remote(
                         input_prompt=request.prompt,
+                        prompt_type=request.prompt_type,
                         input_text=request.text,
                         language=request.language,
                         stream=True),
@@ -154,17 +139,7 @@ class SummaryRouterIngress(BaseIngress):
 
         @router.post(
             "",
-            description=(
-            "상담 내역 텍스트 요약 API.\n\n"
-            "**SummaryRequest**\n"
-            "   - text: 요약할 텍스트.\n"
-            "   - prompt: (선택 사항) 요약에 사용할 프롬프트. 지정하지 않으면 기본 요약 프롬프트 적용.\n"
-            "   - language: (선택 사항) 요약 결과 언어. 지정하지 않으면 영어(en)로 요약.\n\n"
-            "       language code\n"
-            "           - Korean: ko\n"
-            "           - English: en\n\n"
-            "**SummaryResponse**\n"
-            "   - text: 요약된 텍스트."),
+            description=summary_description.summarize_description,
             response_model=SummaryResponse)
         async def summarize_gpt(
             request: SummaryRequest,
@@ -179,6 +154,7 @@ class SummaryRouterIngress(BaseIngress):
                 input_text = text_preprocess(request.text)
                 result += await service.summarize(
                     input_prompt=request.prompt,
+                    prompt_type=request.prompt_type,
                     input_text=input_text,
                     language=request.language)
                 # result = text_postprocess(result)
@@ -200,6 +176,7 @@ class SummaryRouterIngress(BaseIngress):
             batch_wait_timeout_s=0.1)
         async def batched_generation(
             request_prompt: List[Any],
+            request_prompt_type: List[Any],
             request_text: List[Any],
             source_language: str,
             detect_language: str,
@@ -221,6 +198,7 @@ class SummaryRouterIngress(BaseIngress):
                 return await self.service.translate.remote(
                     input_prompt=request_prompt,
                     input_text=request_text,
+                    prompt_type=request_prompt_type,
                     history=history,
                     source_language=source_language,
                     detect_language=detect_language,
