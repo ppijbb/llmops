@@ -27,8 +27,8 @@ from ray.serve.schema import LoggingConfig
 
 from app.router import (
     DemoRouterIngress, SummaryRouterIngress, TranslationRouterIngress)
-from app.src.engine import (LLMService, llm_ready)
-
+from app.src.service.engine import (LLMService, llm_ready)
+from app.src.setting.middelware import OnlineStatusMiddleware, RequestResponseLoggingMiddleware
 
 app = FastAPI(
     title="Dencomm LLM Service",
@@ -40,6 +40,12 @@ app.add_middleware(
     allow_origins=["*", "/demo/*"],
     allow_methods=["*"],
     allow_headers=["*"])
+app.add_middleware
+app.add_middleware(
+    OnlineStatusMiddleware, 
+    exempt_routes=["/translate", "/summarize"])
+# app.add_middleware(
+#     RequestResponseLoggingMiddleware)
 
 
 @serve.deployment(num_replicas=1)
@@ -76,6 +82,7 @@ class APIIngress(
                     include_in_schema=cls.include_in_schema)
                 self.server_logger.info(f"Routing {cls.__name__} to Application Updated")
 
+                
     @app.get("/health")
     async def healthcheck(self,):
         try:
@@ -107,6 +114,9 @@ def build_app(
             "GPU": float(torch.cuda.is_available())/2
             }], 
         placement_group_strategy="STRICT_PACK",
+        logging_config=LoggingConfig(
+            log_level="INFO",
+            logs_dir="./logs",),
         # route_prefix="/"
         ).bind(
             llm_handle=LLMService.bind()

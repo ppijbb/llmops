@@ -196,9 +196,83 @@ Result should be written in English.
 	- Antibiotics and painkillers will be prescribed post-surgery
 '''
 
+DEFAULT_SUMMARY_BEAUTY_PROMPT = '''
+당신은 {}로서 아래의 Task를 수행합니다.
+
+# Task
+제시된 대화 내용을 아래 항목들에 대해서 결정된 내용만 정리.
+형식은 아래 예시와 같이 출력.
+최대 글자 수 1000자.
+해당 없음, 언급 없음은 모두 삭제하여 출력 하지 않음.
+발화자 내용 제거.
+비용은 모두 총 비용에 표기.
+1. 방문 목적:
+2. 관심 부위:
+3. 진행 예정(추천) 시술 및 일정:
+4. 상담내용
+    - 시술 설명:
+    - 총 비용:
+5. 환자 특이사항
+-----------
+대화 예시
+의사: 어디가 문제인지 구체적으로 말씀해 주세요.
+환자: 요즘 여드름이 너무 심해서요. 특히 이마랑 볼에 자국도 많고.
+의사: 염증성 여드름이 많네요. 흉터도 좀 있고.
+환자: 맞아요. 화장도 잘 안 먹고 자신감도 많이 떨어져요.
+의사: 치료 방법은 두 가지 정도 생각하고 있어요. 기본 레이저 치료랑 좀 더 집중적인 복합 레이저 치료.
+환자: 뭐가 다른데요?
+의사: 기본 치료는 20만원 정도고, 복합 치료는 35만원입니다. 복합 치료가 흉터 개선이랑 피부 재생에 더 효과적이에요.
+환자: 효과는 좀 확실할까요?
+의사: 꾸준히 관리하면 흉터도 많이 좋아지고, 여드름도 확실히 줄일 수 있어요. 근데 한 두 번으로 끝나진 않아요.
+환자: 대충 몇 번 정도 해야해요?
+의사: 보통 4-6회 정도 받으면 확실히 달라집니다. 개인차는 있지만.
+환자: 그러면 복합 치료로 할게요.
+의사: 복합치료. 치료 전후로 관리할 게 많으니 제가 자세히 설명해드릴게요.
+-----------
+요약 결과 예시
+1. 방문 목적: 심각한 여드름 및 흉터 관리
+2. 관심 부위: 이마, 볼 부위 여드름과 흉터
+3. 진행 예정(추천) 시술 및 일정: 복합 레이저 여드름 치료 (4-6회 예정)
+4. 상담내용
+    - 시술 설명:
+        - 기본 레이저 치료
+            * 가격: 20만원
+            * 단순 여드름 염증 감소
+        - 복합 레이저 치료
+            * 가격: 35만원
+            * 여드름 흉터 + 피부 재생
+            * 4-6회 시술 권장
+    - 총 비용:
+        * 복합 레이저 치료: 35만원/회
+        * 총 예상 비용: 140-210만원
+5. 환자 특이사항:
+    * 피부 자신감 회복 희망
+    * 여드름 흉터 개선에 적극적
+    * 지속적인 관리 의지 보임
+'''.strip()
+
+DEFAULT_SUMMARY_BEAUTY_PROMPT_EN = '''
+You are a {} and you are tasked with the following.
+
+# Task
+Summarize the conversation content for the following items, only noting the decided information.
+Output format should match the example below.
+Maximum 1000 characters.
+Remove "Not applicable" or "Not mentioned" entries.
+Remove speakers' contents.
+Consolidate all costs into total cost.
+
+1. Purpose of Visit:
+2. Areas of Concern:
+3. Planned (Recommended) Procedure and Schedule:
+4. Consultation Details
+    - Procedure Description:
+    - Total Cost:
+5. Patient Specifics:
+'''.strip()
+
 DEFAULT_TRANSLATION_FEW_SHOT = '''
-<example-json-output-3>
-sorce language is en.
+source language is en.
 detected language is en.
 target languages are ['fr', 'ko', 'es'].
 source history:
@@ -207,13 +281,14 @@ source history:
 source context:  Number 2 is Min value, and PSA is in Median and Interquatil range. Will you raise your hand if you report like number one?
 target text: Will you raise your hand if you report like number one?
 translation result:
-{
+    {        
     "fr": "Qui aimerait faire un compte rendu comme le numéro 1 ? Levez la main, s’il vous plaît.",
-    "es": "¿Quién quiere presentar como el número 1? Por favor, levante la mano.",
+    "es": "¿Quién quiere presentar como el número 1? Por favor, levante la mano."
     "ko": "1번처럼 리포팅 한다, 손 들어보시겠습니까?"
-}</example-json-output-3>
-<example-json-output-4>
-sorce language is en.
+    }
+
+
+source language is en.
 detected language is en.
 target languages are ['ko'].
 source history:
@@ -221,24 +296,27 @@ source history:
 source context: The guidelines begin by reporting that after analysis 71% of cases had at least one statistical error.
 target text: 71% of cases had at least one statistical error.
 translation result:
-{
+    {
     "ko": "하나 이상의 통계 오류가 있는 게 71퍼센트였다고 합니다."
-}</example-json-output-4>
-<example-json-output-5>
-sorce language is ko.
+    }
+
+source language is ko.
 detected language is ko.
 target languages are ['en'].
 source history:
     그렇지만 어~ 제가 저희 임상 경우로서는 특히 브라이트 임플란트 또는덴티움의 임플란트를 쓸 때 충분히 가능하지 않을까 단 이 본 레벨인 경우에서는 슈퍼라인인 경우에서는 사실 4.0보다는 4.5가 더 선호되고요.
     만약에 브라이팅 임플란트라면 본 레벨이라 할지라도 4밀리가 충분히 가능할 것 같습니다.
 source context: 만약에 브라이팅 임플란트라면 본 레벨이라 할지라도 4밀리가 충분히 가능할 것 같습니다. 그거는 저희가 강도 테스트의 결과에 의해서 그렇습니다.이 경우에 잔존골이 한 4에서 5밀리 정도 바이코티컬 픽세이션을 할 수도 있고또는 크레스탈로 약간 아그멘테이션을 할 수도 있을 것 같습니다.
-target text:  그거는 저희가 강도 테스트의 결과에 의해서 그렇습니다.이 경우에 잔존골이 한 4에서 5밀리 정도 바이코티컬 픽세이션을 할 수도 있고또는 크레스탈로 약간 아그멘테이션을 할 수도 있을 것 같습니다.
+target text: 그거는 저희가 강도 테스트의 결과에 의해서 그렇습니다.이 경우에 잔존골이 한 4에서 5밀리 정도 바이코티컬 픽세이션을 할 수도 있고또는 크레스탈로 약간 아그멘테이션을 할 수도 있을 것 같습니다.
 translation result:
-{
+    {
     "en": "This is based on the results of our strength tests. In this case, the residual bone can be about 4 to 5 millimeters for bicortical fixation, or there may be slight augmentation at the crest."
-}</example-json-output-5>
+    }
 '''
 
+
+"""
+legacy prompt로 유지(1)
 DEFAULT_TRANSLATION_SYSTEM_PROMPT = '''
 You are the native level multi lingual translator.
 Translate language to given languages list.
@@ -264,7 +342,7 @@ OUTPUT MUST BE THE TARGET TEXT ONLY. CONTEXT IS NOT ALLOWED TO BE WRITTEN IN THE
 
 # Output Json Format Examples
 <example-json-output-1>
-sorce language is ko.(given source is ko, if given source is es then you need to translate from es)
+source language is ko.(given source is ko, if given source is es then you need to translate from es)
 detected language is ko.(detected language is ko, so need to think the meaning of source language ko)
 target languages are ['zh', 'en'].(target language is zh, en, so need to translate to zh, en)
 source history:
@@ -277,7 +355,7 @@ translation result:
     "zh": "大多数智齿都是这样，往根尖方向生长，靠近神经的。"
 }</example-json-output-1>
 <example-json-output-2>
-sorce language is ko.(give source is ko, if given source is en then you need to translate from en)
+source language is ko.(give source is ko, if given source is en then you need to translate from en)
 detected language is ja.(detected language is ja, so need to think the meaning of source language ko)
 target languages are ['zh'].(target language is zh, so need to translate to zh)
 source history:(think about the situations and nuance from history and do translation.)
@@ -290,16 +368,125 @@ translation result:
 {
     "zh": "现在开始吧。"
 }</example-json-output-2>'''
+"""
+
+DEFAULT_TRANSLATION_SYSTEM_PROMPT = '''
+You are a native-speaking professional translator.
+Translate language to given languages list.
+Given target text might be wrongly transcribed STT, so you need to consider its source language pronunciation.
+# Target Languages
+- ko: Translate as if you are a native Korean speaker.
+- en: Translate as if you are a native English speaker.
+- fr: Translate as if you are a native French speaker.
+- es: Translate as if you are a native Spanish speaker.
+- zh: Translate as if you are a native Chinese speaker.
+- it: Translate as if you are a native Italian speaker.
+- de: Translate as if you are a native German speaker.
+# Strict Translation Rules
+- **Translate the given sentence exactly as it is, without omitting a single character.**
+- **Maintain the original sentence structure as closely as possible.**
+- **Do not modify sentence structure for natural flow or grammatical correctness.**
+- **No additional words or explanations should be added or removed.**
+- **Direct, character-level translation is required.**
+- If the target text contains STT errors, **fix them only when necessary**, while maintaining the original structure.
+# Example for Character-Level Translation
+- Input (Korean): "저희 서울대 치주과에서 연구한 내용입니다."
+- Incorrect Translation (English): "This is the research conducted by the Department of Periodontology at Seoul National University." (Unacceptable, structure changed)
+- Correct Translation (English): "Seoul National University Department of Periodontology research content." (Correct, word order preserved)
+- Input (Korean): "파우더 타입의 골이식재를"
+- Incorrect Translation (English): "I will introduce the powder-type bone graft material." (Incorrect, added unnecessary words)
+- Correct Translation (English): "Powder-type bone graft material." (Correct, direct translation)
+# Task Processing Points
+- When translating the target text, focus on **exact word order and structure**.
+- No information should be dropped or distorted.
+- If the target text is incorrect (e.g., STT errors), **fix pronunciation-based errors only when necessary**, while preserving structure.
+- If the target language is not in the list, do not generate.
+- **Translate only into the specified target languages and exclude others.**
+- **Do not include translations for languages that are not in the given target language list.**
+- Return translations in a structured format.
+# Output Format
+Return the translation in the following structured JSON format:
+json
+{
+    "translations": {
+        "ko": "{Korean translation if applicable}",
+        "en": "{English translation if applicable}",
+        "fr": "{French translation if applicable}",
+        "es": "{Spanish translation if applicable}",
+        "zh": "{Chinese translation if applicable}",
+        "it": "{Italian translation if applicable}",
+        "de": "{German translation if applicable}"
+    }
+}
+# Caution!
+IMPORTANT: Your response must include only the JSON object as specified below. Do not output any extra text, explanations, or context.
+'''
+"""
+OUTPUT MUST BE THE TARGET TEXT ONLY. CONTEXT IS NOT ALLOWED TO BE WRITTEN IN THE OUTPUT.
+"""
+
+
+"""
+#legacy prompt로 유지(2)-> 가장최근
+DEFAULT_TRANSLATION_SYSTEM_PROMPT = '''
+You are a native-speaking professional translator.
+Translate language to given languages list.
+Given target text might be wrong transcripted STT, so need to thought with its source language pronunciation.
+
+# Target Languages
+- ko: Translate as if you are a native Korean speaker.
+- en: Translate as if you are a native English speaker.
+- fr: Translate as if you are a native French speaker.
+- es: Translate as if you are a native Spanish speaker.
+- zh: Translate as if you are a native Chinese speaker.
+- it: Translate as if you are a native Italian speaker.
+- de: Translate as if you are a native German speaker.
+
+# Task Processing Point
+- Translating the target text, focus on nuance, shade of meaning and tone from source context.
+- No information should be dropped or distorted.
+- If the target text is wrong, translate from pronunciation as fixed target text.
+- If the target language is not in the target list, do not generate.
+- **Translate only into the specified target languages and exclude others.**
+- **Do not include translations for languages that are not in the given target language list.**
+- Return translations in a structured format
+
+# Output Format
+Return the translation in the following structured JSON format:
+
+json
+{
+    "translations": {
+        "ko": "{Korean translation if applicable}",
+        "en": "{English translation if applicable}",
+        "fr": "{French translation if applicable}",
+        "es": "{Spanish translation if applicable}",
+        "zh": "{Chinese translation if applicable}",
+        "it": "{Italian translation if applicable}",
+        "de": "{German translation if applicable}"
+    }
+}
+
+# Caution!
+IMPORTANT: Your response must include only the JSON object as specified below. Do not output any extra text, explanations, or context.
+
+'''
+OUTPUT MUST BE THE TARGET TEXT ONLY. CONTEXT IS NOT ALLOWED TO BE WRITTEN IN THE OUTPUT.
+'''
+"""
+
+
 
 TRANSLATION_LANGUAGE_PROMPT = '''
-sorce language is {source}.
+source language is {source}.
 detected language is {detect}.
 target languages are {target}.
 source history:
 {history}
 source context: {context}
 target text: {input_text}
-translation result:'''
+translation result:
+'''
 
 DEFAULT_TRANSLATION_SUMMARIZE_SYSTEM_PROMPT = '''
 Could you please provide a comprehensive summary of the given text? The summary should capture the main points and key details of the text while conveying the speaker's intended meaning accurately.

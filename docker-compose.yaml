@@ -23,8 +23,9 @@ services:
       - FLASK_ENV=development
       - MAX_JOBS=4
       - HF_TOKEN=$HF_TOKEN
-      - LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-    runtime: nvidia
+      # - LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+      - SYSTEM_NAME=$SYSTEM_NAME
+    # runtime: nvidia
     deploy:
       resources:
         limits:
@@ -46,3 +47,4 @@ services:
       - serve
       - run
       - summary_serv:build_app
+      - port=8501
